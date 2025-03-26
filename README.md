@@ -1,31 +1,65 @@
 # Thinkific Manager
 
-## Modules
+**Description:**  
+`thinkific-manager` is a project designed to manage Thinkific integrations. It consists of:
+- `pcnc-server`: A Node.js backend to handle OAuth integrations, API calls, and user authentication.
+- `pcnc-app`: A React frontend for user interaction.
 
-1. `pcnc-app` - Frontend built with React.
-2. `pcnc-server` - Backend built with Node.js and Express.
+---
 
-## How to Run
+## Folder Structure
 
-1. **Setup**
+---
 
+## Getting Started
+
+### 1. Backend (`pcnc-server`)
+#### Setup:
+1. Navigate to the `pcnc-server` folder:
+   ```bash
+   cd pcnc-server
+   ```
+2. Install dependencies:
    ```bash
    npm install
    ```
+3. Add environment variables in `.env`:
+   ```
+   THINKIFIC_CLIENT_ID=***
+   THINKIFIC_CLIENT_SECRET=***
+   THINKIFIC_SUBDOMAIN=your-subdomain
+   ```
 
-2. **Launch the Node.js server**
-
+4. Start the server:
    ```bash
-   cd pcnc-server
    npm run dev
    ```
 
-3. **Launch the React app**
+---
 
+### 2. Frontend (`pcnc-app`)
+#### Setup:
+1. Navigate to the `pcnc-app` folder:
    ```bash
    cd pcnc-app
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the app:
+   ```bash
    npm start
    ```
 
-The React app will automatically connect to the backend (if needed) using the proxy configuration in `pcnc-app/package.json`.
-# thinkific-manager
+---
+
+## Environment Variables
+
+#### Backend `.env`
+#### Frontend `.env`
+
+---
+
+## License
+MIT License
