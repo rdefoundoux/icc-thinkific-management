@@ -1,0 +1,9 @@
+{
+  "name": "thinkific-manager",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "pcnc-app",
+    "pcnc-server"
+  ]
+}
