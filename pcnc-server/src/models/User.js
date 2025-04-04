@@ -1,63 +1,54 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
-    name: { type: String, required: true },
+    thinkificId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
     email: {
         type: String,
-        required: true,
+        required: function() { return !this.isOAuthUser },
         unique: true,
-        match: /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/
+        match: [
+            /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/,
+            'Invalid email format'
+        ]
     },
-    password: { type: String, required: true },
+    firstName: String,
+    lastName: String,
+    password: {
+        type: String,
+        required: function() { return !this.isOAuthUser }
+    },
+    isOAuthUser: {
+        type: Boolean,
+        default: false
+    },
+    lastLogin: Date,
+    oauthProvider: String,
+    accessToken: String,
     role: {
         type: String,
         enum: ['admin', 'teacher', 'rsf', 'sf', 'coordinator', 'student'],
         default: 'student'
     },
-    assignedClass: { type: mongoose.Schema.Types.ObjectId, ref: 'Class' },
-    availability: [{
-        day: String,
-        hours: [String]
-    }],
-    resetPasswordToken: String,
-    resetPasswordExpire: Date,
-    thinkificId: { type: String, unique: true },
-    thinkificData: {
-        avatarUrl: String,
-        customFields: Map,
-        enrollments: [{
-            courseId: String,
-            status: String,
-            completedAt: Date
-        }]
-    },
-    lastSyncedAt: Date
+    subdomain: String,
+    gid: String
 }, { timestamps: true });
 
-// Hash password before saving
+// Password hashing remains the same
 userSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) return next();
+    if (!this.isModified('password') || this.isOAuthUser) return next();
     this.password = await bcrypt.hash(this.password, 12);
     next();
 });
 
-// Method to compare passwords
-userSchema.methods.comparePassword = async function(enteredPassword) {
-    return await bcrypt.compare(enteredPassword, this.password);
-};
-
-
-// Remove sensitive data from response
-userSchema.methods.toProfile = function() {
-    const user = this.toObject();
-    delete user.password;
-    delete user.resetPasswordToken;
-    delete user.resetPasswordExpire;
-    return user;
+// OAuth password generation remains the same
+userSchema.statics.generateOAuthPassword = async function() {
+    return bcrypt.hash(crypto.randomBytes(16).toString('hex'), 12);
 };
 
 export default mongoose.model('User', userSchema);
-
-
-

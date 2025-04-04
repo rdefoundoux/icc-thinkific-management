@@ -56,11 +56,12 @@ export class AuthController {
     }
 
     // Generate local JWT for application authentication
+    // Exchange code for access token
     generateLocalJWT(user) {
         return jwt.sign(
-            { id: user._id, role: user.role },
-            config.JWT_SECRET,
-            { expiresIn: config.JWT_EXPIRE }
+            { id: user._id, email: user.email, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRE }
         );
     }
 }

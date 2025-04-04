@@ -1,146 +1,198 @@
 import express from 'express';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import axios from 'axios';
 import User from '../models/User.js';
-import { AuthController } from '../controllers/authController.js';
-import { userSyncService } from '../services/user-syncService.js';
 
 const router = express.Router();
-const authController = new AuthController();
+const THINKIFIC_GRAPHQL_ENDPOINT = `https://api.thinkific.com/stable/graphql`;
 
-// PKCE Code Verifier & Code Challenge
-const codeVerifier = crypto.randomBytes(32).toString('hex');
-const toBase64UrlEncoded = (str) =>
-    str.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-const codeChallenge = toBase64UrlEncoded(
-    crypto.createHash('sha256').update(codeVerifier).digest('base64')
-);
+// PKCE Code Generation for Enhanced Security
+const generatePKCE = () => {
+    const codeVerifier = crypto.randomBytes(64).toString('base64url');
+    const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
 
-// OAuth: Initialize Thinkific login
+    return { codeVerifier, codeChallenge };
+};
+
+// Initiate OAuth with Required Permissions
 router.get('/thinkific', (req, res) => {
     try {
-        let { subdomain } = req.query;
+        const { codeVerifier, codeChallenge } = generatePKCE();
+        const state = crypto.randomBytes(32).toString('hex');
 
-        // Fallback to environment variable if subdomain is not passed
-        subdomain = subdomain || process.env.THINKIFIC_SUBDOMAIN;
+        req.session.regenerate((err) => {
+            if (err) throw err;
 
-        if (!subdomain) {
-            return res
-                .status(400)
-                .json({ error: 'Subdomain query parameter is required.' });
-        }
+            req.session.codeVerifier = codeVerifier;
+            req.session.oauthState = state;
 
-        const authorizeUrl = `${process.env.PROTOCOL}://${subdomain}.${process.env.ENVIRONMENT}/oauth2/authorize?client_id=${process.env.THINKIFIC_CLIENT_ID}&response_type=code&redirect_uri=${process.env.THINKIFIC_OAUTH_REDIRECT_URI}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    return res.status(500).json({ error: 'Session storage failed' });
+                }
 
-        res.redirect(authorizeUrl);
+                const authParams = new URLSearchParams({
+                    client_id: process.env.THINKIFIC_CLIENT_ID,
+                    redirect_uri: process.env.THINKIFIC_REDIRECT_URI,
+                    response_type: 'code',
+                    scope: 'users:read site:read',
+                    code_challenge: codeChallenge,
+                    code_challenge_method: 'S256',
+                    state
+                });
+
+                res.redirect(`https://${process.env.THINKIFIC_SUBDOMAIN}.thinkific.com/oauth2/authorize?${authParams}`);
+            });
+        });
     } catch (err) {
-        console.error('Error in Thinkific OAuth initiation:', err);
-        res.status(500).json({ error: 'Unexpected error while initiating OAuth flow.' });
+        console.error('Authorization error:', err);
+        res.status(500).json({ error: 'Authentication failed' });
     }
 });
 
-// OAuth Callback: Exchange Code for Tokens
+// GraphQL Query to Fetch Current User
+const GET_USER_QUERY = `query GetUser {me { id email firstName lastName}}`;
+
+// Callback Handler for OAuth2
 router.get('/callback', async (req, res) => {
     try {
-        const { code } = req.query;
-        let { subdomain } = req.query;
-console.log('before',subdomain);
-        // Fallback to default subdomain if dynamic subdomain is not passed
-        subdomain = subdomain || process.env.THINKIFIC_SUBDOMAIN;
-        console.log('after',subdomain)
-        if (!code || !subdomain) {
-            return res.status(400).json({
-                error: 'Code and subdomain query parameters are required.',
-            });
-        }
-        console.log('token',subdomain);
-        const tokenUrl = `${process.env.PROTOCOL}://${subdomain}.${process.env.ENVIRONMENT}/oauth2/token`;
-        console.log('tokenUrl',tokenUrl);
-        const options = {
-            grant_type: 'authorization_code',
-            code_verifier: codeVerifier,
-            code,
-        };
+        const { code, state, error, error_description } = req.query;
 
-        const authParams = {
-            auth: {
-                username: process.env.THINKIFIC_CLIENT_ID,
+
+
+        // Handle errors from the authorization endpoint
+        if (error) throw new Error(`${error}: ${error_description}`);
+
+
+        console.log('Authorization code:', code);
+
+        // Exchange Authorization Code for Access Token
+        const tokenResponse = await axios.post(
+            `https://${process.env.THINKIFIC_SUBDOMAIN}.thinkific.com/oauth2/token`,
+            new URLSearchParams({
+                grant_type: 'authorization_code',
+                code,
+                client_id: process.env.THINKIFIC_CLIENT_ID,
+                client_secret: process.env.THINKIFIC_CLIENT_SECRET,
+                redirect_uri: process.env.THINKIFIC_REDIRECT_URI,
+                code_verifier: req.session.codeVerifier
+            }),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': `Basic ${Buffer.from(
+                        `${process.env.THINKIFIC_CLIENT_ID}:${process.env.THINKIFIC_CLIENT_SECRET}`
+                    ).toString('base64')}`,
+                    'User-Agent': 'ThinkificManager/1.0'
+                }
+
+            }
+        );
+
+        const accessToken = tokenResponse.data.access_token;
+        console.log('OAuth Token Exchange Success:', tokenResponse.data);
+
+        // Make a GraphQL Request to Fetch Current User
+        const graphqlResponse = await axios.post(
+            THINKIFIC_GRAPHQL_ENDPOINT,
+            {
+                query: GET_USER_QUERY
             },
-        };
-
-        // Exchange authorization code for tokens
-        const tokenResponse = await authController.exchangeCodeForToken(
-            code,
-            tokenUrl,
-            options,
-            authParams
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'X-Auth-Subdomain': process.env.THINKIFIC_SUBDOMAIN,
+                    'Content-Type': 'application/json'
+                }
+            }
         );
 
-        if (!tokenResponse) {
-            throw new Error('Could not retrieve token from Thinkific.');
+        if (graphqlResponse.data.errors) {
+            throw new Error(graphqlResponse.data.errors.map((err) => err.message).join(', '));
         }
 
-        const { access_token: accessToken, gid } = tokenResponse;
+        console.log('GraphQL Response:', graphqlResponse.data);
 
-        // Find or create the user locally
-        let user = await User.findOne({ subdomain });
-        if (!user) {
-            user = await User.create({ subdomain, gid, accessToken });
-        } else {
-            user.accessToken = accessToken; // Update access token if re-authenticating
-            await user.save();
-        }
+        const userData = graphqlResponse.data.data.me;
 
-        // Generate a local JWT and redirect or respond appropriately
-        const localJwt = authController.generateLocalJWT(user);
+        console.log('User Data:', userData);
 
-        res.cookie('authToken', localJwt, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict',
-            maxAge: process.env.JWT_EXPIRE,
+        // Update the User in Your Local Database
+        const user = await User.findOneAndUpdate(
+            { thinkificId: userData.id },
+            {
+                email: userData.email,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                lastLogin: new Date(),
+                isOAuthUser: true  // Ensure this is set
+            },
+            { upsert: true, new: true }
+        );
+
+        req.session.destroy(); // Clear session data after successful login
+
+        res.json({
+            success: true,
+            user: {
+                id: user.thinkificId,
+                email: user.email,
+                name: `${user.firstName} ${user.lastName}`
+            }
+        });
+        // Generate JWT token
+        const token = jwt.sign({ sub: user._id }, process.env.JWT_SECRET, {
+            expiresIn: '1h'
         });
 
-        const appSubviewUrl = `${process.env.PROTOCOL}://${subdomain}.${process.env.ENVIRONMENT}/manage/apps/${process.env.SLUG}#embedded-app`;
+        // Set HTTP-only cookie and redirect to frontend
+        res.cookie('session', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 3600000 // 1 hour
+        });
 
-        res.redirect(appSubviewUrl);
+        // Redirect to frontend callback handler
+        res.redirect(`${process.env.FRONTEND_BASE_URL}/callback`);
     } catch (err) {
-        console.error('Error in OAuth callback:', err);
-        res.redirect(
-            `/error?message=${encodeURIComponent('OAuth callback failed. Please try again.')}`
-        );
+        console.error('OAuth Callback Error:', err);
+
+        res.status(401).json({
+            error: 'Authentication failed',
+            details: err.message,
+            ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+        });
     }
 });
 
-// Logout User
 router.post('/logout', (req, res) => {
-    try {
-        res.clearCookie('authToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-        });
-        res.status(204).send();
-    } catch (err) {
-        console.error('Logout error:', err);
-        res.status(500).json({ error: 'Logout failed.' });
-    }
+    res.clearCookie('session');
+    res.json({ success: true });
 });
 
-// Retrieve Current User Details
-router.get('/me', async (req, res) => {
+// Profile Endpoint
+router.get('/profile', async (req, res) => {
     try {
-        const token = req.cookies.authToken;
-        if (!token) {
-            return res.status(401).json({ user: null });
-        }
+        const token = req.cookies.session;
+        if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id).select('-password -__v');
+        const user = await User.findById(decoded.sub).select('-accessToken -refreshToken -__v');
 
-        res.status(200).json({ user });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        res.json({
+            id: user.thinkificId,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`,
+            role: user.role
+        });
     } catch (err) {
-        console.error('Error in retrieving user info:', err);
-        res.status(500).json({ user: null });
+        console.error('Profile Error:', err);
+        res.status(500).json({ error: 'Failed to fetch profile' });
     }
 });
 

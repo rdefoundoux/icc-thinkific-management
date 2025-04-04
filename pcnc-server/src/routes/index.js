@@ -27,13 +27,20 @@ router.put('/classes/:classId/teachers', adminOnly, assignTeacher);
 
 // Error handling
 router.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Error stack:', err.stack);
     if (!res.headersSent) {
-        res.status(500).json({
+        const errorResponse = {
             success: false,
-            error: 'Internal Server Error',
-            message: err.message
-        });
+            error: err.message || 'Internal Server Error',
+            code: err.code || 'SERVER_ERROR'
+        };
+
+        if (process.env.NODE_ENV === 'development') {
+            errorResponse.stack = err.stack;
+            errorResponse.details = err.details;
+        }
+
+        res.status(err.statusCode || 500).json(errorResponse);
     }
 });
 
