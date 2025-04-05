@@ -132,39 +132,38 @@ router.get('/callback', async (req, res) => {
             { upsert: true, new: true }
         );
 
-        req.session.destroy(); // Clear session data after successful login
-
-        res.json({
-            success: true,
-            user: {
-                id: user.thinkificId,
-                email: user.email,
-                name: `${user.firstName} ${user.lastName}`
-            }
+        // Destroy session safely
+        await new Promise((resolve) => {
+            req.session.destroy(err => {
+                if (err) console.error('Session destruction error:', err);
+                resolve();
+            });
         });
-        // Generate JWT token
+
+        // Set JWT cookie and redirect
         const token = jwt.sign({ sub: user._id }, process.env.JWT_SECRET, {
             expiresIn: '1h'
         });
 
-        // Set HTTP-only cookie and redirect to frontend
         res.cookie('session', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 3600000 // 1 hour
+            maxAge: 3600000
         });
 
-        // Redirect to frontend callback handler
-        res.redirect(`${process.env.FRONTEND_BASE_URL}/callback`);
+        if (!res.headersSent) {
+            res.redirect(`${process.env.FRONTEND_BASE_URL}/callback`);
+        }
+
     } catch (err) {
         console.error('OAuth Callback Error:', err);
 
-        res.status(401).json({
-            error: 'Authentication failed',
-            details: err.message,
-            ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-        });
+        if (!res.headersSent) {
+            res.redirect(
+                `${process.env.FRONTEND_BASE_URL}/login?error=${encodeURIComponent(err.message)}`
+            );
+        }
     }
 });
 

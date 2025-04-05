@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     host: true,                // Listen on all addresses (0.0.0.0)
     port: 5173,                // Optional: Ensure you're using the right port
-    allowedHosts: ['.loca.lt', 'pcnc-app.loca.lt', 'localhost'], // Allow loca.lt and localhost for testing
+    allowedHosts: ['.ngrok-free.app', '1082-70-30-206-145.ngrok-free.app','pcnc-app-rdefoundoux-rdefoundouxs-projects.vercel.app','.vercel.app', 'localhost'], // Allow loca.lt and localhost for testing
     strictPort: true           // Ensures the specified port is used, avoid auto-switching
   },
   plugins: [
@@ -14,6 +14,10 @@ export default defineConfig({
       jsxImportSource: '@emotion/react',
       babel: {
         plugins: ['@emotion/babel-plugin']
+      },
+      server: {
+        // Fallback for React Router
+        historyApiFallback: true,
       }
     })
   ],
