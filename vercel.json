@@ -5,7 +5,7 @@
       "src": "pcnc-app/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build"
+        "distDir": "dist"
       }
     }
   ],
@@ -14,5 +14,6 @@
       "src": "/(.*)",
       "dest": "pcnc-app/$1"
     }
-  ]
+  ],
+  "outputDirectory": "dist"
 }
