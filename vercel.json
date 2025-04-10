@@ -15,5 +15,6 @@
       "dest": "pcnc-app/$1"
     }
   ],
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
