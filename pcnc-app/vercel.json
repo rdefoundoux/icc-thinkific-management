@@ -1,19 +1,4 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "pcnc-app/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "pcnc-app/$1"
-    }
-  ],
-  "outputDirectory": "dist"
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
