@@ -46,5 +46,18 @@ export const teacherOnly = (req, res, next) => {
     }
     next();
 };
+export const isAuthenticated = (req, res, next) => {
+    if (req.user) return next();
+    res.status(401).json({ error: 'Authentication required' });
+};
+export const isAdmin = (req, res, next) => {
+    if (req.user?.roles.includes('admin')) return next();
+    res.status(403).json({ error: 'Admin access required' });
+};
+export const isCoordinator = (req, res, next) => {
+    if (req.user?.roles.includes('coordinator')) return next();
+    res.status(403).json({ error: 'Coordinator access required' });
+};
+
 export default class authMiddleware {
 }

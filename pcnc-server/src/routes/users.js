@@ -5,10 +5,11 @@ import User from '../models/User.js';
 import { ProxyService } from '../services/ProxyService.js';
 import axios from 'axios';
 import retryAfter from 'axios-retry-after';
+import { isAuthenticated, isAdmin, isCoordinator } from '../middleware/auth.js';
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
-const CACHE_TTL = 3600 * 1000; // 1 hour in milliseconds
+const CACHE_TTL = 3 * 3600 * 1000; // 1 hour in milliseconds
 
 const VALID_ROLES = ['admin', 'teacher', 'rsf', 'sf', 'coordinator', 'traineeTeacher', 'student'];
 
@@ -145,21 +146,30 @@ function mapThinkificUser(tUser) {
 }
 
 // GET /api/v1/users?roles=admin,teacher
-// Optimized GET endpoint
+// Enhanced GET endpoint with pagination and search
 router.get('/', async (req, res) => {
     try {
-        const { roles, page = 1, limit = 25 } = req.query;
-        const filter = roles ? { roles: { $in: roles.split(',') } } : {};
+        const { roles, page = 1, limit = 25, search = '' } = req.query;
+        const filter = {};
 
-        // Sync with Thinkific
+        // Sync with Thinkific first
         await getThinkificUsers();
 
-        // Convert to numbers with validation
+        // Build filter
+        if (roles) filter.roles = { $in: roles.split(',') };
+        if (search) {
+            filter.$or = [
+                { email: { $regex: search, $options: 'i' } },
+                { firstName: { $regex: search, $options: 'i' } },
+                { lastName: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        // Validate pagination parameters
         const pageNum = Math.max(1, parseInt(page)) || 1;
         const limitNum = Math.min(100, Math.max(1, parseInt(limit))) || 25;
         const skip = (pageNum - 1) * limitNum;
 
-        // Parallel fetch data and count
         const [users, total] = await Promise.all([
             User.find(filter)
                 .select('-password')
@@ -241,6 +251,42 @@ router.post('/',  async (req, res) => {
         await proxyService.assignProxies(user._id, roles);
 
         res.status(201).json({ success: true, data: user });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+// Protected PUT endpoint (Admin only)
+router.put('/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const { firstName, lastName, roles } = req.body;
+        if (!validateRoles(roles)) throw new Error('Invalid roles');
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { $set: { firstName, lastName, roles } },
+            { new: true }
+        );
+
+        res.json({ success: true, data: user });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+
+// Protected POST attendance (Coordinator only)
+router.post('/:id/attendance', isAuthenticated, isCoordinator, async (req, res) => {
+    try {
+        const { date, present } = req.body;
+        if (!date) throw new Error('Date is required');
+
+        const attendance = await Attendance.findOneAndUpdate(
+            { user: req.params.id, date },
+            { $set: { present } },
+            { upsert: true, new: true }
+        );
+
+        res.json({ success: true, data: attendance });
     } catch (err) {
         res.status(400).json({ success: false, error: err.message });
     }

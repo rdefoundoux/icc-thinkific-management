@@ -31,7 +31,7 @@ async function fetchThinkificUser(email) {
         },
         {
             headers: {
-                Authorization: `Bearer ${process.env.THINKIFIC_API_TOKEN}`,
+                Authorization: `Bearer ${process.env.THINKIFIC_API2_TOKEN}`,
                 'X-Auth-Subdomain': process.env.THINKIFIC_SUBDOMAIN,
                 'Content-Type': 'application/json'
             }
@@ -39,6 +39,7 @@ async function fetchThinkificUser(email) {
     );
 
     if (response.data.errors) {
+        console.log('Thinkific errors: ', response);
         throw new Error(response.data.errors.map(err => err.message).join(', '));
     }
     return response.data.data.userByEmail;
