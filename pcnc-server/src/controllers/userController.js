@@ -128,3 +128,49 @@ export const syncUserData = async (req, res) => {
         res.status(400).json({ error: 'Data sync failed' });
     }
 };
+// controllers/userController.js
+export const createUser = async (req, res) => {
+    try {
+        const { roles, ...userData } = req.body;
+
+        // Create local user
+        const user = await User.create({
+            ...userData,
+            roles,
+            isProxyUser: false
+        });
+
+        // Assign proxies for limited roles
+        const proxyService = new ProxyService();
+        await Promise.all(roles.map(async role => {
+            if (ROLE_MAP[role] && LICENSE_LIMITS[ROLE_MAP[role]]) {
+                await proxyService.assignProxy(user.id, ROLE_MAP[role]);
+            }
+        }));
+
+        res.status(201).json(user);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const listCourses = async (req, res) => {
+    try {
+        const response = await axios.get(
+            `${THINKIFIC_API}/courses`,
+            { headers: req.thinkificHeaders }
+        );
+
+        // Audit logging
+        await AuditLog.create({
+            userId: req.user.id,
+            proxyId: req.proxy._id,
+            action: 'LIST_COURSES'
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        res.status(502).json({ error: 'Upstream error' });
+    }
+};
+

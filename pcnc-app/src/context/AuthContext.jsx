@@ -1,46 +1,51 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { notifications } from '@mantine/notifications';
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const verifySession = async () => {
+        const verifyAuth = async () => {
             try {
                 const response = await fetch(
                     `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/profile`,
                     { credentials: 'include' }
                 );
-                const userData = await response.json();
-                if (!response.ok) throw new Error(userData.error);
-                setUser(userData);
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    setUser({
+                        ...userData,
+                        name: `${userData.firstName} ${userData.lastName}` // Ensure name exists
+                    });
+                }
             } catch (err) {
-                console.error('Session verification failed:', err);
+                console.error('Auth verification error:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        verifySession();
+        verifyAuth();
     }, []);
 
     const login = (userData) => {
-        setUser(userData);
-        navigate('/');
+        setUser({
+            ...userData,
+            name: `${userData.firstName} ${userData.lastName}`
+        });
+        navigate('/profile'); // Add navigation here as fallback
     };
-
-    const logout = async () => {
-        await fetch(
-            `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/logout`,
-            { credentials: 'include' }
-        );
+    const logout = () => {
         setUser(null);
-        navigate('/login');
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
     };
 
     return (
@@ -48,6 +53,8 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     );
-};
+}
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+    return useContext(AuthContext);
+}

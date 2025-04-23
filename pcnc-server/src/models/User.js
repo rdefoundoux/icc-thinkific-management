@@ -3,10 +3,11 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
-    thinkificId: {
+    thinkificId: {  // Rename for clarity
         type: String,
+        index: true,
         unique: true,
-        sparse: true
+        sparse: true // Add sparse index
     },
     email: {
         type: String,
@@ -20,8 +21,7 @@ const userSchema = new mongoose.Schema({
     firstName: String,
     lastName: String,
     password: {
-        type: String,
-        required: function() { return !this.isOAuthUser }
+        type: String
     },
     isOAuthUser: {
         type: Boolean,
@@ -30,11 +30,21 @@ const userSchema = new mongoose.Schema({
     lastLogin: Date,
     oauthProvider: String,
     accessToken: String,
-    role: {
-        type: String,
+    roles: {  // Change to array for multiple roles
+        type: [String],
         enum: ['admin', 'teacher', 'rsf', 'sf', 'coordinator', 'student'],
-        default: 'student'
+        default: ['student']
     },
+    proxyMappings: [{
+        role: String,
+        proxyId: mongoose.Schema.Types.ObjectId
+    }],
+    thinkificEnrollments: [{
+        courseId: String,
+        status: String,
+        completedAt: Date
+    }],
+    lastSyncAt: Date,
     subdomain: String,
     gid: String
 }, { timestamps: true });

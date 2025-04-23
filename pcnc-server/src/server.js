@@ -12,48 +12,61 @@ import mainRouter from './routes/index.js';
 class AppServer {
     constructor() {
         this.app = express();
+        this.sessionStore = MongoStore.create({
+            mongoUrl: config.MONGODB_URI,
+            ttl: 14 * 24 * 60 * 60,
+            autoRemove: 'interval',
+            autoRemoveInterval: 60
+        });
         this.configureMiddleware();
         this.connectDatabase();
         this.configureRoutes();
     }
 
     configureMiddleware() {
-        this.app.set('trust proxy', true); // Handles proxy in production
-        this.app.use(helmet()); // Security headers
+        this.app.set('trust proxy', 1);
+        this.app.use(helmet());
         this.app.use(cors({
             origin: [
                 'http://localhost:5173',
-                '=https://1082-70-30-206-145.ngrok-free.app',
+                'https://1082-70-30-206-145.ngrok-free.app',
                 config.THINKIFIC_OAUTH_REDIRECT_URI
             ],
             credentials: true
         }));
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
-        this.app.use(cookieParser(process.env.COOKIE_SECRET)); // Secure cookie parsing
+        this.app.use(cookieParser(process.env.COOKIE_SECRET));
 
         // Session configuration
         this.app.use(session({
             secret: process.env.COOKIE_SECRET,
-            resave: true,
+            resave: false,
             saveUninitialized: false,
-            store: MongoStore.create({
-                mongoUrl: config.MONGODB_URI,
-                ttl: 14 * 24 * 60 * 60 // 14 days
-            }),
+            store: this.sessionStore,
             cookie: {
-                secure: true,
-                sameSite: 'none', // Required for cross-domain in production
+                secure: false,
+                sameSite:  'lax',
                 httpOnly: true,
-                domain: process.env.COOKIE_DOMAIN, // Set to '.ngrok-free.app' for testing
-                maxAge: 14 * 24 * 60 * 60 * 1000
-            }
+                maxAge: 14 * 24 * 60 * 60 * 1000,
+                domain: undefined
+            },
+            proxy: true
         }));
 
-        // Rate limiting to protect against brute force attacks
+        // Session logging middleware
+        this.app.use((req, res, next) => {
+            console.log('Session ID:', req.sessionID);
+            console.log('Session Status:', req.session?.codeVerifier
+                ? 'Has CodeVerifier'
+                : 'No CodeVerifier');
+            next();
+        });
+
+        // Rate limiting
         const limiter = rateLimit({
             windowMs: 15 * 60 * 1000,
-            max: 500, // Max 500 requests per 15 mins per IP
+            max: 500,
             standardHeaders: true,
             legacyHeaders: false,
         });
@@ -65,6 +78,17 @@ class AppServer {
             mongoose.set('strictQuery', false);
             await mongoose.connect(config.MONGODB_URI);
             console.log('MongoDB connected successfully');
+
+            // Verify session store
+            this.sessionStore.on('error', (error) => {
+                console.error('Session store error:', error);
+            });
+
+            // Create TTL index
+            const sessionCollection = mongoose.connection.db.collection('sessions');
+            await sessionCollection.createIndex({ expires: 1 }, { expireAfterSeconds: 0 });
+            console.log('Session TTL index created');
+
         } catch (err) {
             console.error('Database connection error:', err);
             process.exit(1);
@@ -81,6 +105,10 @@ class AppServer {
         this.app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Environment: ${config.NODE_ENV || 'development'}`);
+            console.log(`Session cookie settings:
+  - Secure: ${config.NODE_ENV === 'production'}
+  - SameSite: ${config.NODE_ENV === 'production' ? 'none' : 'lax'}
+  - Domain: ${config.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : 'localhost'}`);
         });
     }
 }

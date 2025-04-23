@@ -1,106 +1,195 @@
-// frontend/src/theme.js
-import { createTheme } from '@mantine/core';
+import { createTheme } from "@mantine/core";
 
-export const theme = createTheme({
-    colorScheme: 'dark',
-    primaryColor: 'blue',
+// Utility to create 10-shade arrays from base color
+const createShades = (baseColor) => Array(10).fill(baseColor);
+
+// PCNC Brand Colors (10 shades each)
+const pcncNavy = createShades("#161E3F");
+const pcncBlue = createShades("#83CEE0");
+const pcncPurple = createShades("#662D91");
+const pcncOrange = createShades("#F9A061");
+const pcncTeal = createShades("#00B0CA");
+const pcncYellow = createShades("#FFE069");
+const pcncGreen = createShades("#86C8A1");
+const pcncLightPurple = createShades("#A67FB5");
+
+const theme = createTheme({
+    colorScheme: "light",
+    primaryColor: "pcncBlue",
     colors: {
-        dark: [
-            '#C1C2C5', // Text color
-            '#A6A7AB',
-            '#909296',
-            '#5C5F66',
-            '#373A40', // Default dark color
-            '#2C2E33', // Card background
-            '#25262B', // Page background
-            '#1A1B1E', // Modal background
-            '#141517', // Hover colors
-            '#101113'  // Darkest shade
-        ],
-        blue: [
-            '#e7f5ff',
-            '#d0ebff',
-            '#a5d8ff',
-            '#74c0fc',
-            '#4dabf7',
-            '#339af0', // Primary button color
-            '#228be6',
-            '#1c7ed6',
-            '#1971c2',
-            '#1864ab'
+        pcncNavy,
+        pcncBlue,
+        pcncPurple,
+        pcncOrange,
+        pcncTeal,
+        pcncYellow,
+        pcncGreen,
+        pcncLightPurple,
+        gray: [
+            "#f8f9fa", // 0
+            "#f1f3f6", // 1
+            "#f5f6f9", // 2
+            "#e0e0e6", // 3
+            "#dadce0", // 4
+            "#bdc1c6", // 5
+            "#9aa0a6", // 6
+            "#80868b", // 7
+            "#5f6368", // 8
+            "#3c4043", // 9
         ],
     },
+    fontFamily: "Google Sans, Roboto, sans-serif",
     components: {
-        Table: {
-            styles: {
-                root: {
-                    '& th': { fontWeight: 600 },
-                    '& tr:hover td': {
-                        backgroundColor: 'var(--mantine-color-dark-5)'
-                    }
-                }
-            }
-        },
-        NavLink: {
-            defaultProps: {
-                variant: 'filled',
-                style: {
-                    transition: 'all 150ms ease',
-                }
-            },
+        Button: {
+            defaultProps: { radius: "24px", variant: "outline" },
             styles: (theme) => ({
                 root: {
-                    '&[data-active]': {
-                        backgroundColor: theme.colors.dark[5],
-                        color: theme.white,
-                        '&:hover': {
-                            backgroundColor: theme.colors.dark[4]
-                        }
+                    border: `1px solid ${theme.colors.gray[3]}`,
+                    color: theme.colors.pcncNavy[0],
+                    fontWeight: 500,
+                    "&:hover": {
+                        backgroundColor: theme.colors.pcncBlue[0],
+                        boxShadow: "0 4px 8px rgba(22,30,63,0.1)",
                     },
-                    '&:hover': {
-                        backgroundColor: theme.colors.dark[6]
-                    }
                 },
-                label: {
-                    fontSize: theme.fontSizes.sm
-                },
-                icon: {
-                    color: theme.colors.gray[4]
-                }
-            })
-        },
-        Paper: {
-            defaultProps: {
-                bg: 'dark.7',
-                withBorder: true,
-                style: { borderColor: 'var(--mantine-color-dark-5)' }
-            }
+            }),
         },
         Card: {
+            styles: (theme) => ({
+                root: {
+                    backgroundColor: "#fff",
+                    border: `1px solid ${theme.colors.gray[3]}`,
+                    borderRadius: "12px",
+                    boxShadow: "0 1px 3px rgba(22,30,63,0.05)",
+                },
+            }),
+        },
+        Table: {
+            styles: (theme) => ({
+                root: {
+                    "--header-bg": theme.colors.gray[1],
+                    "--row-hover": theme.colors.gray[2],
+                    "--border-color": theme.colors.gray[3],
+                    borderCollapse: "collapse",
+                    width: "100%",
+                },
+                thead: {
+                    th: {
+                        background: "var(--header-bg)",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        fontSize: "0.95em",
+                    },
+                },
+                "tbody tr:hover": {
+                    background: "var(--row-hover)",
+                },
+                td: {
+                    borderBottom: "1px solid var(--border-color)",
+                },
+            }),
+        },
+        Badge: {
+            variants: {
+                admin: () => ({
+                    root: {
+                        backgroundColor: pcncBlue[0],
+                        color: pcncNavy[0],
+                    },
+                }),
+                teacher: () => ({
+                    root: {
+                        backgroundColor: pcncOrange[0],
+                        color: pcncNavy[0],
+                    },
+                }),
+                coordinator: () => ({
+                    root: {
+                        backgroundColor: pcncTeal[0],
+                        color: pcncNavy[0],
+                    },
+                }),
+                rsf: () => ({
+                    root: {
+                        backgroundColor: pcncLightPurple[0],
+                        color: pcncNavy[0],
+                    },
+                }),
+                sf: () => ({
+                    root: {
+                        backgroundColor: pcncPurple[0],
+                        color: "#fff",
+                    },
+                }),
+                traineeTeacher: () => ({
+                    root: {
+                        backgroundColor: pcncYellow[0],
+                        color: pcncNavy[0],
+                    },
+                }),
+                student: () => ({
+                    root: {
+                        backgroundColor: pcncGreen[0],
+                        color: pcncNavy[0],
+                    },
+                }),
+            },
+        },
+        ActionIcon: {
+            defaultProps: { variant: "transparent", size: "lg" },
+            styles: (theme) => ({
+                root: {
+                    color: theme.colors.gray[7],
+                    borderRadius: "50%",
+                    "&:hover": {
+                        backgroundColor: theme.colors.gray[1],
+                    },
+                },
+            }),
+        },
+        NavLink: {
+            styles: (theme) => ({
+                root: {
+                    borderRadius: "24px",
+                    padding: "10px 20px",
+                    "&[data-active]": {
+                        backgroundColor: theme.colors.pcncBlue[0],
+                        color: theme.colors.pcncNavy[0],
+                        fontWeight: 600,
+                        "& .mantine-NavLink-icon": {
+                            color: theme.colors.pcncNavy[0],
+                        },
+                    },
+                    "&:hover": {
+                        backgroundColor: theme.colors.gray[2],
+                    },
+                },
+                icon: {
+                    color: theme.colors.gray[6],
+                },
+            }),
+        },
+        Progress: {
             styles: {
                 root: {
-                    backgroundColor: 'var(--mantine-color-dark-6)',
-                    borderColor: 'var(--mantine-color-dark-4)'
-                }
-            }
+                    height: "8px",
+                    borderRadius: "8px",
+                },
+                bar: {
+                    borderRadius: "8px",
+                },
+            },
         },
-        Input: {
+        Container: {
             styles: {
-                input: {
-                    backgroundColor: 'var(--mantine-color-dark-7)',
-                    borderColor: 'var(--mantine-color-dark-4)',
-                    '&:focus': {
-                        borderColor: 'var(--mantine-color-blue-6)'
-                    }
-                }
-            }
+                root: {
+                    maxWidth: "900px",
+                    margin: "0 auto",
+                    padding: "32px 0",
+                },
+            },
         },
-        Button: {
-            defaultProps: {
-                variant: 'filled'
-            }
-        }
-    }
+    },
 });
 
 export default theme;

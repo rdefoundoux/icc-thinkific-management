@@ -1,6 +1,7 @@
 import express from 'express';
 import { Router } from 'express';
 import authRouter from './auth.js';
+import usersRouter from './users.js';
 import { adminOnly, authenticate } from '../middleware/auth.js';
 import { validateClassCreation } from '../middleware/validation.js';
 import { assignTeacher, createClass, validateRegistration } from '../controllers/registrationController.js';
@@ -17,7 +18,7 @@ router.post('/webhooks/thinkific',
 
 // Public routes
 router.use('/auth',authRouter);
-router.post('/api/users/sync', syncUserData);
+router.use('/users', usersRouter);
 
 // Protected routes
 router.use(authenticate);

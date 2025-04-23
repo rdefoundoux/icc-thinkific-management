@@ -1,24 +1,38 @@
-// UserMenu.jsx
-import { Menu, Avatar } from '@mantine/core';
-import { IconUser, IconSettings } from '@tabler/icons-react';
+// UserMenu.jsx - Google account menu
+import { Menu, Avatar, Text } from '@mantine/core';
+import { IconUser, IconSettings, IconLogout } from '@tabler/icons-react';
 
-const UserMenu = () => {
-    return (
-        <Menu shadow="md" width={200}>
-            <Menu.Target>
-                <Avatar size="md" radius="xl" color="blue">JD</Avatar>
-            </Menu.Target>
+const UserMenu = () => (
+    <Menu shadow="xl" width={240} position="bottom-end">
+        <Menu.Target>
+            <Avatar
+                size={32}
+                radius="xl"
+                style={{ cursor: 'pointer' }}
+            />
+        </Menu.Target>
 
-            <Menu.Dropdown>
-                <Menu.Item leftSection={<IconUser size={14} />}>
-                    Profil
-                </Menu.Item>
-                <Menu.Item leftSection={<IconSettings size={14} />}>
-                    Paramètres
-                </Menu.Item>
-            </Menu.Dropdown>
-        </Menu>
-    );
-};
+        <Menu.Dropdown p="xs">
+            <div style={{ padding: '12px 16px' }}>
+                <Text fw={500}>John Doe</Text>
+                <Text size="sm" color="dimmed">john@ecole.xyz</Text>
+            </div>
+
+            <Menu.Divider />
+
+            <Menu.Item icon={<IconUser size={18} />}>
+                My Profile
+            </Menu.Item>
+            <Menu.Item icon={<IconSettings size={18} />}>
+                Account Settings
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item color="red" icon={<IconLogout size={18} />}>
+                Logout
+            </Menu.Item>
+        </Menu.Dropdown>
+    </Menu>
+);
+
 
 export default UserMenu;

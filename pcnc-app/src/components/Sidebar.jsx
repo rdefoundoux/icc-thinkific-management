@@ -1,79 +1,60 @@
-import { Box, NavLink, Group, Text } from '@mantine/core';
-import { IconHome, IconBooks, IconUsers, IconSettings } from '@tabler/icons-react';
-import { NavLink as RouterNavLink } from 'react-router-dom';
+// Sidebar.jsx - Gmail-style navigation
+import React from 'react';
+import { Box, NavLink, Stack } from '@mantine/core';
+import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
+import {
+    IconHome, IconBooks, IconUsers,
+    IconSettings, IconLogout
+} from '@tabler/icons-react';
 
+const navItems = [
+    { label: 'Dashboard', to: '/', icon: IconHome },
+    { label: 'Classes', to: '/classes', icon: IconBooks },
+    { label: 'Students', to: '/students', icon: IconUsers },
+    { label: 'Settings', to: '/settings', icon: IconSettings },
+];
 
 const Sidebar = () => {
-    return (
-        <Box w={240} style={{ borderRight: '1px solid var(--mantine-color-gray-3)' }}>
-            <Group p="md" pb={0} gap={0}>
-                <NavLink
-                    component={RouterNavLink}
-                    to="/"
-                    label="Tableau de bord"
-                    icon={<IconHome size={20} />}
-                    styles={{
-                        root: {
-                            '&[data-active]': {
-                                backgroundColor: 'var(--mantine-color-dark-5)',
-                                color: 'var(--mantine-color-white)',
-                            },
-                            '&[data-active]:hover': {
-                                backgroundColor: 'var(--mantine-color-dark-4)'
-                            }
-                        }
-                    }}
-                />
-                <NavLink
-                    component={RouterNavLink}
-                    to="/classes"
-                    label="Gestion des classes"
-                    icon={<IconBooks size={20} />}
-                    styles={{
-                        root: {
-                            '&[data-active]': {
-                                backgroundColor: 'var(--mantine-color-dark-5)',
-                                color: 'var(--mantine-color-white)',
-                            }
-                        }
-                    }}
-                />
-                <NavLink
-                    component={RouterNavLink}
-                    to="/students"
-                    label="Étudiants"
-                    icon={<IconUsers size={20} />}
-                    styles={{
-                        root: {
-                            '&[data-active]': {
-                                backgroundColor: 'var(--mantine-color-dark-5)',
-                                color: 'var(--mantine-color-white)',
-                            }
-                        }
-                    }}
-                />
-                <NavLink
-                    component={RouterNavLink}
-                    to="/settings"
-                    label="Paramètres"
-                    icon={<IconSettings size={20} />}
-                    styles={{
-                        root: {
-                            '&[data-active]': {
-                                backgroundColor: 'var(--mantine-color-dark-5)',
-                                color: 'var(--mantine-color-white)',
-                            }
-                        }
-                    }}
-                />
-            </Group>
+    const location = useLocation();
 
-            <Box p="md" style={{ position: 'absolute', bottom: 0 }}>
-                <Text size="sm" c="dimmed">École XYZ © 2025</Text>
-            </Box>
+    return (
+        <Box
+            w={256}
+            p="sm"
+            style={{
+                borderRight: '1px solid #dadce0',
+                backgroundColor: 'white',
+                height: '100vh'
+            }}
+        >
+            <Stack spacing={2}>
+                {navItems.map(({ label, to, icon: Icon }) => (
+                    <NavLink
+                        key={label}
+                        component={RouterNavLink}
+                        to={to}
+                        label={label}
+                        icon={<Icon size={20} />}
+                        pl="xl"
+                        sx={(theme) => ({
+                            borderRadius: theme.radius.md,
+                            backgroundColor: location.pathname === to ? theme.colors.blue[0] : "transparent",
+                            color: location.pathname === to ? theme.colors.blue[6] : theme.colors.gray[7],
+                            "&:hover": {
+                                backgroundColor: theme.colors.blue[0],
+                            },
+                        })}
+                    />
+                ))}
+                <NavLink
+                    icon={<IconLogout size={20} />}
+                    label="Logout"
+                    pl="xl"
+                    onClick={() => console.log('Logout')}
+                />
+            </Stack>
         </Box>
     );
 };
-
 
 export default Sidebar;
