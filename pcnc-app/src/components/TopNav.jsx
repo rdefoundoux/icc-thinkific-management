@@ -1,128 +1,71 @@
-import React from 'react';
-import { Flex, Text, Avatar, ActionIcon, Tooltip } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
-import { IconHelp, IconSettings, IconBell } from '@tabler/icons-react';
+import { Group, Button, Select, Image } from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-const TopNav = () => {
+const TopNav = ({ onLanguageChange, showLoginButton }) => {
+    const navigate = useNavigate();
     const { t } = useTranslation();
-    const isSmallScreen = useMediaQuery('(max-width: 768px)');
-    const iconSize = 20;
-    const avatarSize = isSmallScreen ? 32 : 36;
-
-    const interactiveElementStyle = (theme) => ({
-        transition: 'all 150ms ease',
-        '&:hover': {
-            transform: 'scale(1.05)',
-            backgroundColor: theme.colors.pcncBlue[0],
-        },
-        '&:active': {
-            transform: 'scale(0.95)',
-        },
-    });
-
-    const actionIconProps = {
-        size: 'lg',
-        radius: 'xl',
-        variant: 'light',
-        sx: interactiveElementStyle,
-        color: 'pcncPurple',
-    };
 
     return (
-        <Flex
-            h={{ base: 56, md: 64 }}
-            px={{ base: 'md', md: 'xl' }}
-            bg="white"
-            align="center"
-            justify="space-between"
-            sx={(theme) => ({
-                borderBottom: `1px solid ${theme.colors.pcncNavy[0]}`,
-                boxShadow: '0 2px 4px rgba(22,30,63,0.1)',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
-            })}
+        <Group
+            px="lg"
+            py="md"
+            style={{
+                background: 'linear-gradient(90deg, #FFFFFF 0%, #f8f8f8 100%)',
+                boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+            }}
         >
-            {/* Left Section - PCNC Logo */}
-            <Flex align="center" gap="sm">
-                <img
-                    src="/src/assets/pcnc-logo.png"
-                    alt="PCNC Logo"
-                    style={{
-                        height: isSmallScreen ? 32 : 40,
-                        width: 'auto',
+            <Image
+                src="/src/assets/pcnc-logo.png"
+                alt="PCNC"
+                height={40}
+                fit="contain"
+                style={{ cursor: 'pointer' }}
+                onClick={() => navigate('/')}
+            />
+            <Group spacing="sm" style={{ alignItems: 'center' }}>
+                <Select
+                    placeholder="Langue"
+                    data={[
+                        { value: 'fr', label: 'Français' },
+                        { value: 'en', label: 'English' },
+                    ]}
+                    onChange={onLanguageChange}
+                    size="sm"
+                    styles={{
+                        input: {
+                            backgroundColor: '#f0f0f0',
+                            border: '1px solid #ccc',
+                            color: '#333',
+                        },
+                        item: {
+                            '&[data-selected]': {
+                                backgroundColor: '#662D91',
+                                color: '#fff',
+                            },
+                        },
                     }}
-                />
-            </Flex>
-
-            {/* Right Section - Interactive Elements */}
-            <Flex gap={{ base: 'xs', md: 'sm' }} align="center">
-                <NavIcon
-                    icon={<IconBell size={iconSize} />}
-                    label={t('topNav.notifications')}
-                    count="3"
-                    actionIconProps={actionIconProps}
+                    defaultValue="fr"
                 />
 
-                <NavIcon
-                    icon={<IconHelp size={iconSize} />}
-                    label={t('topNav.help')}
-                    actionIconProps={actionIconProps}
-                />
-
-                <NavIcon
-                    icon={<IconSettings size={iconSize} />}
-                    label={t('topNav.settings')}
-                    actionIconProps={actionIconProps}
-                />
-
-                <Tooltip label={t('topNav.userProfile')} position="bottom" withArrow>
-                    <Avatar
-                        size={avatarSize}
-                        radius="xl"
-                        color="pcncPurple"
-                        sx={{
-                            ...interactiveElementStyle,
-                            backgroundColor: '#F5F6F9',
-                            border: '2px solid #662D91',
-                        }}
+                {showLoginButton && (
+                    <Button
+                        onClick={() => navigate('/login')}
+                        variant="gradient"
+                        gradient={{ from: '#662D91', to: '#00B0CA' }}
+                        size="sm"
+                        style={{ color: '#fff' }}
                     >
-                        U
-                    </Avatar>
-                </Tooltip>
-            </Flex>
-        </Flex>
+                        {t('loginButton') || 'Connexion'}
+                    </Button>
+                )}
+            </Group>
+
+
+        </Group>
     );
 };
-
-const NavIcon = ({ icon, label, count, actionIconProps }) => (
-    <Tooltip label={label} position="bottom" withArrow>
-        <ActionIcon {...actionIconProps} aria-label={label} pos="relative">
-            {icon}
-            {count && (
-                <Text
-                    size="xs"
-                    sx={{
-                        position: 'absolute',
-                        top: -5,
-                        right: -5,
-                        backgroundColor: '#00B0CA',
-                        color: 'white',
-                        borderRadius: '50%',
-                        width: 18,
-                        height: 18,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 700,
-                    }}
-                >
-                    {count}
-                </Text>
-            )}
-        </ActionIcon>
-    </Tooltip>
-);
 
 export default TopNav;

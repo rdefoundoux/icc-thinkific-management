@@ -1,15 +1,11 @@
-import {
-    Routes,
-    Route,
-    Navigate,
-    Outlet,
-    useLocation,
-} from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { MantineProvider, Flex, LoadingOverlay } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import theme from './theme';
 import LoginPage from './pages/LoginPage';
+import RegistrationPage from './pages/RegistrationPage';
+import RegistrationSuccessPage from './pages/RegistrationSuccessPage';
 import DashboardLayout from './layouts/DashboardLayout';
 import ClassManager from './pages/ClassManager';
 import TeacherDashboard from './pages/TeacherDashboard';
@@ -26,6 +22,8 @@ const App = () => {
             <Routes>
                 {/* Public Routes */}
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegistrationPage />} />
+                <Route path="/registration-success" element={<RegistrationSuccessPage />} />
                 <Route path="/callback" element={<ThinkificAuth />} />
 
                 {/* Protected Routes */}
@@ -40,8 +38,9 @@ const App = () => {
                     </Route>
                 </Route>
 
-                {/* Unknown paths redirect to home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+                {/* Redirect home to registration */}
+                <Route path="/" element={<Navigate to="/register" replace />} />
+                <Route path="*" element={<Navigate to="/register" replace />} />
             </Routes>
         </MantineProvider>
     );

@@ -1,6 +1,9 @@
+// controllers/registrationController.js
 import User from '../models/User.js';
+import asyncHandler from 'express-async-handler';
 import Class from '../models/Class.js';
 import thinkificService from '../services/thinkificService.js';
+
 
 const checkEligibility = async (studentData) => {
     // Implémentez votre logique de validation ici
@@ -27,42 +30,7 @@ export const assignTeacher = async (req, res) => {
     }
 };
 
-export const validateRegistration = async (req, res) => {
-    try {
-        const { studentData } = req.body;
 
-        if (!(await checkEligibility(studentData))) {
-            return res.status(400).json({ error: 'Critères non remplis' });
-        }
-
-        const availableClass = await Class.findOne({
-            courseCode: studentData.course,
-            'schedule.startDate': { $gt: new Date() },
-            seatsAvailable: { $gt: 0 }
-        }).sort('schedule.startDate');
-
-        if (!availableClass) {
-            return res.status(400).json({ error: 'Aucune classe disponible' });
-        }
-
-        const thinkificUser = await createThinkificUser(studentData);
-
-        const newStudent = await User.create({
-            ...studentData,
-            thinkificId: thinkificUser.id,
-            assignedClass: availableClass._id
-        });
-
-        await Class.findByIdAndUpdate(availableClass._id, {
-            $inc: { seatsAvailable: -1 },
-            $push: { students: newStudent._id }
-        });
-
-        res.status(201).json(newStudent);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-};
 export const createClass = async (req, res) => {
     try {
         const { courseCode, teacherId, schedule } = req.body;
@@ -113,3 +81,98 @@ export const createClass = async (req, res) => {
         });
     }
 };
+
+
+// @desc    Register a new user with GDPR compliance for PCNC
+// @route   POST /api/v1/registrations
+// @access  Public
+export const validateRegistration = asyncHandler(async (req, res) => {
+    const {
+        firstName,
+        lastName,
+        email,
+        whatsappNumber,
+        address,
+        city,
+        postalCode,
+        department,
+        country,
+        birthDate,
+        gender,
+        localChurch,
+        nonIccChurch,
+        iccMember,
+        memberSince,
+        iccCampus,
+        staffMember,
+        convertedDate,
+        baptized,
+        baptismDate,
+        previousCourses,
+        preferredSchedule,
+        comments,
+        gdprConsent
+    } = req.body;
+
+    // Check required GDPR consent
+    if (!gdprConsent || !gdprConsent.dataProcessing) {
+        return res.status(400).json({
+            success: false,
+            error: 'Le consentement RGPD est requis'
+        });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+        return res.status(400).json({
+            success: false,
+            error: 'Un utilisateur avec cet email existe déjà'
+        });
+    }
+
+    // Create user with all PCNC fields
+    const user = await User.create({
+        email,
+        firstName,
+        lastName,
+        whatsappNumber,
+        address,
+        city,
+        postalCode,
+        department,
+        country,
+        birthDate: birthDate ? new Date(birthDate) : undefined,
+        gender,
+        localChurch,
+        nonIccChurch,
+        iccMember,
+        memberSince: memberSince ? new Date(memberSince) : undefined,
+        iccCampus,
+        staffMember,
+        convertedDate: convertedDate ? new Date(convertedDate) : undefined,
+        baptized,
+        baptismDate: baptismDate ? new Date(baptismDate) : undefined,
+        previousCourses,
+        preferredSchedule,
+        comments,
+        roles: ['student'],
+        requiresPasswordReset: true,
+        gdprConsent: {
+            dataProcessingAccepted: gdprConsent.dataProcessing,
+            acceptedAt: new Date()
+        }
+    });
+
+    // Remove sensitive data from response
+    const userData = user.toObject();
+    delete userData.password;
+
+    // Send confirmation email (implementation needed)
+
+    res.status(201).json({
+        success: true,
+        data: userData
+    });
+});
+

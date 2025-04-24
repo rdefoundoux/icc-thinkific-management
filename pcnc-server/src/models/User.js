@@ -1,13 +1,15 @@
+// models/User.js - Extended with new fields
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
-    thinkificId: {  // Rename for clarity
+    // Existing fields
+    thinkificId: {
         type: String,
         index: true,
         unique: true,
-        sparse: true // Add sparse index
+        sparse: true
     },
     email: {
         type: String,
@@ -30,11 +32,53 @@ const userSchema = new mongoose.Schema({
     lastLogin: Date,
     oauthProvider: String,
     accessToken: String,
-    roles: {  // Change to array for multiple roles
+    roles: {
         type: [String],
         enum: ['admin', 'teacher', 'rsf', 'sf', 'coordinator', 'student'],
         default: ['student']
     },
+
+    // New fields for PCNC registration
+    whatsappNumber: String,
+    address: String,
+    city: String,
+    postalCode: String,
+    department: String,
+    country: String,
+    birthDate: Date,
+    gender: String,
+
+    // Church information
+    localChurch: String,
+    nonIccChurch: String,
+    iccMember: {
+        type: Boolean,
+        default: false
+    },
+    memberSince: Date,
+    iccCampus: String,
+    staffMember: String,
+
+    // Spiritual information
+    convertedDate: Date,
+    baptized: String,
+    baptismDate: Date,
+    previousCourses: [String],
+
+    // Course preferences
+    preferredSchedule: String,
+    comments: String,
+
+    // GDPR consent
+    gdprConsent: {
+        dataProcessingAccepted: {
+            type: Boolean,
+            default: false
+        },
+        acceptedAt: Date
+    },
+
+    // Existing fields continued
     proxyMappings: [{
         role: String,
         proxyId: mongoose.Schema.Types.ObjectId
