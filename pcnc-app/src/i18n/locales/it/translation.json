@@ -1,0 +1,72 @@
+{
+  "topNav": {
+    "help": "Aiuto",
+    "settings": "Impostazioni",
+    "notifications": "Notifiche",
+    "userProfile": "Profilo utente"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "classes": "Classi",
+    "students": "Studenti",
+    "settings": "Impostazioni",
+    "logout": "Disconnetti"
+  },
+  "classManager": {
+    "classManagement": "Gestione delle classi",
+    "newClass": "Nuova classe",
+    "type": "Tipo",
+    "region": "Regione",
+    "courseCode": "Codice Corso",
+    "month": "Mese",
+    "year": "Anno",
+    "thinkificGroup": "Gruppo Thinkific",
+    "actions": "Azioni",
+    "na": "N/D"
+  },
+  "classForm": {
+    "createNewClass": "Crea nuova classe",
+    "classType": "Tipo di classe",
+    "online": "Online",
+    "onsite": "In sede",
+    "r35Version": "Versione R35",
+    "r35Required": "Versione R35 richiesta",
+    "rubiEdition": "Edizione Rubi",
+    "rubiRequired": "Edizione Rubi richiesta",
+    "courseCodeInvalid": "Codice corso non valido",
+    "yearInvalid": "L’anno deve essere il 2025 o successivo",
+    "btnCreate": "Crea classe",
+    "existingGroups": "Gruppi Thinkific esistenti:",
+    "noGroups": "Nessun gruppo trovato"
+  },
+  "userMenu": {
+    "myProfile": "Il mio profilo",
+    "accountSettings": "Impostazioni account",
+    "logout": "Disconnetti"
+  },
+  "loginPage": {
+    "signInTitle": "Accedi al tuo account",
+    "emailAddress": "Indirizzo email",
+    "password": "Password",
+    "institutionalLogin": "Login istituzionale",
+    "welcomeBack": "Bentornato! 👋",
+    "errorTitle": "Accesso negato",
+    "newHere": "Nuovo qui?",
+    "createAccount": "Crea un account",
+    "forgotPassword": "Password dimenticata?"
+  },
+  "pagination": {
+    "showing": "Mostrando",
+    "of": "di",
+    "users": "utenti"
+  },
+  "common": {
+    "cancel": "Annulla",
+    "save": "Salva",
+    "edit": "Modifica",
+    "or": "oppure",
+    "continueWith": "continua con",
+    "language": "Lingua",
+    "selectLanguage": "Seleziona una lingua"
+  }
+}

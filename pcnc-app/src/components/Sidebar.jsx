@@ -1,21 +1,30 @@
-// Sidebar.jsx - Gmail-style navigation
 import React from 'react';
 import { Box, NavLink, Stack } from '@mantine/core';
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import {
-    IconHome, IconBooks, IconUsers,
-    IconSettings, IconLogout
+    IconHome,
+    IconBooks,
+    IconUsers,
+    IconSettings,
+    IconLogout,
 } from '@tabler/icons-react';
-
-const navItems = [
-    { label: 'Dashboard', to: '/', icon: IconHome },
-    { label: 'Classes', to: '/classes', icon: IconBooks },
-    { label: 'Students', to: '/students', icon: IconUsers },
-    { label: 'Settings', to: '/settings', icon: IconSettings },
-];
+import { useTranslation } from 'react-i18next';
 
 const Sidebar = () => {
     const location = useLocation();
+    const { t } = useTranslation();
+
+    const navItems = [
+        { label: t('sidebar.dashboard'), to: '/', icon: IconHome },
+        { label: t('sidebar.classes'), to: '/classes', icon: IconBooks },
+        { label: t('sidebar.students'), to: '/users', icon: IconUsers },
+        { label: t('sidebar.settings'), to: '/profile', icon: IconSettings },
+    ];
+
+    const handleLogout = () => {
+        console.log('Logout clicked');
+        // Perform logout logic here
+    };
 
     return (
         <Box
@@ -24,7 +33,7 @@ const Sidebar = () => {
             style={{
                 borderRight: '1px solid #dadce0',
                 backgroundColor: 'white',
-                height: '100vh'
+                height: '100vh',
             }}
         >
             <Stack spacing={2}>
@@ -38,9 +47,13 @@ const Sidebar = () => {
                         pl="xl"
                         sx={(theme) => ({
                             borderRadius: theme.radius.md,
-                            backgroundColor: location.pathname === to ? theme.colors.blue[0] : "transparent",
-                            color: location.pathname === to ? theme.colors.blue[6] : theme.colors.gray[7],
-                            "&:hover": {
+                            backgroundColor:
+                                location.pathname === to ? theme.colors.blue[0] : 'transparent',
+                            color:
+                                location.pathname === to
+                                    ? theme.colors.blue[6]
+                                    : theme.colors.gray[7],
+                            '&:hover': {
                                 backgroundColor: theme.colors.blue[0],
                             },
                         })}
@@ -48,9 +61,9 @@ const Sidebar = () => {
                 ))}
                 <NavLink
                     icon={<IconLogout size={20} />}
-                    label="Logout"
+                    label={t('sidebar.logout')}
                     pl="xl"
-                    onClick={() => console.log('Logout')}
+                    onClick={handleLogout}
                 />
             </Stack>
         </Box>

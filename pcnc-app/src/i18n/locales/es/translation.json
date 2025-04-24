@@ -1,0 +1,72 @@
+{
+  "topNav": {
+    "help": "Ayuda",
+    "settings": "Configuración",
+    "notifications": "Notificaciones",
+    "userProfile": "Perfil de usuario"
+  },
+  "sidebar": {
+    "dashboard": "Panel",
+    "classes": "Clases",
+    "students": "Estudiantes",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión"
+  },
+  "classManager": {
+    "classManagement": "Gestión de clases",
+    "newClass": "Nueva clase",
+    "type": "Tipo",
+    "region": "Región",
+    "courseCode": "Código del curso",
+    "month": "Mes",
+    "year": "Año",
+    "thinkificGroup": "Grupo Thinkific",
+    "actions": "Acciones",
+    "na": "N/D"
+  },
+  "classForm": {
+    "createNewClass": "Crear nueva clase",
+    "classType": "Tipo de clase",
+    "online": "En línea",
+    "onsite": "Presencial",
+    "r35Version": "Versión R35",
+    "r35Required": "Versión R35 requerida",
+    "rubiEdition": "Edición Rubi",
+    "rubiRequired": "Edición Rubi requerida",
+    "courseCodeInvalid": "Código de curso inválido",
+    "yearInvalid": "El año debe ser 2025 o posterior",
+    "btnCreate": "Crear clase",
+    "existingGroups": "Grupos Thinkific existentes:",
+    "noGroups": "No se encontraron grupos"
+  },
+  "userMenu": {
+    "myProfile": "Mi perfil",
+    "accountSettings": "Configuración de la cuenta",
+    "logout": "Cerrar sesión"
+  },
+  "loginPage": {
+    "signInTitle": "Inicia sesión en tu cuenta",
+    "emailAddress": "Correo electrónico",
+    "password": "Contraseña",
+    "institutionalLogin": "Inicio institucional",
+    "welcomeBack": "¡Bienvenido de nuevo! 👋",
+    "errorTitle": "Acceso denegado",
+    "newHere": "¿Eres nuevo?",
+    "createAccount": "Crea una cuenta",
+    "forgotPassword": "¿Has olvidado tu contraseña?"
+  },
+  "pagination": {
+    "showing": "Mostrando",
+    "of": "de",
+    "users": "usuarios"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "or": "o",
+    "continueWith": "continuar con",
+    "language": "Idioma",
+    "selectLanguage": "Selecciona un idioma"
+  }
+}

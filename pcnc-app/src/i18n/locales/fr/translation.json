@@ -1,0 +1,94 @@
+{
+  "topNav": {
+    "help": "Aide",
+    "settings": "Paramètres",
+    "notifications": "Notifications",
+    "userProfile": "Profil utilisateur"
+  },
+  "sidebar": {
+    "dashboard": "Tableau de bord",
+    "classes": "Classes",
+    "students": "Étudiants",
+    "settings": "Paramètres",
+    "logout": "Se déconnecter"
+  },
+  "classManager": {
+    "classManagement": "Gestion des classes",
+    "newClass": "Nouvelle classe",
+    "type": "Type",
+    "region": "Région",
+    "courseCode": "Code du cours",
+    "month": "Mois",
+    "year": "Année",
+    "thinkificGroup": "Groupe Thinkific",
+    "actions": "Actions",
+    "na": "N/A"
+  },
+  "classForm": {
+    "createNewClass": "Créer une nouvelle classe",
+    "classType": "Type de classe",
+    "online": "En ligne",
+    "onsite": "Sur place",
+    "r35Version": "Version R35",
+    "r35Required": "Version R35 requise",
+    "rubiEdition": "Édition Rubi",
+    "rubiRequired": "Édition Rubi requise",
+    "courseCodeInvalid": "Code du cours invalide",
+    "yearInvalid": "L’année doit être 2025 ou plus",
+    "btnCreate": "Créer la classe",
+    "existingGroups": "Groupes Thinkific existants :",
+    "noGroups": "Aucun groupe trouvé"
+  },
+  "userMenu": {
+    "myProfile": "Mon profil",
+    "accountSettings": "Paramètres du compte",
+    "logout": "Se déconnecter"
+  },
+  "loginPage": {
+    "signInTitle": "Connectez-vous à votre compte",
+    "emailAddress": "Adresse e-mail",
+    "password": "Mot de passe",
+    "institutionalLogin": "Connexion institutionnelle",
+    "welcomeBack": "Bon retour ! 👋",
+    "errorTitle": "Accès refusé",
+    "newHere": "Nouveau ici ?",
+    "createAccount": "Créer un compte",
+    "forgotPassword": "Mot de passe oublié ?"
+  },
+  "pagination": {
+    "showing": "Affichage de",
+    "of": "sur",
+    "users": "utilisateurs"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "edit": "Modifier",
+    "or": "ou",
+    "continueWith": "continuer avec",
+    "language": "Langue",
+    "selectLanguage": "Sélectionnez une langue",
+
+    "name": "Nom",
+    "emailRolesRequired": "L’e-mail et les rôles sont requis",
+    "invalidRoles": "Rôles invalides",
+    "rolesRequired": "Les rôles sont requis",
+    "searchUsers": "Rechercher des utilisateurs...",
+    "filterRoles": "Filtrer par rôles",
+    "addUser": "Ajouter un utilisateur",
+    "bulkUpload": "Import en masse",
+    "upload": "Importer",
+    "usersAdded": "Utilisateurs ajoutés",
+    "errors": "Erreurs",
+    "editUser": "Modifier l’utilisateur",
+    "markAttendance": "Marquer la présence",
+    "markAttendanceFor": "Marquer la présence de {{email}}",
+    "date": "Date",
+    "present": "Présent",
+    "absent": "Absent",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "roles": "Rôles",
+    "of": "de"
+  }
+}

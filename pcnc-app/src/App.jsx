@@ -4,18 +4,19 @@ import {
     Navigate,
     Outlet,
     useLocation,
-} from "react-router-dom";
-import { useAuth } from "./context/AuthContext";
-import { MantineProvider, Flex, LoadingOverlay } from "@mantine/core";
-import theme from "./theme";
-import LoginPage from "./pages/LoginPage";
-import DashboardLayout from "./layouts/DashboardLayout";
-import ClassManager from "./pages/ClassManager";
-import TeacherDashboard from "./pages/TeacherDashboard";
-import StudentPortal from "./pages/StudentPortal";
-import ThinkificManager from "./components/ThinkificManager";
-import ThinkificAuth from "./auth/ThinkificAuth";
-import ProfilePage from "./pages/ProfilePage.jsx";
+} from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import { MantineProvider, Flex, LoadingOverlay } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
+import theme from './theme';
+import LoginPage from './pages/LoginPage';
+import DashboardLayout from './layouts/DashboardLayout';
+import ClassManager from './pages/ClassManager';
+import TeacherDashboard from './pages/TeacherDashboard';
+import StudentPortal from './pages/StudentPortal';
+import ThinkificManager from './components/ThinkificManager';
+import ThinkificAuth from './auth/ThinkificAuth';
+import ProfilePage from './pages/ProfilePage';
 import UserManagement from './pages/UserManagement';
 import './index.css';
 
@@ -29,7 +30,6 @@ const App = () => {
 
                 {/* Protected Routes */}
                 <Route element={<ProtectedRoute />}>
-                    {/* Dashboard Wrapping Layout */}
                     <Route element={<DashboardLayout />}>
                         <Route index element={<ClassManager />} />
                         <Route path="users" element={<UserManagement />} />
@@ -40,7 +40,7 @@ const App = () => {
                     </Route>
                 </Route>
 
-                {/* Redirect unknown paths to the home (dashboard) */}
+                {/* Unknown paths redirect to home */}
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </MantineProvider>
@@ -50,23 +50,22 @@ const App = () => {
 const ProtectedRoute = () => {
     const { user, loading } = useAuth();
     const location = useLocation();
+    const { t } = useTranslation();
 
-    // Display loading visuals while preparing authentication state
     if (loading) {
         return (
             <Flex h="100vh" align="center" justify="center">
-                <LoadingOverlay visible={true} zIndex={1000} />
+                <LoadingOverlay visible zIndex={1000} />
             </Flex>
         );
     }
 
-    // If authenticated, render protected content; otherwise, redirect.
     return user ? (
         <Outlet />
     ) : (
         <Navigate
             to="/login"
-            state={{ from: location.pathname !== "/login" ? location : "/" }}
+            state={{ from: location.pathname !== '/login' ? location : '/' }}
             replace
         />
     );

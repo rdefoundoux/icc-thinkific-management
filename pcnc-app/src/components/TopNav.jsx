@@ -2,13 +2,14 @@ import React from 'react';
 import { Flex, Text, Avatar, ActionIcon, Tooltip } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconHelp, IconSettings, IconBell } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 
 const TopNav = () => {
+    const { t } = useTranslation();
     const isSmallScreen = useMediaQuery('(max-width: 768px)');
     const iconSize = 20;
     const avatarSize = isSmallScreen ? 32 : 36;
 
-    // Updated interactive element styling with PCNC colors
     const interactiveElementStyle = (theme) => ({
         transition: 'all 150ms ease',
         '&:hover': {
@@ -36,8 +37,8 @@ const TopNav = () => {
             align="center"
             justify="space-between"
             sx={(theme) => ({
-                borderBottom: `1px solid ${theme.colors.pcncNavy[0]}`, // PCNC navy border
-                boxShadow: '0 2px 4px rgba(22,30,63,0.1)', // PCNC navy shadow
+                borderBottom: `1px solid ${theme.colors.pcncNavy[0]}`,
+                boxShadow: '0 2px 4px rgba(22,30,63,0.1)',
                 position: 'sticky',
                 top: 0,
                 zIndex: 100,
@@ -59,33 +60,32 @@ const TopNav = () => {
             <Flex gap={{ base: 'xs', md: 'sm' }} align="center">
                 <NavIcon
                     icon={<IconBell size={iconSize} />}
-                    label="Notifications"
+                    label={t('topNav.notifications')}
                     count="3"
                     actionIconProps={actionIconProps}
                 />
 
                 <NavIcon
                     icon={<IconHelp size={iconSize} />}
-                    label="Aide"
+                    label={t('topNav.help')}
                     actionIconProps={actionIconProps}
                 />
 
                 <NavIcon
                     icon={<IconSettings size={iconSize} />}
-                    label="Paramètres"
+                    label={t('topNav.settings')}
                     actionIconProps={actionIconProps}
                 />
 
-                {/* User Avatar */}
-                <Tooltip label="User Profile" position="bottom" withArrow>
+                <Tooltip label={t('topNav.userProfile')} position="bottom" withArrow>
                     <Avatar
                         size={avatarSize}
                         radius="xl"
                         color="pcncPurple"
                         sx={{
                             ...interactiveElementStyle,
-                            backgroundColor: '#F5F6F9', // PCNC light background
-                            border: `2px solid #662D91`, // PCNC purple border
+                            backgroundColor: '#F5F6F9',
+                            border: '2px solid #662D91',
                         }}
                     >
                         U
@@ -96,14 +96,9 @@ const TopNav = () => {
     );
 };
 
-// Updated NavIcon component with PCNC styling
 const NavIcon = ({ icon, label, count, actionIconProps }) => (
     <Tooltip label={label} position="bottom" withArrow>
-        <ActionIcon
-            {...actionIconProps}
-            aria-label={label}
-            pos="relative"
-        >
+        <ActionIcon {...actionIconProps} aria-label={label} pos="relative">
             {icon}
             {count && (
                 <Text
@@ -112,7 +107,7 @@ const NavIcon = ({ icon, label, count, actionIconProps }) => (
                         position: 'absolute',
                         top: -5,
                         right: -5,
-                        backgroundColor: '#00B0CA', // PCNC teal
+                        backgroundColor: '#00B0CA',
                         color: 'white',
                         borderRadius: '50%',
                         width: 18,

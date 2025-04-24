@@ -1,102 +1,154 @@
-// frontend/src/components/ClassManager.jsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import {
+    Table,
+    Button,
+    Group,
+    Text,
+    Loader,
+    ActionIcon,
+    Tooltip,
+    Pagination,
+    Box,
+    Paper
+} from '@mantine/core';
+import { IconPlus, IconEdit, IconUsers } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+import ClassForm from '../components/ClassForm';
+import useClasses from '../hooks/useClasses';
 
 const ClassManager = () => {
-    const [classes, setClasses] = useState([]);
-    const [teachers, setTeachers] = useState([]);
-    const [courses] = useState(['001', '101', '201']);
-    const [newClass, setNewClass] = useState({
-        name: '',
-        courseCode: '',
-        schedule: { days: [], timeSlot: '' },
-        teacher: ''
-    });
+    const [showForm, setShowForm] = useState(false);
+    const [existingGroups, setExistingGroups] = useState([]);
+    const { classes, loading, page, total, fetchClasses } = useClasses();
+    const { t } = useTranslation();
 
+    // Fetch groups on mount
     useEffect(() => {
-        fetchClasses();
-        fetchTeachers();
+        const fetchGroups = async () => {
+            try {
+                const response = await fetch(
+                    `${import.meta.env.VITE_API_BASE_URL}/api/v1/classes/groups`
+                );
+                if (!response.ok) throw new Error('Failed to fetch groups');
+                const data = await response.json();
+                setExistingGroups(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error('Error fetching groups:', error);
+                setExistingGroups([]);
+            }
+        };
+        fetchGroups();
     }, []);
 
-    const fetchClasses = async () => {
-        const response = await axios.get('/api/classes');
-        setClasses(response.data);
-    };
-
-    const fetchTeachers = async () => {
-        const response = await axios.get('/api/users?role=teacher');
-        setTeachers(response.data);
-    };
-
-    const createClass = async () => {
-        try {
-            const response = await axios.post('/api/classes', {
-                ...newClass,
-                thinkificGroupId: await createThinkificGroup()
-            });
-            setClasses([...classes, response.data]);
-        } catch (error) {
-            console.error('Error creating class:', error);
-        }
-    };
-
-    const createThinkificGroup = async () => {
-        const response = await axios.post('https://api.thinkific.com/api/public/v1/groups', {
-            name: `${newClass.courseCode}-${Date.now()}`,
-            meta: { linked_course: newClass.courseCode }
-        }, {
-            headers: {
-                'X-Auth-API-Key': process.env.REACT_APP_THINKIFIC_KEY,
-                'X-Auth-Subdomain': process.env.REACT_APP_THINKIFIC_SUBDOMAIN
-            }
+    const handleCreate = async (values) => {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/classes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(values),
         });
-        return response.data.id;
+        setShowForm(false);
+        fetchClasses();
     };
 
     return (
-        <div className="class-manager">
-            <h2>Create New Class</h2>
-            <div className="form-group">
-                <label>Course Code:</label>
-                <select
-                    value={newClass.courseCode}
-                    onChange={e => setNewClass({...newClass, courseCode: e.target.value})}
+        <Box className="classter-container">
+            {/* Heading and action bar */}
+            <Group position="apart" mb="xl" className="smooth-transition">
+                <Text size="xl" weight={700} color="pcncNavy.0">
+                    {t('classManager.classManagement')}
+                </Text>
+                <Button
+                    leftIcon={<IconPlus />}
+                    onClick={() => setShowForm(true)}
+                    className="hover-scale"
                 >
-                    <option value="">Select Course</option>
-                    {courses.map(code => (
-                        <option key={code} value={code}>{code}</option>
-                    ))}
-                </select>
-            </div>
+                    {t('classManager.newClass')}
+                </Button>
+            </Group>
 
-            <div className="form-group">
-                <label>Teacher:</label>
-                <select
-                    value={newClass.teacher}
-                    onChange={e => setNewClass({...newClass, teacher: e.target.value})}
-                >
-                    <option value="">Select Teacher</option>
-                    {teachers.map(teacher => (
-                        <option key={teacher._id} value={teacher._id}>
-                            {teacher.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            {/* Form Modal */}
+            <ClassForm
+                opened={showForm}
+                onClose={() => setShowForm(false)}
+                onSubmit={handleCreate}
+                existingGroups={existingGroups}
+            />
 
-            <button onClick={createClass}>Create Class</button>
+            {/* Main content area */}
+            <Paper withBorder radius="md" p="md" shadow="sm">
+                {loading ? (
+                    <Loader size="lg" variant="dots" />
+                ) : (
+                    <Table highlightOnHover className="classter-table smooth-transition">
+                        <thead>
+                        <tr>
+                            <th>{t('classManager.type')}</th>
+                            <th>{t('classManager.region')}</th>
+                            <th>{t('classManager.courseCode')}</th>
+                            <th>{t('classManager.month')}</th>
+                            <th>{t('classManager.year')}</th>
+                            <th>{t('classManager.thinkificGroup')}</th>
+                            <th>{t('classManager.actions')}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {classes.map((cls) => {
+                            const group = existingGroups.find(
+                                (g) => g.id === cls.thinkificGroupId
+                            );
+                            return (
+                                <tr key={cls._id}>
+                                    <td>{cls.type}</td>
+                                    <td>{cls.region || '—'}</td>
+                                    <td>{cls.courseCode}</td>
+                                    <td>{cls.month}</td>
+                                    <td>{cls.year}</td>
+                                    <td>
+                                        {group ? (
+                                            <Text size="sm" className="overflow-ellipsis">
+                                                {group.name}
+                                            </Text>
+                                        ) : (
+                                            <Text size="sm" color="dimmed">
+                                                {t('classManager.na')}
+                                            </Text>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <Group spacing={4}>
+                                            <Tooltip label={t('common.edit')} position="bottom">
+                                                <ActionIcon color="blue" className="hover-scale">
+                                                    <IconEdit size={18} />
+                                                </ActionIcon>
+                                            </Tooltip>
+                                            <Tooltip
+                                                label={t('userMenu.myProfile')}
+                                                position="bottom"
+                                            >
+                                                <ActionIcon color="green" className="hover-scale">
+                                                    <IconUsers size={18} />
+                                                </ActionIcon>
+                                            </Tooltip>
+                                        </Group>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        </tbody>
+                    </Table>
+                )}
+            </Paper>
 
-            <h2>Existing Classes</h2>
-            <div className="class-list">
-                {classes.map(cls => (
-                    <div key={cls._id} className="class-card">
-                        <h3>{cls.name} ({cls.courseCode})</h3>
-                        <p>Teacher: {cls.teacher?.name}</p>
-                        <p>Schedule: {cls.schedule.days.join(', ')} {cls.schedule.timeSlot}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
+            {/* Pagination */}
+            <Pagination
+                page={page}
+                onChange={fetchClasses}
+                total={Math.ceil(total / 10)}
+                mt="lg"
+                position="right"
+            />
+        </Box>
     );
 };
-export default ClassManager; // Ajouter cette ligne
+
+export default ClassManager;

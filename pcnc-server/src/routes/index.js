@@ -7,6 +7,8 @@ import { validateClassCreation } from '../middleware/validation.js';
 import { assignTeacher, createClass, validateRegistration } from '../controllers/registrationController.js';
 import { syncUserData } from "../controllers/userController.js";
 import { thinkificWebhookHandler } from '../webhooks/thinkific.js';
+import classesRouter from './classes.js';
+
 
 const router = Router();
 
@@ -19,12 +21,11 @@ router.post('/webhooks/thinkific',
 // Public routes
 router.use('/auth',authRouter);
 router.use('/users', usersRouter);
+router.use('/classes', classesRouter);
 
 // Protected routes
 router.use(authenticate);
 router.post('/registrations', validateRegistration);
-router.post('/classes', adminOnly, validateClassCreation, createClass);
-router.put('/classes/:classId/teachers', adminOnly, assignTeacher);
 
 // Error handling
 router.use((err, req, res, next) => {

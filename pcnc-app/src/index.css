@@ -3,30 +3,27 @@
 /* Import Mantine core styles */
 @import '@mantine/core/styles.layer.css';
 
-/* ------------------------------
- * Base and Global Styles
- * ------------------------------ */
-
 :root {
   font-family: 'Google Sans', Roboto, Arial, sans-serif;
   line-height: 1.5;
   background: #f8f9fa;
-  color: #161E3F; /* PCNC navy blue for text */
+  color: #161E3F;
 }
 
-/* Responsive font size */
 @media (max-width: 768px) {
-  :root { font-size: 14px; }
+  :root {
+    font-size: 14px;
+  }
 }
 
-/* Body and root container */
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   background: #f8f9fa;
-  color: #161E3F; /* PCNC navy blue for text */
+  color: #161E3F;
 }
+
 #root {
   min-height: 100vh;
   display: flex;
@@ -34,47 +31,61 @@ body {
 }
 
 /* Utility classes */
-.smooth-transition { transition: all 150ms ease; }
-.overflow-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gradient-text {
-  background: linear-gradient(45deg, #662D91 0%, #00B0CA 100%); /* Purple to Teal gradient */
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+.smooth-transition {
+  transition: all 150ms ease;
 }
-.smooth-shadow { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); }
-.hover-scale { transition: transform 0.2s ease; }
-.hover-scale:hover { transform: scale(1.02); }
+.overflow-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gradient-text {
+  background: linear-gradient(45deg, #662D91 0%, #00B0CA 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.smooth-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+.hover-scale {
+  transition: transform 0.2s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
 
 /* Print styles */
 @media print {
-  .no-print { display: none !important; }
-  .print-full-width { width: 100% !important; }
+  .no-print {
+    display: none !important;
+  }
+  .print-full-width {
+    width: 100% !important;
+  }
 }
 
-/* Keyframes */
 @keyframes logo-spin {
-  from { transform: rotate(0deg);}
-  to { transform: rotate(360deg);}
+  from {transform: rotate(0deg);}
+  to {transform: rotate(360deg);}
 }
 @media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo { animation: logo-spin infinite 20s linear; }
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
 }
 
-/* ------------------------------
- * Mantine Component Customization
- * ------------------------------ */
-
-/* Button */
+/* Mantine Component Customization */
 .mantine-Button-root {
   border-radius: 24px;
   font-weight: 500;
   transition: background-color 0.3s, box-shadow 0.3s;
 }
 .mantine-Button-root:hover {
-  background-color: #83CEE0; /* Light blue from PCNC */
-  box-shadow: 0 4px 8px rgba(22,30,63,0.1); /* Based on PCNC blue */
+  background-color: #83CEE0;
+  box-shadow: 0 4px 8px rgba(22,30,63,0.1);
 }
 
-/* Card */
 .mantine-Card-root {
   border-radius: 12px;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -82,18 +93,17 @@ body {
 }
 .mantine-Card-root:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 10px rgba(22,30,63,0.15); /* Based on PCNC blue */
+  box-shadow: 0 4px 10px rgba(22,30,63,0.15);
 }
 
-/* Avatar */
 .mantine-Avatar-root {
-  box-shadow: 0 4px 6px rgba(22,30,63,0.1); /* Based on PCNC blue */
+  box-shadow: 0 4px 6px rgba(22,30,63,0.1);
 }
 
-/* Progress Bar */
-.mantine-Progress-root { border-radius: 8px; }
+.mantine-Progress-root {
+  border-radius: 8px;
+}
 
-/* Modal */
 .mantine-Modal-root {
   border-radius: 16px;
 }
@@ -104,30 +114,24 @@ body {
   font-size: 0.95em;
 }
 
-/* Table */
 .mantine-Table-root {
   border-radius: 12px;
   background: #fff;
   font-size: 1em;
-  box-shadow: 0 1px 3px rgba(22,30,63,0.05); /* Based on PCNC blue */
+  box-shadow: 0 1px 3px rgba(22,30,63,0.05);
 }
 
-/* ------------------------------
- * Classter-like Styles
- * ------------------------------ */
-
-/* Main container for pages */
+/* Classter-like Styles */
 .classter-container {
   max-width: 950px;
   margin: 0 auto;
   padding: 32px 0;
 }
 
-/* Table styles */
 .classter-table {
-  --header-bg: #f1f3f6; /* Lighter background that works with PCNC palette */
-  --row-hover: #f5f6f9; /* Subtle hover that works with PCNC palette */
-  --border-color: #e0e0e6; /* Slightly blueish border */
+  --header-bg: #f1f3f6;
+  --row-hover: #f5f6f9;
+  --border-color: #e0e0e6;
 }
 .classter-table th {
   background: var(--header-bg);
@@ -136,16 +140,30 @@ body {
   font-size: 0.95em;
   border-bottom: 2px solid var(--border-color);
 }
+.classter-table th,
+.classter-table td {
+  vertical-align: middle;
+  text-align: left;
+  white-space: nowrap;
+}
 .classter-table tr:hover {
   background: var(--row-hover);
 }
 .classter-table td {
   border-bottom: 1px solid var(--border-color);
   font-size: 1em;
-  vertical-align: middle;
+}
+.classter-table {
+  table-layout: fixed;
+  width: 100%;
+}
+.classter-table th,
+.classter-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Role pill styling - Updated to match PCNC colors */
+/* Role pill styling */
 .role-pill {
   border-radius: 16px;
   font-size: 0.85em;
@@ -154,30 +172,59 @@ body {
   font-weight: 500;
   letter-spacing: 0.01em;
   background: #e0e7ef;
-  color: #161E3F; /* PCNC navy */
+  color: #161E3F;
   margin-right: 4px;
   margin-bottom: 2px;
   display: inline-block;
 }
-.role-pill[data-role="admin"]         { background: #83CEE0; color: #161E3F; } /* Light blue */
-.role-pill[data-role="teacher"]       { background: #F9A061; color: #161E3F; } /* Light orange */
-.role-pill[data-role="coordinator"]   { background: #00B0CA; color: #161E3F; } /* Teal */
-.role-pill[data-role="rsf"]           { background: #A67FB5; color: #161E3F; } /* Light purple */
-.role-pill[data-role="sf"]            { background: #662D91; color: #ffffff; } /* Purple - with white text */
-.role-pill[data-role="traineeTeacher"]{ background: #FFE069; color: #161E3F; } /* Light yellow */
-.role-pill[data-role="student"]       { background: #86C8A1; color: #161E3F; } /* Light green */
+.role-pill[data-role="admin"] {
+  background: #83CEE0;
+  color: #161E3F;
+}
+.role-pill[data-role="teacher"] {
+  background: #F9A061;
+  color: #161E3F;
+}
+.role-pill[data-role="coordinator"] {
+  background: #00B0CA;
+  color: #161E3F;
+}
+.role-pill[data-role="rsf"] {
+  background: #A67FB5;
+  color: #161E3F;
+}
+.role-pill[data-role="sf"] {
+  background: #662D91;
+  color: #ffffff;
+}
+.role-pill[data-role="traineeTeacher"] {
+  background: #FFE069;
+  color: #161E3F;
+}
+.role-pill[data-role="student"] {
+  background: #86C8A1;
+  color: #161E3F;
+}
 
-/* Responsive grid for dashboard/profile */
 @media (max-width: 900px) {
-  .classter-container { padding: 16px 0; }
-  .mantine-Table-root, .classter-table { font-size: 0.95em; }
+  .classter-container {
+    padding: 16px 0;
+  }
+  .mantine-Table-root,
+  .classter-table {
+    font-size: 0.95em;
+  }
 }
 @media (max-width: 600px) {
-  .classter-container { padding: 8px 0; }
-  .mantine-Table-root, .classter-table { font-size: 0.9em; }
+  .classter-container {
+    padding: 8px 0;
+  }
+  .mantine-Table-root,
+  .classter-table {
+    font-size: 0.9em;
+  }
 }
 
-/* Alerts, Modal, and other utility tweaks */
 .mantine-Alert-root {
   border-radius: 10px;
   font-size: 0.98em;

@@ -1,0 +1,72 @@
+{
+  "topNav": {
+    "help": "Hilfe",
+    "settings": "Einstellungen",
+    "notifications": "Benachrichtigungen",
+    "userProfile": "Benutzerprofil"
+  },
+  "sidebar": {
+    "dashboard": "Übersicht",
+    "classes": "Kurse",
+    "students": "Studierende",
+    "settings": "Einstellungen",
+    "logout": "Abmelden"
+  },
+  "classManager": {
+    "classManagement": "Kursverwaltung",
+    "newClass": "Neuen Kurs",
+    "type": "Art",
+    "region": "Region",
+    "courseCode": "Kurscode",
+    "month": "Monat",
+    "year": "Jahr",
+    "thinkificGroup": "Thinkific-Gruppe",
+    "actions": "Aktionen",
+    "na": "k.A."
+  },
+  "classForm": {
+    "createNewClass": "Neuen Kurs erstellen",
+    "classType": "Kursart",
+    "online": "Online",
+    "onsite": "Präsenz",
+    "r35Version": "R35-Version",
+    "r35Required": "R35-Version erforderlich",
+    "rubiEdition": "Rubi-Ausgabe",
+    "rubiRequired": "Rubi-Ausgabe erforderlich",
+    "courseCodeInvalid": "Ungültiger Kurscode",
+    "yearInvalid": "Das Jahr muss mindestens 2025 sein",
+    "btnCreate": "Kurs erstellen",
+    "existingGroups": "Existierende Thinkific-Gruppen:",
+    "noGroups": "Keine Gruppen gefunden"
+  },
+  "userMenu": {
+    "myProfile": "Mein Profil",
+    "accountSettings": "Kontoeinstellungen",
+    "logout": "Abmelden"
+  },
+  "loginPage": {
+    "signInTitle": "Melden Sie sich in Ihrem Konto an",
+    "emailAddress": "E-Mail-Adresse",
+    "password": "Passwort",
+    "institutionalLogin": "Institutionelle Anmeldung",
+    "welcomeBack": "Willkommen zurück! 👋",
+    "errorTitle": "Zugriff verweigert",
+    "newHere": "Neu hier?",
+    "createAccount": "Konto erstellen",
+    "forgotPassword": "Passwort vergessen?"
+  },
+  "pagination": {
+    "showing": "Zeige",
+    "of": "von",
+    "users": "Benutzern"
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "edit": "Bearbeiten",
+    "or": "oder",
+    "continueWith": "fortfahren mit",
+    "language": "Sprache",
+    "selectLanguage": "Wählen Sie eine Sprache"
+  }
+}

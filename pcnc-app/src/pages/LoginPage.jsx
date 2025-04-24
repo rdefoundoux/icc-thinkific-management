@@ -9,19 +9,28 @@ import {
     Box,
     Container,
     LoadingOverlay,
-    Group
+    Group,
+    Select
 } from '@mantine/core';
 import { IconMail, IconLock } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
 import { notifications } from '@mantine/notifications';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next'; // Import i18n so we can call changeLanguage
 
 const LoginPage = () => {
     const [credentials, setCredentials] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const { t } = useTranslation();
+
+    // Handler for switching languages
+    const handleLanguageChange = (value) => {
+        i18n.changeLanguage(value);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -37,20 +46,19 @@ const LoginPage = () => {
                     credentials: 'include',
                 }
             );
-
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Login failed');
 
             login(data.user);
             notifications.show({
-                title: 'Welcome back! 👋',
-                message: `Glad to see you, ${data.user.firstName}!`,
+                title: t('loginPage.welcomeBack'),
+                message: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
                 color: 'pcncPurple',
             });
             navigate('/users');
         } catch (err) {
             notifications.show({
-                title: 'Access Denied',
+                title: t('loginPage.errorTitle'),
                 message: err.message,
                 color: 'red',
                 withBorder: true,
@@ -70,7 +78,11 @@ const LoginPage = () => {
                 background: 'linear-gradient(135deg, #f8f9fa, #ffffff)',
             }}
         >
-            <Container size="lg" p="xl" style={{ display: 'flex', justifyContent: 'space-between', gap: '2rem' }}>
+            <Container
+                size="lg"
+                p="xl"
+                style={{ display: 'flex', justifyContent: 'space-between', gap: '2rem' }}
+            >
                 {/* Left Panel */}
                 <Box
                     style={{
@@ -103,15 +115,15 @@ const LoginPage = () => {
                                 style={{
                                     width: '180px',
                                     margin: '0 auto',
-                                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+                                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
                                 }}
                             />
                         </motion.div>
-                        <Text size="xl" weight={700} mt="md" style={{ lineHeight: 1.5, color: '#ffffff' }}>
-                            Welcome to PCNC Academy Portal
+                        <Text size="xl" weight={700} mt="md" style={{ lineHeight: 1.5 }}>
+                            {t('loginPage.signInTitle')}
                         </Text>
                         <Text mt="sm" style={{ opacity: 0.9, color: '#d1d5db' }}>
-                            Empowering Growth and Transformation Through Education
+                            PCNC Academy Portal
                         </Text>
                     </motion.div>
                 </Box>
@@ -125,6 +137,7 @@ const LoginPage = () => {
                         background: '#fff',
                         boxShadow: '0px 12px 30px rgba(0, 0, 0, 0.1)',
                         padding: '2rem',
+                        position: 'relative',
                     }}
                 >
                     <motion.div
@@ -132,9 +145,24 @@ const LoginPage = () => {
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <Text size="xl" weight={700} align="center" mb="lg" style={{ color: '#161E3F' }}>
-                            Sign in to Your Account
+                        <Text size="xl" weight={700} align="center" mb="lg" color="pcncNavy.0">
+                            {t('loginPage.signInTitle')}
                         </Text>
+
+                        {/* Language Switcher */}
+                        <Select
+                            label={t('common.language')}
+                            placeholder={t('common.selectLanguage')}
+                            data={[
+                                { value: 'en', label: 'English' },
+                                { value: 'fr', label: 'Français' },
+                                { value: 'de', label: 'Deutsch' },
+                                { value: 'it', label: 'Italiano' },
+                                { value: 'es', label: 'Español' },
+                            ]}
+                            onChange={handleLanguageChange}
+                            mb="lg"
+                        />
 
                         <LoadingOverlay
                             visible={loading}
@@ -146,7 +174,7 @@ const LoginPage = () => {
 
                         <form onSubmit={handleSubmit}>
                             <TextInput
-                                label="Email Address"
+                                label={t('loginPage.emailAddress')}
                                 placeholder="your.email@example.com"
                                 icon={<IconMail size={18} />}
                                 value={credentials.email}
@@ -161,7 +189,7 @@ const LoginPage = () => {
                             />
 
                             <PasswordInput
-                                label="Password"
+                                label={t('loginPage.password')}
                                 placeholder="••••••••"
                                 icon={<IconLock size={18} />}
                                 value={credentials.password}
@@ -188,12 +216,12 @@ const LoginPage = () => {
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
                             >
-                                Sign In
+                                {t('loginPage.signInTitle')}
                             </Button>
                         </form>
 
                         <Divider
-                            label="Or continue with"
+                            label={`${t('common.or')} ${t('common.continueWith')}`}
                             labelPosition="center"
                             my="lg"
                             styles={{
@@ -218,18 +246,18 @@ const LoginPage = () => {
                                 },
                             }}
                         >
-                            Institutional Login
+                            {t('loginPage.institutionalLogin')}
                         </Button>
 
                         <Group position="apart" mt="xl" style={{ padding: '0 12px' }}>
                             <Text size="sm" color="dimmed">
-                                New here?{' '}
+                                {t('loginPage.newHere')}{' '}
                                 <Anchor fw={500} href="/signup" color="pcncPurple">
-                                    Create an account
+                                    {t('loginPage.createAccount')}
                                 </Anchor>
                             </Text>
                             <Anchor href="/forgot-password" size="sm" color="pcncPurple">
-                                Forgot password?
+                                {t('loginPage.forgotPassword')}
                             </Anchor>
                         </Group>
                     </motion.div>

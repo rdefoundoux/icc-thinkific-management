@@ -1,0 +1,72 @@
+{
+  "topNav": {
+    "help": "Help",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "userProfile": "User Profile"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "classes": "Classes",
+    "students": "Students",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "classManager": {
+    "classManagement": "Class Management",
+    "newClass": "New Class",
+    "type": "Type",
+    "region": "Region",
+    "courseCode": "Course Code",
+    "month": "Month",
+    "year": "Year",
+    "thinkificGroup": "Thinkific Group",
+    "actions": "Actions",
+    "na": "N/A"
+  },
+  "classForm": {
+    "createNewClass": "Create New Class",
+    "classType": "Class Type",
+    "online": "Online",
+    "onsite": "Onsite",
+    "r35Version": "R35 Version",
+    "r35Required": "R35 version required",
+    "rubiEdition": "Rubi Edition",
+    "rubiRequired": "Rubi edition required",
+    "courseCodeInvalid": "Invalid course code",
+    "yearInvalid": "Year must be 2025 or later",
+    "btnCreate": "Create Class",
+    "existingGroups": "Existing Thinkific Groups:",
+    "noGroups": "No groups found"
+  },
+  "userMenu": {
+    "myProfile": "My Profile",
+    "accountSettings": "Account Settings",
+    "logout": "Logout"
+  },
+  "loginPage": {
+    "signInTitle": "Sign in to Your Account",
+    "emailAddress": "Email Address",
+    "password": "Password",
+    "institutionalLogin": "Institutional Login",
+    "welcomeBack": "Welcome back! 👋",
+    "errorTitle": "Access Denied",
+    "newHere": "New here?",
+    "createAccount": "Create an account",
+    "forgotPassword": "Forgot password?"
+  },
+  "pagination": {
+    "showing": "Showing",
+    "of": "of",
+    "users": "users"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "or": "or",
+    "continueWith": "continue with",
+    "language": "Language",
+    "selectLanguage": "Select a language"
+  }
+}

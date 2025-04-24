@@ -8,8 +8,10 @@
   ],
   "dependencies": {
     "@mantine/core": "^7.17.4",
+    "@mantine/form": "^7.17.4",
     "@mantine/hooks": "^7.17.4",
     "@tabler/icons-react": "^3.31.0",
+    "axios-retry": "^4.5.0",
     "lodash.debounce": "^4.0.8"
   }
 }

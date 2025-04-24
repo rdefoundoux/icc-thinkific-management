@@ -15,12 +15,11 @@ export function AuthProvider({ children }) {
                     `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/profile`,
                     { credentials: 'include' }
                 );
-
                 if (response.ok) {
                     const userData = await response.json();
                     setUser({
                         ...userData,
-                        name: `${userData.firstName} ${userData.lastName}` // Ensure name exists
+                        name: `${userData.firstName} ${userData.lastName}`,
                     });
                 }
             } catch (err) {
@@ -36,15 +35,16 @@ export function AuthProvider({ children }) {
     const login = (userData) => {
         setUser({
             ...userData,
-            name: `${userData.firstName} ${userData.lastName}`
+            name: `${userData.firstName} ${userData.lastName}`,
         });
-        navigate('/profile'); // Add navigation here as fallback
+        navigate('/profile');
     };
+
     const logout = () => {
         setUser(null);
         fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/logout`, {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
         });
     };
 
