@@ -23,6 +23,7 @@ const App = () => {
                 {/* Public Routes */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegistrationPage />} />
+
                 <Route path="/registration-success" element={<RegistrationSuccessPage />} />
                 <Route path="/callback" element={<ThinkificAuth />} />
 
@@ -35,6 +36,7 @@ const App = () => {
                         <Route path="teacher" element={<TeacherDashboard />} />
                         <Route path="student" element={<StudentPortal />} />
                         <Route path="thinkific" element={<ThinkificManager />} />
+                        <Route path="classes" element={<ClassManager/>} />
                     </Route>
                 </Route>
 

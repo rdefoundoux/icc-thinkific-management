@@ -11,5 +11,13 @@ export default {
         CLIENT_SECRET: process.env.THINKIFIC_CLIENT_SECRET,
         SUBDOMAIN: process.env.THINKIFIC_SUBDOMAIN,
         OAUTH_REDIRECT: process.env.THINKIFIC_OAUTH_REDIRECT_URI
+    },
+    ELVANTO: {
+        CLIENT_ID: process.env.ELVANTO_CLIENT_ID,
+        CLIENT_SECRET: process.env.ELVANTO_CLIENT_SECRET,
+        REDIRECT_URI: process.env.ELVANTO_REDIRECT_URI,
+        SCOPE: process.env.ELVANTO_SCOPE || 'ManagePeople,ManageGroups',
+        AUTH_URL: 'https://api.elvanto.com/oauth',
+        TOKEN_URL: 'https://api.elvanto.com/oauth/token'
     }
 };

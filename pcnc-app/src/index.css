@@ -21,7 +21,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: #f8f9fa;
-  color: #161E3F;
+  color: #3c4043;
 }
 
 #root {
@@ -75,92 +75,133 @@ body {
   }
 }
 
-/* Mantine Component Customization */
+/* --- Mantine Button --- */
 .mantine-Button-root {
   border-radius: 24px;
   font-weight: 500;
   transition: background-color 0.3s, box-shadow 0.3s;
 }
 .mantine-Button-root:hover {
-  background-color: #83CEE0;
+  background-color: #e8f0fe;
   box-shadow: 0 4px 8px rgba(22,30,63,0.1);
 }
 
+/* --- Mantine Card --- */
 .mantine-Card-root {
   border-radius: 12px;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(22,30,63,0.05);
 }
 .mantine-Card-root:hover {
   transform: translateY(-4px);
   box-shadow: 0 4px 10px rgba(22,30,63,0.15);
 }
 
+/* --- Mantine Avatar --- */
 .mantine-Avatar-root {
-  box-shadow: 0 4px 6px rgba(22,30,63,0.1);
+  box-shadow: 0 4px 6px rgba(32,33,36,0.1);
 }
 
+/* --- Mantine Progress Bar --- */
 .mantine-Progress-root {
   border-radius: 8px;
 }
 
-.mantine-Modal-root {
+/* ---------------------------------------------------
+ * Classter-like Styles
+ * --------------------------------------------------- */
+
+//* Container */
+.classter-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 16px;
+  overflow: visible;
+}
+
+/* Table wrapper for scroll and expansion */
+.classter-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin: 0;
+  padding: 0;
+  background: transparent;
   border-radius: 16px;
 }
 
-/* MultiSelect pills */
-.mantine-MultiSelect-pill {
+/* Table: uncrushable, modern, responsive */
+.classter-table {
+  width: 100%;
+  min-width: 1100px;
   border-radius: 16px;
-  font-size: 0.95em;
-}
-
-.mantine-Table-root {
-  border-radius: 12px;
   background: #fff;
   font-size: 1em;
-  box-shadow: 0 1px 3px rgba(22,30,63,0.05);
+  box-shadow: 0 8px 24px rgba(22,30,63,0.06);
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-/* Classter-like Styles */
-.classter-container {
-  max-width: 950px;
-  margin: 0 auto;
-  padding: 32px 0;
-}
-
-.classter-table {
-  --header-bg: #f1f3f6;
-  --row-hover: #f5f6f9;
-  --border-color: #e0e0e6;
-}
-.classter-table th {
-  background: var(--header-bg);
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.95em;
-  border-bottom: 2px solid var(--border-color);
-}
 .classter-table th,
 .classter-table td {
   vertical-align: middle;
   text-align: left;
   white-space: nowrap;
-}
-.classter-table tr:hover {
-  background: var(--row-hover);
-}
-.classter-table td {
-  border-bottom: 1px solid var(--border-color);
-  font-size: 1em;
-}
-.classter-table {
-  table-layout: fixed;
-  width: 100%;
-}
-.classter-table th,
-.classter-table td {
   overflow: hidden;
   text-overflow: ellipsis;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e0e0e6;
+}
+
+.classter-table th {
+  background: #f1f3f6;
+  font-weight: 700;
+  font-size: 0.95em;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom: 2px solid #e0e0e6;
+  text-transform: uppercase;
+}
+
+.classter-table tr:nth-child(even) {
+  background: #f7fafd;
+}
+.classter-table tr:hover {
+  background: #eaf6fa;
+  transition: background 0.2s;
+}
+
+.classter-table caption {
+  caption-side: top;
+  padding: 12px 0;
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #161E3F;
+  background: transparent;
+}
+
+@media (max-width: 900px) {
+  .classter-table {
+    min-width: 700px;
+    font-size: 0.95em;
+  }
+  .classter-table th,
+  .classter-table td {
+    padding: 12px;
+  }
+  .classter-table-wrapper {
+    margin-left: -8px;
+    margin-right: -8px;
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .classter-table {
+    min-width: 600px;
+    font-size: 0.9em;
+  }
 }
 
 /* Role pill styling */
@@ -178,8 +219,8 @@ body {
   display: inline-block;
 }
 .role-pill[data-role="admin"] {
-  background: #83CEE0;
-  color: #161E3F;
+  background: #e8f0fe;
+  color: #1a73e8;
 }
 .role-pill[data-role="teacher"] {
   background: #F9A061;
@@ -204,25 +245,6 @@ body {
 .role-pill[data-role="student"] {
   background: #86C8A1;
   color: #161E3F;
-}
-
-@media (max-width: 900px) {
-  .classter-container {
-    padding: 16px 0;
-  }
-  .mantine-Table-root,
-  .classter-table {
-    font-size: 0.95em;
-  }
-}
-@media (max-width: 600px) {
-  .classter-container {
-    padding: 8px 0;
-  }
-  .mantine-Table-root,
-  .classter-table {
-    font-size: 0.9em;
-  }
 }
 
 .mantine-Alert-root {

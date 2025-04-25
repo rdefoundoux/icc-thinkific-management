@@ -104,3 +104,36 @@ table th, table td {
   background: #e8f5e9;
   color: #388e3c;
 }
+.classter-table-wrapper {
+  width: 100vw;
+  max-width: 100%;
+  overflow-x: auto;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  padding: 0;
+  background: transparent;
+}
+
+@media (max-width: 900px) {
+  .classter-table-wrapper {
+    margin-left: -8px;
+    margin-right: -8px;
+    padding: 0 8px;
+  }
+}
+
+.classter-table caption {
+  caption-side: top;
+  padding: 12px 0;
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #161E3F;
+  background: transparent;
+}
+
+.classter-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f1f3f6;
+}

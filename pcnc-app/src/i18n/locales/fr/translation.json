@@ -22,7 +22,9 @@
     "year": "Année",
     "thinkificGroup": "Groupe Thinkific",
     "actions": "Actions",
-    "na": "N/A"
+    "na": "N/A",
+    "assignTeacher": "Attribuer un enseignant",
+    "teacher": "Formateur"
   },
   "classForm": {
     "createNewClass": "Créer une nouvelle classe",
@@ -68,7 +70,6 @@
     "continueWith": "continuer avec",
     "language": "Langue",
     "selectLanguage": "Sélectionnez une langue",
-
     "name": "Nom",
     "emailRolesRequired": "L’e-mail et les rôles sont requis",
     "invalidRoles": "Rôles invalides",

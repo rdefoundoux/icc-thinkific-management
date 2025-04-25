@@ -22,7 +22,9 @@
     "year": "Year",
     "thinkificGroup": "Thinkific Group",
     "actions": "Actions",
-    "na": "N/A"
+    "na": "N/A",
+    "assignTeacher": "Assign Teacher",
+    "teacher": "Teacher"
   },
   "classForm": {
     "createNewClass": "Create New Class",

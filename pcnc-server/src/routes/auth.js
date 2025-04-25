@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 // Placeholder: Implement this function in your email service
 import { sendEmail } from '../services/EmailService.js';
+import ElvantoAuth from '../controllers/elvantoAuth.js';
 
 const router = express.Router();
 const THINKIFIC_GRAPHQL_ENDPOINT = `https://api.thinkific.com/stable/graphql`;
@@ -175,5 +176,9 @@ router.post('/logout', (req, res) => {
     res.clearCookie('session');
     res.json({ success: true });
 });
+
+// Elvanto OAuth routes
+router.get('/elvanto', ElvantoAuth.initiateAuth);
+router.get('/elvanto/callback', ElvantoAuth.handleCallback);
 
 export default router;

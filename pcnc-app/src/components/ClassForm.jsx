@@ -22,18 +22,25 @@ const ClassForm = ({ opened, onClose, onSubmit, existingGroups = [] }) => {
         initialValues: {
             type: 'online',
             region: '',
-            r35Version: '',
-            rubiEdition: '',
+            version: '',
+            className: '',
             courseCode: '',
             month: months[0],
-            year: 2025
+            year: 2025,
+            dayName: '',
+            hour: '',
+            minutes: '',
+            lang: ''
         },
         validate: {
-            r35Version: (value) => (value.trim() ? null : t('classForm.r35Required')),
-            rubiEdition: (value) => (value.trim() ? null : t('classForm.rubiRequired')),
-            courseCode: (value) =>
-                /^\d{3}$/.test(value) ? null : t('classForm.courseCodeInvalid'),
-            year: (value) => (value >= 2025 ? null : t('classForm.yearInvalid')),
+            version: (value) => (value.trim() ? null : 'Version is required'),
+            className: (value) => (value.trim() ? null : 'Class name is required'),
+            courseCode: (value) => (/^\d{3}$/.test(value) ? null : 'Course code must be 3 digits'),
+            year: (value) => (value >= 2025 ? null : 'Year must be >= 2025'),
+            dayName: (value) => (value.trim() ? null : 'Day name is required'),
+            hour: (value) => (value.trim() ? null : 'Hour is required'),
+            minutes: (value) => (value.trim() ? null : 'Minutes is required'),
+            lang: (value) => (value.trim() ? null : 'Language is required'),
         },
     });
 
@@ -49,7 +56,7 @@ const ClassForm = ({ opened, onClose, onSubmit, existingGroups = [] }) => {
                     {...form.getInputProps('type')}
                 />
 
-                {form.values.type === 'onsite' && (
+                {(form.values.type === 'onsite') && (
                     <TextInput
                         label={t('classManager.region')}
                         required
@@ -58,38 +65,52 @@ const ClassForm = ({ opened, onClose, onSubmit, existingGroups = [] }) => {
                 )}
 
                 <TextInput
-                    label={t('classForm.r35Version')}
-                    placeholder="R35.1"
+                    label="Version"
                     required
-                    {...form.getInputProps('r35Version')}
+                    {...form.getInputProps('version')}
                 />
-
                 <TextInput
-                    label={t('classForm.rubiEdition')}
-                    placeholder="Rubi 2.0"
+                    label="Class Name"
                     required
-                    {...form.getInputProps('rubiEdition')}
+                    {...form.getInputProps('className')}
                 />
-
                 <TextInput
                     label={t('classManager.courseCode')}
                     placeholder="101"
                     required
                     {...form.getInputProps('courseCode')}
                 />
-
                 <Select
                     label={t('classManager.month')}
                     data={months}
                     required
                     {...form.getInputProps('month')}
                 />
-
                 <NumberInput
                     label={t('classManager.year')}
                     min={2025}
                     required
                     {...form.getInputProps('year')}
+                />
+                <TextInput
+                    label="Day Name"
+                    required
+                    {...form.getInputProps('dayName')}
+                />
+                <TextInput
+                    label="Hour"
+                    required
+                    {...form.getInputProps('hour')}
+                />
+                <TextInput
+                    label="Minutes"
+                    required
+                    {...form.getInputProps('minutes')}
+                />
+                <TextInput
+                    label="Language"
+                    required
+                    {...form.getInputProps('lang')}
                 />
 
                 <Group position="right" mt="md">

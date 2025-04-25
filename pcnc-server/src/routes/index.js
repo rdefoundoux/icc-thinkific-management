@@ -8,6 +8,7 @@ import { assignTeacher, createClass, validateRegistration } from '../controllers
 import { syncUserData } from "../controllers/userController.js";
 import { thinkificWebhookHandler } from '../webhooks/thinkific.js';
 import classesRouter from './classes.js';
+import { withElvantoAuth } from '../middleware/elvantoAuth.js';
 
 
 const router = Router();
@@ -22,6 +23,23 @@ router.post('/webhooks/thinkific',
 router.use('/auth',authRouter);
 router.use('/users', usersRouter);
 router.use('/classes', classesRouter);
+
+// Add this to your router
+router.get('/elvanto/people',
+    withElvantoAuth,
+    async (req, res) => {
+        try {
+            const response = await axios.get('https://api.elvanto.com/v1/people/getAll.json', {
+                headers: { Authorization: `Bearer ${req.elvantoAccessToken}` }
+            });
+            res.json(response.data);
+        } catch (error) {
+            res.status(error.response?.status || 500).json({
+                error: error.response?.data || error.message
+            });
+        }
+    }
+);
 
 // Protected routes
 router.use(authenticate);

@@ -56,16 +56,39 @@ class ThinkificService {
         }
     }
 
-    static async addUserToGroup(userId, groupId) {
+    static async addUserToGroup(thinkificUserId, groupId) {
+        let groupName; // Declare outside try/catch scope
         try {
+            const groupResponse = await this.getGroup(groupId);
+            const groupName = groupResponse.group?.name; // Correctly access the name
+            console.log('Group Name:', groupName);
+
             await axios.post(
-                `${API_BASE}/groups/${groupId}/enrollments`,
-                { user_id: userId },
+                `${API_BASE}/group_users`,
+                { user_id: thinkificUserId, group_names: [groupName] },
                 { headers: this.headers() }
             );
             return true;
         } catch (error) {
-            this.handleError(error, 'Failed to add user to group');
+            console.error('Thinkific API Error Details:', {
+                userIdUsed: thinkificUserId,
+                groupIdUsed: groupId,
+                groupNameAttempted: groupName || 'N/A', // ✅ Use captured value
+                errorResponse: error.response?.data
+            });
+            throw new Error(`Failed to add user to group: ${error.response?.data?.error || error.message}`);
+        }
+    }
+
+    static async getGroup(groupId) {
+        try {
+            const response = await axios.get(`${API_BASE}/groups/${groupId}`, {
+                headers: this.headers()
+            });
+            console.log('Thinkific API Response to get group from id:', response.data);
+            return response.data;
+        } catch (error) {
+            throw new Error(`Failed to fetch group: ${error.message}`);
         }
     }
 

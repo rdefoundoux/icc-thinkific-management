@@ -3,33 +3,26 @@ import mongoose from 'mongoose';
 import  ThinkificService  from '../services/ThinkificService.js';
 
 const classSchema = new mongoose.Schema({
-    type: {
-        type: String,
-        enum: ['online', 'onsite'],
-        required: true
-    },
+    type: { type: String, enum: ['online', 'onsite'], required: true },
     region: String,
-    courseCode: {
-        type: String,
-        required: true
-    },
-    month: {
-        type: String,
-        required: true
-    },
-    year: {
-        type: Number,
-        required: true
-    },
+    version: String, // NEW
+    className: String, // NEW
+    courseCode: { type: String, required: true },
+    month: { type: String, required: true },
+    year: { type: Number, required: true },
+    dayName: String, // NEW
+    hour: String,    // NEW
+    minutes: String, // NEW
+    lang: String,    // NEW
     thinkificGroupId: {
         type: String,
         required: [true, 'Thinkific group ID is required'],
         validate: {
-            validator: async function(groupId) {
+            validator: async function (groupId) {
                 return await ThinkificService.groupExists(groupId);
             },
-            message: 'Invalid Thinkific group ID'
-        }
+            message: 'Invalid Thinkific group ID',
+        },
     },
     teacher: {
         type: mongoose.Schema.Types.ObjectId,
@@ -53,17 +46,8 @@ const classSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-classSchema.pre('save', function(next) {
-    if (this.isModified('teacher')) {
-        this.constructor.findOne({ teacher: this.teacher })
-            .then(existingClass => {
-                if (existingClass) throw new Error('Teacher already assigned to another class');
-                next();
-            })
-            .catch(next);
-    } else {
-        next();
-    }
-});
+classSchema.index({ teacher: 1 });
+classSchema.index({ thinkificGroupId: 1 });
+classSchema.index({ courseCode: 1, year: 1 });
 
 export default mongoose.model('Class', classSchema);

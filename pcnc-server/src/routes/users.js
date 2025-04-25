@@ -5,11 +5,12 @@ import User from '../models/User.js';
 import { ProxyService } from '../services/ProxyService.js';
 import axios from 'axios';
 import retryAfter from 'axios-retry-after';
+import PQueue from 'p-queue';
 import { isAuthenticated, isAdmin, isCoordinator } from '../middleware/auth.js';
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
-const CACHE_TTL = 3 * 3600 * 1000; // 1 hour in milliseconds
+const CACHE_TTL = 3 * 3600 * 1000; // 3 hours
 
 const VALID_ROLES = ['admin', 'teacher', 'rsf', 'sf', 'coordinator', 'traineeTeacher', 'student'];
 
@@ -24,6 +25,8 @@ client.interceptors.response.use(null, retryAfter(client, {
         error.response?.status === 429 &&
         error.config?.method?.toLowerCase() === 'get'
 }));
+
+const API_URL = 'https://api.thinkific.com/api/public/v1';
 
 // Enhanced cache with TTL and database fallback
 const thinkificCache = {
@@ -48,7 +51,7 @@ async function getThinkificUsers() {
 
     try {
         thinkificCache.isRefreshing = true;
-        const apiUsers = await fetchPaginatedUsers();
+        const apiUsers = await fetchPaginatedUsersParallel();
         const dbUsers = await User.find({ thinkificId: { $exists: true } });
 
         // Merge API users with database entries
@@ -69,45 +72,58 @@ async function getThinkificUsers() {
     }
 }
 
-async function fetchPaginatedUsers() {
-    let allUsers = [];
-    let page = 1;
-    const perPage = 100;
-
-    while (true) {
-        try {
-            const response = await client.get('https://api.thinkific.com/api/public/v1/users', {
-                params: { page, limit: perPage },
-                headers: {
-                    'X-Auth-API-Key': process.env.THINKIFIC_API_TOKEN,
-                    'X-Auth-Subdomain': process.env.THINKIFIC_SUBDOMAIN
-                }
-            });
-
-            allUsers = [...allUsers, ...response.data.items];
-
-            if (response.data.items.length < perPage) break;
-            page++;
-
-            // Rate limit handling
-            const remaining = parseInt(response.headers['x-ratelimit-remaining-minute']) || 20;
-            if (remaining < 5) await new Promise(resolve => setTimeout(resolve, 1500));
-        } catch (err) {
-            if (err.response?.status === 429) {
-                const retryAfter = parseInt(err.response.headers['retry-after']) || 5;
-                console.log(`Rate limited. Waiting ${retryAfter}s...`);
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                continue;
-            }
-            throw err;
+// Parallel paginated fetching using p-queue
+async function fetchPaginatedUsersParallel() {
+    const perPage = 200; // Max allowed by Thinkific API
+    // First, get the first page to determine how many pages
+    const firstPageResp = await client.get(`${API_URL}/users`, {
+        params: { page: 1, limit: perPage },
+        headers: {
+            'X-Auth-API-Key': process.env.THINKIFIC_API_TOKEN,
+            'X-Auth-Subdomain': process.env.THINKIFIC_SUBDOMAIN
         }
+    });
+    const total = firstPageResp.data.meta?.total || (firstPageResp.data.items.length);
+    const totalPages = Math.ceil(total / perPage);
+
+    const allUsers = [...firstPageResp.data.items];
+
+    if (totalPages <= 1) return allUsers;
+
+    // Use PQueue to limit concurrency (avoid rate limits)
+    const queue = new PQueue({ concurrency: 5 });
+    const promises = [];
+    for (let page = 2; page <= totalPages; page++) {
+        promises.push(queue.add(async () => {
+            try {
+                const resp = await client.get(`${API_URL}/users`, {
+                    params: { page, limit: perPage },
+                    headers: {
+                        'X-Auth-API-Key': process.env.THINKIFIC_API_TOKEN,
+                        'X-Auth-Subdomain': process.env.THINKIFIC_SUBDOMAIN
+                    }
+                });
+                return resp.data.items;
+            } catch (err) {
+                if (err.response?.status === 429) {
+                    const retryAfter = parseInt(err.response.headers['retry-after']) || 5;
+                    console.log(`Rate limited. Waiting ${retryAfter}s...`);
+                    await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                    return [];
+                }
+                throw err;
+            }
+        }));
+    }
+    const results = await Promise.all(promises);
+    for (const items of results) {
+        allUsers.push(...items);
     }
     return allUsers;
 }
 
 function mergeUsers(apiUsers, dbUsers) {
     const dbMap = new Map(dbUsers.map(u => [u.thinkificId, u]));
-
     return apiUsers.map(apiUser => {
         const dbUser = dbMap.get(apiUser.id?.toString());
         return dbUser ? dbUser.toObject() : mapThinkificUser(apiUser);
@@ -115,44 +131,55 @@ function mergeUsers(apiUsers, dbUsers) {
 }
 
 async function bulkUpsertUsers(users) {
-    const bulkOps = users.map(user => ({
-        updateOne: {
-            filter: { thinkificId: user.thinkificId },
-            update: { $set: user },
-            upsert: true
+    const bulkOps = [];
+    for (const user of users) {
+        bulkOps.push({
+            updateOne: {
+                filter: { thinkificId: user.thinkificId },
+                update: { $set: user },
+                upsert: true
+            }
+        });
+        if (bulkOps.length % 500 === 0) {
+            await User.bulkWrite(bulkOps, { ordered: false });
+            bulkOps.length = 0;
         }
-    }));
-
-    await User.bulkWrite(bulkOps, { ordered: false });
+    }
+    if (bulkOps.length > 0) {
+        await User.bulkWrite(bulkOps, { ordered: false });
+    }
 }
 
-// Helper: Map Thinkific user to local User model
 function mapThinkificUser(tUser) {
-    const customFields = {};
-    (tUser.custom_profile_fields || []).forEach(f => {
-        customFields[f.label.toLowerCase()] = f.value;
-    });
     const roles = tUser.role ? tUser.role.split(',').map(r => r.trim()) : ['student'];
-    console.log('thinkific user',tUser);
     return {
         email: tUser.email,
         thinkificId: tUser.id?.toString() || null,
         firstName: tUser.first_name,
         lastName: tUser.last_name,
         roles,
-        password: '', // Or generate a random one if needed
+        password: '',
         requiresPasswordReset: true
     };
 }
 
+// Background cache refresh (proactive)
+setInterval(async () => {
+    if (!thinkificCache.isRefreshing && Date.now() - thinkificCache.timestamp > CACHE_TTL * 0.9) {
+        try {
+            await getThinkificUsers();
+        } catch (e) {
+            console.error('Background Thinkific sync failed:', e);
+        }
+    }
+}, 5 * 60 * 1000); // Every 5 minutes
+
 // GET /api/v1/users?roles=admin,teacher
-// Enhanced GET endpoint with pagination and search
 router.get('/', async (req, res) => {
     try {
         const { roles, page = 1, limit = 25, search = '' } = req.query;
         const filter = {};
-
-        // Sync with Thinkific first
+        // Sync with Thinkific first (now fast!)
         await getThinkificUsers();
 
         // Build filter
@@ -165,7 +192,7 @@ router.get('/', async (req, res) => {
             ];
         }
 
-        // Validate pagination parameters
+        // Pagination
         const pageNum = Math.max(1, parseInt(page)) || 1;
         const limitNum = Math.min(100, Math.max(1, parseInt(limit))) || 25;
         const skip = (pageNum - 1) * limitNum;
@@ -191,107 +218,5 @@ router.get('/', async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 });
-
-// Optimized bulk upload with transaction support
-router.post('/bulk', upload.single('file'), async (req, res) => {
-    const results = [];
-    const errors = [];
-    const proxyService = new ProxyService();
-    const session = await User.startSession();
-
-    if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
-
-    try {
-        session.startTransaction();
-        const stream = require('fs').createReadStream(req.file.path).pipe(csvParser());
-
-        for await (const row of stream) {
-            try {
-                const { email, firstName, lastName, roles } = row;
-                if (!email || !roles) throw new Error('Email and roles required');
-
-                const roleArr = roles.split(',').map(r => r.trim());
-                if (!validateRoles(roleArr)) throw new Error('Invalid roles: ' + roles);
-
-                const user = await User.findOneAndUpdate(
-                    { email },
-                    { $set: { firstName, lastName, roles: roleArr } },
-                    { upsert: true, new: true, session }
-                );
-
-                await proxyService.assignProxies(user._id, roleArr);
-                results.push({ email, status: 'ok' });
-            } catch (err) {
-                errors.push({ row, error: err.message });
-            }
-        }
-
-        await session.commitTransaction();
-        res.json({ success: true, inserted: results, errors });
-    } catch (err) {
-        await session.abortTransaction();
-        res.status(500).json({ success: false, error: err.message });
-    } finally {
-        session.endSession();
-        require('fs').unlinkSync(req.file.path); // Cleanup file
-    }
-});
-
-
-// POST /api/users (manual add)
-router.post('/',  async (req, res) => {
-    try {
-        const { email, firstName, lastName, roles = [] } = req.body;
-        if (!email || !roles.length) throw new Error('Email and roles required');
-        if (!validateRoles(roles)) throw new Error('Invalid roles');
-        const user = await User.create({ email, firstName, lastName, roles });
-
-        // Assign proxies
-        const proxyService = new ProxyService();
-        await proxyService.assignProxies(user._id, roles);
-
-        res.status(201).json({ success: true, data: user });
-    } catch (err) {
-        res.status(400).json({ success: false, error: err.message });
-    }
-});
-// Protected PUT endpoint (Admin only)
-router.put('/:id', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-        const { firstName, lastName, roles } = req.body;
-        if (!validateRoles(roles)) throw new Error('Invalid roles');
-
-        const user = await User.findByIdAndUpdate(
-            req.params.id,
-            { $set: { firstName, lastName, roles } },
-            { new: true }
-        );
-
-        res.json({ success: true, data: user });
-    } catch (err) {
-        res.status(400).json({ success: false, error: err.message });
-    }
-});
-
-
-// Protected POST attendance (Coordinator only)
-router.post('/:id/attendance', isAuthenticated, isCoordinator, async (req, res) => {
-    try {
-        const { date, present } = req.body;
-        if (!date) throw new Error('Date is required');
-
-        const attendance = await Attendance.findOneAndUpdate(
-            { user: req.params.id, date },
-            { $set: { present } },
-            { upsert: true, new: true }
-        );
-
-        res.json({ success: true, data: attendance });
-    } catch (err) {
-        res.status(400).json({ success: false, error: err.message });
-    }
-});
-
-
 
 export default router;
