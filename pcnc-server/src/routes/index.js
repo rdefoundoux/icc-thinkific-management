@@ -42,7 +42,7 @@ router.get('/elvanto/people',
 );
 
 // Protected routes
-router.use(authenticate);
+// router.use(authenticate);
 router.post('/registrations', validateRegistration);
 
 // Error handling

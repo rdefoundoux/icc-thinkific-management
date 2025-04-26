@@ -7,6 +7,10 @@ import axios from 'axios';
 import retryAfter from 'axios-retry-after';
 import PQueue from 'p-queue';
 import { isAuthenticated, isAdmin, isCoordinator } from '../middleware/auth.js';
+import {
+    createUser,
+    updateUser
+} from '../controllers/userController.js';
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
@@ -173,6 +177,14 @@ setInterval(async () => {
         }
     }
 }, 5 * 60 * 1000); // Every 5 minutes
+
+// --- PUBLIC ROUTES ---
+
+// Create a new user (PUBLIC)
+router.post('/', createUser);
+
+// Update an existing user (PUBLIC)
+router.put('/:id', updateUser);
 
 // GET /api/v1/users?roles=admin,teacher
 router.get('/', async (req, res) => {

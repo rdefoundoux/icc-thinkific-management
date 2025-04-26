@@ -1,38 +1,32 @@
 import express from 'express';
-import { createClass, assignRoles } from '../controllers/classController.js';
+import {
+    getClasses,
+    getClassDetails,
+    getGroups,
+    getCourses,
+    createClass,
+    assignRoles,
+    assignCourse,
+    updateClass,
+    getGroupUsers
+} from '../controllers/classController.js';
 import { isAdmin } from '../middleware/auth.js';
-import Class from '../models/Class.js';
-import ThinkificService from '../services/ThinkificService.js';
 
 const router = express.Router();
 
+// GET routes
+router.get('/', getClasses);
+router.get('/groups', getGroups);
+router.get('/courses', getCourses);
+router.get('/groups/:groupId/users', getGroupUsers);
+router.get('/:id', getClassDetails);
+
+// POST routes
 router.post('/', createClass);
 router.post('/:classId/roles', assignRoles);
+router.post('/:classId/courses', assignCourse);
 
-router.get('/', async (req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-
-        const [data, total] = await Promise.all([
-            Class.find().populate('teacher', 'firstName lastName').skip(skip).limit(limit),
-            Class.countDocuments()
-        ]);
-
-        res.json({ data, total });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-router.get('/groups', async (req, res) => {
-    try {
-        const groups = await ThinkificService.getGroups();
-        res.json(groups);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+// PUT routes
+router.put('/:id', updateClass);
 
 export default router;

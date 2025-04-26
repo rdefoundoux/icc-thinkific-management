@@ -3,7 +3,34 @@ import axios from 'axios';
 import axiosRetry from 'axios-retry';
 
 const API_BASE = 'https://api.thinkific.com/api/public/v1';
+const THINKIFIC_GRAPHQL_ENDPOINT = `https://api.thinkific.com/stable/graphql`;
+const GET_GROUP_USERS = `
+  query GetGroupUsers($groupId: ID!, $first: Int) {
+  group(id: $groupId) {
+    users(first: $first) {
+      edges {
+        node {
+          id
+          email
+          firstName
+          lastName
+           email
+          courses(first: $first) {
+            edges {
+              node {
+                name
+                title
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
+`;
 // Configure retry logic for rate limits
 axiosRetry(axios, {
     retries: 3,
@@ -16,6 +43,13 @@ axiosRetry(axios, {
 });
 
 class ThinkificService {
+    static graphqlHeaders() {
+        return {
+            Authorization: `Bearer ${process.env.THINKIFIC_API2_TOKEN}`,
+            'X-Auth-Subdomain': process.env.THINKIFIC_SUBDOMAIN,
+            'Content-Type': 'application/json'
+        };
+    }
     static headers() {
         return {
             'X-Auth-API-Key': process.env.THINKIFIC_API_KEY,
@@ -25,17 +59,31 @@ class ThinkificService {
     }
     static async getGroups() {
         try {
+            console.log('Thinkific API Request: get groups entering ')
             const response = await axios.get(`${API_BASE}/groups`, {
                 headers: this.headers(),
-                params: {
-                    page: 1,
-                    limit: 100
-                }
+                params: { page: 1, limit: 100 }
             });
-            return response.data.items;
+
+            // Verify response structure
+            if (!response.data?.items) {
+                throw new Error('Invalid Thinkific API response structure');
+            }
+            console.log('Thinkific API Response:', response.data);
+
+            return response.data.items.map(group => ({
+                id: group.id,
+                name: group.name,
+                users_count: group.users_count
+            }));
+
         } catch (error) {
-            console.log('Thinkific API Response:', error);
-            this.handleError(error, 'Failed to fetch groups');
+            console.error('Thinkific API Error:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
+            throw new Error('Failed to fetch groups from Thinkific');
         }
     }
     static async createGroup(groupData) {
@@ -80,17 +128,7 @@ class ThinkificService {
         }
     }
 
-    static async getGroup(groupId) {
-        try {
-            const response = await axios.get(`${API_BASE}/groups/${groupId}`, {
-                headers: this.headers()
-            });
-            console.log('Thinkific API Response to get group from id:', response.data);
-            return response.data;
-        } catch (error) {
-            throw new Error(`Failed to fetch group: ${error.message}`);
-        }
-    }
+
 
     static async groupExists(groupId) {
         try {
@@ -104,6 +142,106 @@ class ThinkificService {
         }
     }
 
+    static async getCourses() {
+        try {
+            const response = await axios.get(`${API_BASE}/courses`, {
+                headers: this.headers(),
+                params: { page: 1, limit: 100 }
+            });
+            return response.data.items;
+        } catch (error) {
+            this.handleError(error, 'Failed to fetch courses');
+        }
+    }
+
+    static async getGroup(groupId) {
+        try {
+            const response = await axios.get(`${API_BASE}/groups/${groupId}`, {
+                headers: this.headers()
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching Thinkific group:', error.response?.data || error.message);
+            return { name: 'N/A' }; // Return safe default
+        }
+    }
+
+    static async getGroupUsers(groupId) {
+        try {
+            const response = await axios.post(
+                THINKIFIC_GRAPHQL_ENDPOINT,
+                {
+                    query: GET_GROUP_USERS,
+                    variables: { groupId: groupId.toString(), first: 100 }
+                },
+                { headers: this.graphqlHeaders() }
+            );
+
+            return response.data?.data?.group?.users?.edges?.map(edge => ({
+                ...edge.node
+            })) || [];
+        } catch (error) {
+            console.error('Error fetching Thinkific users:', error.response?.data || error.message);
+            return [];
+        }
+    }
+
+    static async enrollUserInCourse(userId, courseId) {
+        try {
+            await axios.post(`${API_BASE}/enrollments`, {
+                user_id: userId,
+                course_id: courseId,
+                activated_at: new Date().toISOString()
+            }, { headers: this.headers() });
+            return true;
+        } catch (error) {
+            if (error.response?.data?.error === 'User is already enrolled in this course') {
+                return true; // Ignore duplicate enrollments
+            }
+            this.handleError(error, 'Failed to enroll user');
+        }
+    }
+
+    // Bulk enroll users (parallel, but not too many at once)
+    static async bulkEnrollUsers(courseId, userIds) {
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+            const batch = userIds.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(userId => this.enrollUserInCourse(userId, courseId)));
+        }
+        return true;
+    }
+
+    static async getUser(userId) {
+        try {
+            const response = await axios.get(`${API_BASE}/users/${userId}`, {
+                headers: this.headers()
+            });
+            return response.data;
+        }
+        catch (error) {
+            this.handleError(error, 'Failed to fetch user');
+        }
+    }
+
+    static async getGroupUsersCount(groupId) {
+        try {
+            const users = await this.getGroupUsers(groupId);
+            return users.length;
+        } catch (error) {
+            this.handleError(error, 'Failed to fetch group user count');
+        }
+    }
+    static async getCourse(courseId) {
+        try {
+            const response = await axios.get(`${API_BASE}/courses/${courseId}`, {
+                headers: this.headers()
+            });
+            return response.data;
+        } catch (error) {
+            this.handleError(error, 'Failed to fetch course');
+        }
+    }
     static handleError(error, context) {
         const errorInfo = {
             context,
