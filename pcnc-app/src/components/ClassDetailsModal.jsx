@@ -1,11 +1,13 @@
-import { Modal, Group, Text, Avatar, List, Title, Badge, Loader } from '@mantine/core';
+import { Modal, Group, Text, Avatar, List, Title, Badge, Loader,Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
 export default function ClassDetailsModal({ opened, onClose, classData }) {
     const [users, setUsers] = useState([]);
+    const [students, setStudents] = useState([]);
+    const [loading, setLoading] = useState(true);
     // Safe data extraction with defaults
     const thinkificGroup = classData?.thinkificGroup || {};
-    const students = classData?.students || [];
+    //const students = classData?.students || [];
     const staff = {
         teacher: classData?.teacher || null,
         coordinator: classData?.coordinator || null,
@@ -28,6 +30,25 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
 
         if (opened) fetchUsers();
     }, [opened, classData?.thinkificGroupId]);
+    useEffect(() => {
+        const fetchStudents = async () => {
+            try {
+                if (classData?.students?.length > 0) {
+                    const response = await fetch(
+                        `${import.meta.env.VITE_API_BASE_URL}/api/v1/users?ids=${classData.students.join(',')}`
+                    );
+                    const { data } = await response.json();
+                    setStudents(data);
+                }
+            } catch (error) {
+                console.error('Error fetching students:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (opened) fetchStudents();
+    }, [opened, classData]);
     return (
         <Modal opened={opened} onClose={onClose} size="lg" title="Class Details">
             {!classData ? (
@@ -92,19 +113,32 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                     </Group>
 
                     {/* Students Section */}
-                    <Title order={4} mb="sm">Students ({users.length})</Title>
-                    <List>
-                        {users.map((user, index) => (
-                            <List.Item key={index}>
-                                <Group spacing="xs">
-                                    <Avatar size="sm" radius="xl">
-                                        {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                                    </Avatar>
-                                    <Text>{user.firstName} {user.lastName}</Text>
-                                </Group>
-                            </List.Item>
+                    <Title order={4} mb="sm">Students ({students.length})</Title>
+                    <Stack spacing="xs">
+                        {students.map(student => (
+                            <Group key={student._id} spacing="sm">
+                                <Avatar
+                                    src={student.avatarUrl}
+                                    size="md"
+                                    radius="xl"
+                                    alt={`${student.firstName} ${student.lastName}`}
+                                />
+                                <div>
+                                    <Text weight={500}>
+                                        {student.firstName} {student.lastName}
+                                    </Text>
+                                    <Text size="sm" color="dimmed">
+                                        {student.email}
+                                    </Text>
+                                    {student.thinkificId && (
+                                        <Badge color="teal" variant="dot">
+                                            Thinkific Synced
+                                        </Badge>
+                                    )}
+                                </div>
+                            </Group>
                         ))}
-                    </List>
+                    </Stack>
                 </>
             )}
         </Modal>

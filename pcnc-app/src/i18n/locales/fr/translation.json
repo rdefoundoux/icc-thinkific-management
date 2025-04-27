@@ -31,8 +31,13 @@
     "selectRSF": "Sélectionner RSF",
     "rsf": "RSF",
     "assignSF": "Assigner des facilitateurs de soutien",
-    "selectSF": "Sélectionner des membres du SF"
-
+    "selectSF": "Sélectionner des membres du SF",
+    "assignStudents": "Assigner des étudiants",
+    "selectStudents": "Sélectionner des étudiants",
+    "noStudentsFound": "Aucun étudiant trouvé",
+    "assignSelected": "Assigner la sélection",
+    "noStudentsAssigned": "Aucun étudiant assigné à cette classe",
+    "students": "Étudiants"
   },
   "classForm": {
     "createNewClass": "Créer une nouvelle classe",

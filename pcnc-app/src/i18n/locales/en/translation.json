@@ -31,7 +31,13 @@
     "selectRSF": "Select RSF",
     "rsf": "RSF",
     "assignSF": "Assign Support Facilitators",
-    "selectSF": "Select SF Members"
+    "selectSF": "Select SF Members",
+    "assignStudents": "Assign Students",
+    "selectStudents": "Select students",
+    "noStudentsFound": "No students found",
+    "assignSelected": "Assign Selected",
+    "noStudentsAssigned": "No students assigned to this class",
+    "students": "Students"
   },
   "classForm": {
     "createNewClass": "Create New Class",

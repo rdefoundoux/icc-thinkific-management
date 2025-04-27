@@ -15,6 +15,7 @@ import AssignCoordinatorModal from '../components/AssignCoordinatorModal';
 import AssignSFModal from '../components/AssignSFModal';
 import AssignRSFModal from '../components/AssignRSFModal';
 import CourseAssignmentModal from '../components/CourseAssignmentModal';
+import AssignStudentsModal from '../components/AssignStudentsModal';
 import ClassDetailsModal from '../components/ClassDetailsModal';
 
 const columnStyles = [
@@ -44,6 +45,7 @@ const ClassManager = () => {
     const [assignCoordinatorModalOpen, setAssignCoordinatorModalOpen] = useState(false);
     const [assignSFModalOpen, setAssignSFModalOpen] = useState(false);
     const [assignRSFModalOpen, setAssignRSFModalOpen] = useState(false);
+    const [assignStudentsModalOpen, setAssignStudentsModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchGroups = async (retries = 3) => {
@@ -332,6 +334,18 @@ const ClassManager = () => {
                                                             <IconUsers />
                                                         </ActionIcon>
                                                     </Tooltip>
+                                                    <Tooltip label={t('classManager.assignStudents')}>
+                                                        <ActionIcon
+                                                            color="green"
+                                                            onClick={() => {
+                                                                setSelectedClass(cls);
+                                                                setAssignStudentsModalOpen(true);
+                                                            }}
+                                                        >
+                                                            <IconUserPlus size={18} />
+                                                        </ActionIcon>
+                                                    </Tooltip>
+
                                                     <Tooltip label="Assign Course" position="bottom">
                                                         <ActionIcon
                                                             color="orange"
@@ -399,6 +413,12 @@ const ClassManager = () => {
             <AssignRSFModal
                 opened={assignRSFModalOpen}
                 onClose={() => setAssignRSFModalOpen(false)}
+                classObj={selectedClass}
+                onAssigned={fetchClasses}
+            />
+            <AssignStudentsModal
+                opened={assignStudentsModalOpen}
+                onClose={() => setAssignStudentsModalOpen(false)}
                 classObj={selectedClass}
                 onAssigned={fetchClasses}
             />
