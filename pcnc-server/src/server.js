@@ -56,10 +56,6 @@ class AppServer {
 
         // Session logging middleware
         this.app.use((req, res, next) => {
-            console.log('Session ID:', req.sessionID);
-            console.log('Session Status:', req.session?.codeVerifier
-                ? 'Has CodeVerifier'
-                : 'No CodeVerifier');
             next();
         });
 

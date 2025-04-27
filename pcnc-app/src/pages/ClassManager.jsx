@@ -3,11 +3,17 @@ import {
     Table, Button, Group, Text, Loader, ActionIcon,
     Tooltip, Pagination, Box, Paper, Avatar, Badge
 } from '@mantine/core';
-import { IconPlus, IconEdit, IconUsers, IconUserPlus, IconBook } from '@tabler/icons-react';
+import {
+    IconPlus, IconEdit, IconUsers, IconUserPlus, IconBook,
+    IconUserCheck  // Add this
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import ClassForm from '../components/ClassForm';
 import useClasses from '../hooks/useClasses';
 import AssignTeacherModal from '../components/AssignTeacherModal';
+import AssignCoordinatorModal from '../components/AssignCoordinatorModal';
+import AssignSFModal from '../components/AssignSFModal';
+import AssignRSFModal from '../components/AssignRSFModal';
 import CourseAssignmentModal from '../components/CourseAssignmentModal';
 import ClassDetailsModal from '../components/ClassDetailsModal';
 
@@ -35,6 +41,9 @@ const ClassManager = () => {
     const [courseModalOpen, setCourseModalOpen] = useState(false);
     const [detailsModalOpen, setDetailsModalOpen] = useState(false);
     const [groupUsers, setGroupUsers] = useState({});
+    const [assignCoordinatorModalOpen, setAssignCoordinatorModalOpen] = useState(false);
+    const [assignSFModalOpen, setAssignSFModalOpen] = useState(false);
+    const [assignRSFModalOpen, setAssignRSFModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchGroups = async (retries = 3) => {
@@ -152,6 +161,8 @@ const ClassManager = () => {
                                     <th style={columnStyles[4]}>{t('classManager.year')}</th>
                                     <th style={columnStyles[5]}>{t('classManager.thinkificGroup')}</th>
                                     <th style={columnStyles[6]}>{t('classManager.teacher')}</th>
+                                    <th style={columnStyles[10]}>Coordinator</th>
+                                    <th style={columnStyles[10]}>{t('classManager.rsf')}</th>
                                     <th style={columnStyles[7]}>{t('classManager.assignedCourses')}</th>
                                     <th style={columnStyles[8]}>{t('classManager.students')}</th>
                                     <th style={columnStyles[9]}>{t('classManager.actions')}</th>
@@ -211,6 +222,35 @@ const ClassManager = () => {
                                                 )}
                                             </td>
                                             <td>
+                                                {cls.coordinator ? (
+                                                    <Group spacing={8} align="center" noWrap>
+                                                        <Avatar size={28} radius="xl" src={cls.coordinator.avatarUrl} alt={cls.coordinator.firstName} />
+                                                        <Text size="sm" weight={500}>
+                                                            {cls.coordinator.firstName} {cls.coordinator.lastName}
+                                                        </Text>
+                                                    </Group>
+                                                ) : (
+                                                    <Text size="sm" color="dimmed">{t('classManager.na')}</Text>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {cls.rsf?.[0] ? (
+                                                    <Group spacing={8} noWrap>
+                                                        <Avatar
+                                                            size={28}
+                                                            radius="xl"
+                                                            src={cls.rsf[0].avatarUrl}
+                                                            alt={cls.rsf[0].firstName}
+                                                        />
+                                                        <Text size="sm">
+                                                            {cls.rsf[0].firstName} {cls.rsf[0].lastName}
+                                                        </Text>
+                                                    </Group>
+                                                ) : (
+                                                    <Text size="sm" color="dimmed">N/A</Text>
+                                                )}
+                                            </td>
+                                            <td>
                                                 {cls.courses?.length > 0 ? (
                                                     <Group spacing="xs">
                                                         {cls.courses.map((course, index) => (
@@ -254,6 +294,42 @@ const ClassManager = () => {
                                                             }}
                                                         >
                                                             <IconUserPlus size={18} />
+                                                        </ActionIcon>
+                                                    </Tooltip>
+                                                    <Tooltip label={t('classManager.assignCoordinator')} position="bottom">
+                                                        <ActionIcon
+                                                            color="teal"
+                                                            className="hover-scale"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setSelectedClass(cls);
+                                                                setAssignCoordinatorModalOpen(true);
+                                                            }}
+                                                        >
+                                                            <IconUsers size={18} />
+                                                        </ActionIcon>
+                                                    </Tooltip>
+                                                    <Tooltip label={t('classManager.assignRSF')}>
+                                                        <ActionIcon
+                                                            color="teal"
+                                                            onClick={() => {
+                                                                setSelectedClass(cls);
+                                                                setAssignRSFModalOpen(true);
+                                                            }}
+                                                        >
+                                                            <IconUserCheck />
+                                                        </ActionIcon>
+                                                    </Tooltip>
+
+                                                    <Tooltip label={t('classManager.assignSF')}>
+                                                        <ActionIcon
+                                                            color="indigo"
+                                                            onClick={() => {
+                                                                setSelectedClass(cls);
+                                                                setAssignSFModalOpen(true);
+                                                            }}
+                                                        >
+                                                            <IconUsers />
                                                         </ActionIcon>
                                                     </Tooltip>
                                                     <Tooltip label="Assign Course" position="bottom">
@@ -307,6 +383,24 @@ const ClassManager = () => {
                 opened={detailsModalOpen}
                 onClose={() => setDetailsModalOpen(false)}
                 classData={selectedClass}
+            />
+            <AssignCoordinatorModal
+                opened={assignCoordinatorModalOpen}
+                onClose={() => setAssignCoordinatorModalOpen(false)}
+                classObj={selectedClass}
+                onAssigned={fetchClasses}
+            />
+            <AssignSFModal
+                opened={assignSFModalOpen}
+                onClose={() => setAssignSFModalOpen(false)}
+                classObj={selectedClass}
+                onAssigned={fetchClasses}
+            />
+            <AssignRSFModal
+                opened={assignRSFModalOpen}
+                onClose={() => setAssignRSFModalOpen(false)}
+                classObj={selectedClass}
+                onAssigned={fetchClasses}
             />
         </>
     );

@@ -196,47 +196,58 @@ export const getClassDetails = async (req, res) => {
 export const assignRoles = async (req, res) => {
     try {
         const { classId } = req.params;
-        const { userId, role } = req.body;
+        const { userId, userIds, role } = req.body;
 
-        // Get Thinkific user ID from your database
-        const user = await User.findById(userId);
-        if (!user?.thinkificId) { // VALIDATE THINKIFIC ID EXISTS
-            throw new Error('User not synced with Thinkific');
-        }
-
-        const classObj = await Class.findById(classId).populate('teacher');
+        const classObj = await Class.findById(classId);
         if (!classObj) throw new Error('Class not found');
 
+        // Handle role-specific logic
         switch(role) {
             case 'teacher':
-                classObj.teacher = userId;
-                break;
-            case 'traineeTeacher':
-                if (!classObj.traineeTeachers.includes(userId)) {
-                    classObj.traineeTeachers.push(userId);
-                }
-                break;
-            case 'sf':
-                classObj.sf = userId;
-                break;
             case 'coordinator':
-                classObj.coordinator = userId;
-                break;
             case 'rsf':
-                classObj.rsf = userId;
+                // Single user roles
+                if (!userId) throw new Error('User ID required');
+                const user = await User.findById(userId);
+                if (!user?.thinkificId) throw new Error('User not synced with Thinkific');
+
+                // Add to Thinkific group
+                await ThinkificService.addUserToGroup(user.thinkificId, classObj.thinkificGroupId);
+
+                // Update class
+                if (role === 'teacher') classObj.teacher = userId;
+                if (role === 'coordinator') classObj.coordinator = userId;
+                if (role === 'rsf') classObj.rsf = [userId];
                 break;
+
+            case 'sf':
+                // Multiple users
+                if (!userIds?.length) throw new Error('User IDs required');
+
+                // Validate all users have Thinkific IDs
+                const sfUsers = await User.find({ _id: { $in: userIds } });
+                const invalidUsers = sfUsers.filter(u => !u.thinkificId);
+                if (invalidUsers.length > 0) {
+                    throw new Error(`${invalidUsers.length} users not synced with Thinkific`);
+                }
+
+                // Add all to Thinkific group
+                await Promise.all(
+                    sfUsers.map(u =>
+                        ThinkificService.addUserToGroup(u.thinkificId, classObj.thinkificGroupId)
+                    )
+                );
+
+                // Update class (avoid duplicates)
+                classObj.sf = [...new Set([...classObj.sf, ...userIds])];
+                break;
+
             default:
                 throw new Error('Invalid role');
         }
 
         await classObj.save();
-        // Refresh the class data with populated teacher
-        const updatedClass = await Class.findById(classId)
-            .populate('teacher', 'firstName lastName');
-
-        await ThinkificService.addUserToGroup(user.thinkificId, classObj.thinkificGroupId);
-
-        res.json({ success: true, class: updatedClass });
+        res.json({ success: true, class: await Class.findById(classId).populate('teacher coordinator rsf sf') });
     } catch (error) {
         console.error('Error assigning roles:', error);
         res.status(400).json({ error: error.message });

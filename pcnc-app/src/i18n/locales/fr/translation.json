@@ -24,7 +24,15 @@
     "actions": "Actions",
     "na": "N/A",
     "assignTeacher": "Attribuer un enseignant",
-    "teacher": "Formateur"
+    "teacher": "Formateur",
+    "assignCoordinator": "Assigner un coordinateur",
+    "selectCoordinator": "Sélectionner un coordinateur",
+    "assignRSF": "Assigner RSF",
+    "selectRSF": "Sélectionner RSF",
+    "rsf": "RSF",
+    "assignSF": "Assigner des facilitateurs de soutien",
+    "selectSF": "Sélectionner des membres du SF"
+
   },
   "classForm": {
     "createNewClass": "Créer une nouvelle classe",

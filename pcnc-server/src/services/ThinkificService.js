@@ -69,7 +69,7 @@ class ThinkificService {
             if (!response.data?.items) {
                 throw new Error('Invalid Thinkific API response structure');
             }
-            console.log('Thinkific API Response:', response.data);
+
 
             return response.data.items.map(group => ({
                 id: group.id,
