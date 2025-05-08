@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
@@ -13,8 +13,14 @@ export function AuthProvider({ children }) {
             try {
                 const response = await fetch(
                     `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/profile`,
-                    { credentials: 'include' }
+                    {
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        }
                 );
+                console.log('Auth response status:', response.status);
                 if (response.ok) {
                     const userData = await response.json();
                     setUser({
@@ -37,15 +43,19 @@ export function AuthProvider({ children }) {
             ...userData,
             name: `${userData.firstName} ${userData.lastName}`,
         });
-        navigate('/profile');
+        navigate('/users');
     };
 
-    const logout = () => {
-        setUser(null);
-        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/logout`, {
-            method: 'POST',
-            credentials: 'include',
-        });
+    const logout = async () => {
+        try {
+            await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/logout`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+        } finally {
+            setUser(null);
+            navigate('/login');
+        }
     };
 
     return (

@@ -14,15 +14,26 @@ import ThinkificManager from './components/ThinkificManager';
 import ThinkificAuth from './auth/ThinkificAuth';
 import ProfilePage from './pages/ProfilePage';
 import UserManagement from './pages/UserManagement';
+import TeacherClasses from './pages/TeacherClasses';
+import SfDashboard from './pages/SfDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import CoordinatorDashboard from './pages/CoordinatorDashboard';
+import ParentAuthorizationPage from './pages/ParentAuthorizationPage';
+import ElvantoIntegration from './pages/ElvantoIntegration';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
 
 const App = () => {
+    const queryClient = new QueryClient();
     return (
+        <QueryClientProvider client={queryClient}>
         <MantineProvider theme={theme} withGlobalStyles withNormalizeCSS>
             <Routes>
                 {/* Public Routes */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegistrationPage />} />
+                <Route path="/parent-auth" element={<ParentAuthorizationPage />} />
 
                 <Route path="/registration-success" element={<RegistrationSuccessPage />} />
                 <Route path="/callback" element={<ThinkificAuth />} />
@@ -35,8 +46,12 @@ const App = () => {
                         <Route path="profile" element={<ProfilePage />} />
                         <Route path="teacher" element={<TeacherDashboard />} />
                         <Route path="student" element={<StudentPortal />} />
-                        <Route path="thinkific" element={<ThinkificManager />} />
+                        <Route path="elvanto" element={<ElvantoIntegration />} />
                         <Route path="classes" element={<ClassManager/>} />
+                        <Route path="teacher-classes" element={<TeacherClasses />} />
+                        <Route path="admin-dashboard" element={<AdminDashboard />} />
+                        <Route path="sf-dashboard" element={<SfDashboard />} />
+                        <Route path="co-dashboard" element={<CoordinatorDashboard />} />
                     </Route>
                 </Route>
 
@@ -45,6 +60,7 @@ const App = () => {
                 <Route path="*" element={<Navigate to="/register" replace />} />
             </Routes>
         </MantineProvider>
+        </QueryClientProvider>
     );
 };
 

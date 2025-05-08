@@ -14,9 +14,12 @@ class AppServer {
         this.app = express();
         this.sessionStore = MongoStore.create({
             mongoUrl: config.MONGODB_URI,
-            ttl: 14 * 24 * 60 * 60,
+            ttl: 24 * 60 * 60,
             autoRemove: 'interval',
             autoRemoveInterval: 60
+        });
+        this.sessionStore.on('error', (error) => {
+            console.error('Session store error:', error);
         });
         this.configureMiddleware();
         this.connectDatabase();
@@ -29,10 +32,14 @@ class AppServer {
         this.app.use(cors({
             origin: [
                 'http://localhost:5173',
-                'https://1082-70-30-206-145.ngrok-free.app',
-                config.THINKIFIC_OAUTH_REDIRECT_URI
+                'https://pcnc.tail30380e.ts.net',
+                config.THINKIFIC_OAUTH_REDIRECT_URI,
+                'https://api.elvanto.com'
             ],
-            credentials: true
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization'],
+            exposedHeaders: ['Set-Cookie']
         }));
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
@@ -45,17 +52,18 @@ class AppServer {
             saveUninitialized: false,
             store: this.sessionStore,
             cookie: {
-                secure: false,
-                sameSite:  'lax',
+                secure: false, // false for HTTP in development
+                sameSite: 'lax', // Allows cookies on same-site requests
                 httpOnly: true,
-                maxAge: 14 * 24 * 60 * 60 * 1000,
-                domain: undefined
+                maxAge: 24 * 60 * 60 * 1000,
+                domain: '.tail30380e.ts.net' // Explicitly set domain for development
             },
             proxy: true
         }));
 
         // Session logging middleware
         this.app.use((req, res, next) => {
+            //console.log('Session middleware - req.session:', req.session);
             next();
         });
 

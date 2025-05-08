@@ -46,10 +46,15 @@ const LoginPage = () => {
                     credentials: 'include',
                 }
             );
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Login failed');
 
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Login failed');
+            }
+
+            const data = await response.json();
             login(data.user);
+
             notifications.show({
                 title: t('loginPage.welcomeBack'),
                 message: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
@@ -61,12 +66,12 @@ const LoginPage = () => {
                 title: t('loginPage.errorTitle'),
                 message: err.message,
                 color: 'red',
-                withBorder: true,
             });
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <Box

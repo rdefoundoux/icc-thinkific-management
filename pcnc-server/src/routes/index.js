@@ -1,4 +1,5 @@
 import express from 'express';
+import axios from 'axios';
 import { Router } from 'express';
 import authRouter from './auth.js';
 import usersRouter from './users.js';
@@ -9,6 +10,11 @@ import { syncUserData } from "../controllers/userController.js";
 import { thinkificWebhookHandler } from '../webhooks/thinkific.js';
 import classesRouter from './classes.js';
 import { withElvantoAuth } from '../middleware/elvantoAuth.js';
+import coursesRouter from './courses.js';
+import adminRouter from './admins.js';
+import ElvantoController  from '../controllers/elvantoController.js';
+import egliseiccRoutes from './egliseicc.js';
+import countriesRouter from './countries.js';
 
 
 const router = Router();
@@ -23,23 +29,16 @@ router.post('/webhooks/thinkific',
 router.use('/auth',authRouter);
 router.use('/users', usersRouter);
 router.use('/classes', classesRouter);
+router.use('/courses', coursesRouter);
+router.use('/admin', adminRouter);
+router.use('/egliseicc', egliseiccRoutes);
+router.use('/countries', countriesRouter);
+router.get('/elvanto/init', ElvantoController.initiateAuth);
+router.get('/elvanto/callback', ElvantoController.handleCallback);
+router.get('/elvanto/check-auth', withElvantoAuth, (req, res) => res.json({ authenticated: true }));
 
-// Add this to your router
-router.get('/elvanto/people',
-    withElvantoAuth,
-    async (req, res) => {
-        try {
-            const response = await axios.get('https://api.elvanto.com/v1/people/getAll.json', {
-                headers: { Authorization: `Bearer ${req.elvantoAccessToken}` }
-            });
-            res.json(response.data);
-        } catch (error) {
-            res.status(error.response?.status || 500).json({
-                error: error.response?.data || error.message
-            });
-        }
-    }
-);
+router.get('/elvanto/eglises', withElvantoAuth,ElvantoController.syncEglises);
+
 
 // Protected routes
 // router.use(authenticate);

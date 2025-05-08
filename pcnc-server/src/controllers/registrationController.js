@@ -111,7 +111,8 @@ export const validateRegistration = asyncHandler(async (req, res) => {
         previousCourses,
         preferredSchedule,
         comments,
-        gdprConsent
+        gdprConsent,
+        parentalAuth
     } = req.body;
 
     // Check required GDPR consent
@@ -125,10 +126,17 @@ export const validateRegistration = asyncHandler(async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+        console.log('User already exists:', existingUser);
         return res.status(400).json({
             success: false,
             error: 'Un utilisateur avec cet email existe déjà'
         });
+    }
+
+    const dateOfBirth = new Date(birthDate);
+    const age = new Date().getFullYear() - dateOfBirth.getFullYear();
+    if (age < 18 && !parentalAuth) {
+        throw new Error('Parental authorization required for minors');
     }
 
     // Create user with all PCNC fields
@@ -161,7 +169,9 @@ export const validateRegistration = asyncHandler(async (req, res) => {
         gdprConsent: {
             dataProcessingAccepted: gdprConsent.dataProcessing,
             acceptedAt: new Date()
-        }
+        },
+        ThinkificId: '',
+        ...(parentalAuth && { parentalAuth })
     });
 
     // Remove sensitive data from response
@@ -169,7 +179,7 @@ export const validateRegistration = asyncHandler(async (req, res) => {
     delete userData.password;
 
     // Send confirmation email (implementation needed)
-
+    console.log('user created', userData);
     res.status(201).json({
         success: true,
         data: userData

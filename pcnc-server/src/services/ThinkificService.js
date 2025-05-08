@@ -57,6 +57,36 @@ class ThinkificService {
             'Content-Type': 'application/json'
         };
     }
+    static async paginatedGet(endpoint, params = {}) {
+        let allItems = [];
+        let page = 1;
+        const limit = 250; // Max allowed by Thinkific API
+        let hasMore = true;
+
+        while (hasMore) {
+            try {
+                const response = await axios.get(endpoint, {
+                    headers: this.headers(),
+                    params: { ...params, page, limit }
+                });
+
+                if (response.data?.items) {
+                    allItems = allItems.concat(response.data.items);
+                }
+
+                // Check pagination metadata
+                const meta = response.data?.meta?.pagination;
+                hasMore = meta?.total_pages > page;
+                page++;
+
+            } catch (error) {
+                this.handleError(error, `Failed to paginate ${endpoint}`);
+                break;
+            }
+        }
+
+        return allItems;
+    }
     static async getGroups() {
         try {
             console.log('Thinkific API Request: get groups entering ')
@@ -144,13 +174,10 @@ class ThinkificService {
 
     static async getCourses() {
         try {
-            const response = await axios.get(`${API_BASE}/courses`, {
-                headers: this.headers(),
-                params: { page: 1, limit: 100 }
-            });
-            return response.data.items;
+            return await this.paginatedGet(`${API_BASE}/courses`);
         } catch (error) {
             this.handleError(error, 'Failed to fetch courses');
+            return [];
         }
     }
 
@@ -242,6 +269,30 @@ class ThinkificService {
             this.handleError(error, 'Failed to fetch course');
         }
     }
+    static async courseExists(courseId) {
+        try {
+            await this.getCourse(courseId);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+    static async getProductByCourseId(courseId) {
+        try {
+            const allProducts = await this.paginatedGet(`${API_BASE}/products`);
+
+            let product= allProducts.find(product => {
+
+                return product.productable_type === 'Course'&&
+                    String(product.productable_id) === String(courseId);
+            });
+
+            return product;
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            return null;
+        }
+    }
     static handleError(error, context) {
         const errorInfo = {
             context,
@@ -252,6 +303,51 @@ class ThinkificService {
         console.error('Thinkific API Error:', errorInfo);
         throw new Error(`${context}: ${error.message}`);
     }
+    // Add to ThinkificService.js
+    static async unenrollUserFromCourse(userId, courseId) {
+        try {
+            // First get the enrollment ID
+            const enrollmentId = await this.getEnrollmentId(userId, courseId);
+            if (!enrollmentId) {
+                console.log('Enrollment not found, nothing to delete');
+                return true;
+            }
+
+            await axios.delete(`${API_BASE}/enrollments/${enrollmentId}`, {
+                headers: this.headers()
+            });
+            return true;
+        } catch (error) {
+            if (error.response?.status === 404) {
+                console.log('Enrollment already removed');
+                return true;
+            }
+            this.handleError(error, 'Failed to unenroll user');
+        }
+    }
+
+    // Helper method to find enrollment ID
+    static async getEnrollmentId(userId, courseId) {
+        try {
+            const response = await axios.get(`${API_BASE}/enrollments`, {
+                headers: this.headers(),
+                params: {
+                    'query[user_id]': userId,
+                    'query[course_id]': courseId
+                }
+            });
+
+            if (response.data.items?.length > 0) {
+                return response.data.items[0].id;
+            }
+            return null;
+        } catch (error) {
+            this.handleError(error, 'Failed to find enrollment');
+            return null;
+        }
+    }
+
+
 }
 
 export default ThinkificService;

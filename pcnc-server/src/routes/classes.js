@@ -8,9 +8,15 @@ import {
     assignRoles,
     assignCourse,
     updateClass,
-    getGroupUsers
+    getGroupUsers,
+    getClassStudents,
+    getClassesBySF,
+    updateStudentResults,
+    syncEnrollment,
+    getClassesByCoordinator,
+    getClassesForRegistration
 } from '../controllers/classController.js';
-import { assignStudents } from '../controllers/classController.js';
+import { assignStudents ,getClassesByTeacher} from '../controllers/classController.js';
 import { isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -20,6 +26,8 @@ const router = express.Router();
  * GET /api/v1/classes
  */
 router.get('/', getClasses);
+
+router.get('/registration', getClassesForRegistration);
 
 /**
  * Retrieves a list of Thinkific groups.
@@ -39,11 +47,22 @@ router.get('/courses', getCourses);
  */
 router.get('/groups/:groupId/users', getGroupUsers);
 
+// Get classes by teacher
+router.get('/teacher/:teacherId', getClassesByTeacher);
+
 /**
  * Retrieves detailed information about a single class by ID.
  * GET /api/v1/classes/:id
  */
 router.get('/:id', getClassDetails);
+
+router.get('/:classId/students', getClassStudents);
+
+router.get('/sf/:sfId', getClassesBySF);
+
+
+router.get('/coordinator/:coordinatorId', getClassesByCoordinator);
+
 
 /**
  * Creates a new class (and corresponding Thinkific group).
@@ -69,10 +88,18 @@ router.post('/:classId/courses', assignCourse);
  */
 router.post('/:classId/students',  assignStudents);
 
+
+router.post('/sync-enrollment', syncEnrollment);
+
+
+
 /**
  * Updates an existing class by ID.
  * PUT /api/v1/classes/:id
  */
 router.put('/:id', updateClass);
+
+
+router.patch('/students/:studentId/results', updateStudentResults);
 
 export default router;

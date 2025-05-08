@@ -267,7 +267,7 @@ const ClassManager = () => {
                                             </td>
                                             <td>
                                                 <Text size="sm" color="dimmed">
-                                                    {groupUsers[cls.thinkificGroupId]?.length || 'N/A'}
+                                                    {cls.studentCount }
                                                 </Text>
                                             </td>
                                             <td>

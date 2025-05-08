@@ -3,8 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 const TopNav = ({ onLanguageChange, showLoginButton }) => {
+    const { i18n } = useTranslation();
     const navigate = useNavigate();
     const { t } = useTranslation();
+
+    const handleLanguageChange = (language) => {
+        i18n.changeLanguage(language);
+        localStorage.setItem('i18nextLng', language);
+        if (onLanguageChange) onLanguageChange(language);
+    };
 
     return (
         <Group
@@ -25,14 +32,15 @@ const TopNav = ({ onLanguageChange, showLoginButton }) => {
                 style={{ cursor: 'pointer' }}
                 onClick={() => navigate('/')}
             />
-            <Group spacing="sm" style={{ alignItems: 'center' }}>
+            <Group position="apart" spacing="sm" style={{ alignItems: 'center' }}>
                 <Select
                     placeholder="Langue"
                     data={[
                         { value: 'fr', label: 'Français' },
                         { value: 'en', label: 'English' },
                     ]}
-                    onChange={onLanguageChange}
+                    value={i18n.language}
+                    onChange={handleLanguageChange}
                     size="sm"
                     styles={{
                         input: {
@@ -58,7 +66,7 @@ const TopNav = ({ onLanguageChange, showLoginButton }) => {
                         size="sm"
                         style={{ color: '#fff' }}
                     >
-                        {t('loginButton') || 'Connexion'}
+                        {t('topNav.loginButton') || 'Connexion'}
                     </Button>
                 )}
             </Group>

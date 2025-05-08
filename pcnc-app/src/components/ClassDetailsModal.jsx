@@ -1,145 +1,260 @@
-import { Modal, Group, Text, Avatar, List, Title, Badge, Loader,Stack } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import {
+    Modal, Group, Text, Avatar, Title, Badge, Loader,
+    Stack, Paper, Image, Flex, Divider, Grid, ActionIcon
+} from '@mantine/core';
+import { MantineReactTable } from 'mantine-react-table';
+import { IconUsers, IconCertificate, IconZoomCheck, IconFilter, IconArrowsSort } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+import { MRT_Localization_EN } from 'mantine-react-table/locales/en/index.cjs';
+import { MRT_Localization_FR } from 'mantine-react-table/locales/fr/index.cjs';
+
+const localeMap = {
+    en: MRT_Localization_EN,
+    fr: MRT_Localization_FR,
+};
 
 export default function ClassDetailsModal({ opened, onClose, classData }) {
+    const { t } = useTranslation();
+    const { i18n } = useTranslation();
     const [users, setUsers] = useState([]);
-    const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
-    // Safe data extraction with defaults
-    const thinkificGroup = classData?.thinkificGroup || {};
-    //const students = classData?.students || [];
-    const staff = {
-        teacher: classData?.teacher || null,
-        coordinator: classData?.coordinator || null,
-        rsf: classData?.rsf || [],
-        sf: classData?.sf || []
+    const currentLocale = localeMap[i18n.language] || MRT_Localization_EN;
+
+    const staff = classData?.staff || {
+        teacher: null,
+        coordinator: null,
+        rsf: [],
+        sf: []
     };
-    useEffect(() => {
-        const fetchUsers = async () => {
-            if (classData?.thinkificGroupId) {
-                try {
-                    const response = await fetch(
-                        `${import.meta.env.VITE_API_BASE_URL}/api/v1/classes/groups/${classData.thinkificGroupId}/users`
-                    );
-                    setUsers(await response.json());
-                } catch (error) {
-                    console.error('Error fetching users:', error);
-                }
-            }
-        };
 
-        if (opened) fetchUsers();
-    }, [opened, classData?.thinkificGroupId]);
-    useEffect(() => {
-        const fetchStudents = async () => {
-            try {
-                if (classData?.students?.length > 0) {
-                    const response = await fetch(
-                        `${import.meta.env.VITE_API_BASE_URL}/api/v1/users?ids=${classData.students.join(',')}`
-                    );
-                    const { data } = await response.json();
-                    setStudents(data);
-                }
-            } catch (error) {
-                console.error('Error fetching students:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const studentColumns = [
+        {
+            accessorKey: 'avatar',
+            header: t('common.student'),
+            size: 250,
+            Cell: ({ row }) => (
+                <Group>
+                    <Avatar src={row.original.avatarUrl} size={40} radius="xl" />
+                    <div>
+                        <Text weight={500}>{row.original.firstName} {row.original.lastName}</Text>
+                        <Text size="sm" c="dimmed">{row.original.email}</Text>
+                    </div>
+                </Group>
+            ),
+            enableSorting: false,
+        },
+        {
+            accessorKey: 'city',
+            header: t('common.location'),
+            filterVariant: 'select',
+            Cell: ({ row }) => (
+                <Text>
+                    {row.original.city}, {row.original.country}
+                </Text>
+            ),
+        },
+        {
+            accessorKey: 'iccMember',
+            header: t('classManager.iccMember'),
+            filterVariant: 'checkbox',
+            Cell: ({ row }) => (
+                <Badge color={row.original.iccMember ? 'green' : 'yellow'} variant="light">
+                    {row.original.iccMember ? t('common.yes') : t('common.no')}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: 'thinkificId',
+            header: t('common.status'),
+            Cell: ({ row }) => (
+                <Badge
+                    leftSection={row.original.thinkificId && <IconCertificate size={16} />}
+                    color={row.original.thinkificId ? 'teal' : 'orange'}
+                    variant="light"
+                >
+                    {row.original.thinkificId ? t('common.synced') : t('common.pending')}
+                </Badge>
+            ),
+            filterVariant: 'select',
+            filterSelectOptions: [t('common.synced'), t('common.pending')],
+        },
+    ];
 
-        if (opened) fetchStudents();
-    }, [opened, classData]);
     return (
-        <Modal opened={opened} onClose={onClose} size="lg" title="Class Details">
+        <Modal
+            opened={opened}
+            onClose={onClose}
+            size="100%"
+            title={
+                <Group spacing="xs">
+                    <IconZoomCheck size={24} />
+                    <Title order={3}>{t('classDetails.title')}</Title>
+                </Group>
+            }
+            overlayProps={{ blur: 3 }}
+        >
             {!classData ? (
                 <Loader />
             ) : (
-                <>
-                    {/* Basic Info Section */}
-                    <Group mb="md" grow>
-                        <div>
-                            <Text weight={500}>Thinkific Group:</Text>
-                            <Text>{thinkificGroup.name || 'N/A'}</Text>
-                        </div>
-                        <div>
-                            <Text weight={500}>Student Count:</Text>
-                            <Text>{students.length}</Text>
-                        </div>
-                    </Group>
+                <Stack spacing="lg">
+                    {/* Class Header */}
+                    <Paper p="md" withBorder shadow="xs">
+                        <Group position="apart">
+                            <div>
+                                <Text size="xl" weight={600}>{classData.thinkificGroupName}</Text>
+                                <Text c="dimmed">{classData.courseCode} • {classData.students?.length} {t('common.students')}</Text>
+                            </div>
+                            <Badge
+                                size="lg"
+                                variant="gradient"
+                                gradient={{ from: 'indigo', to: 'cyan' }}
+                            >
+                                {classData.type === 'online' ? t('common.online') : t('common.onsite')}
+                            </Badge>
+                        </Group>
+                    </Paper>
 
-                    {/* Staff Section */}
-                    <Title order={4} mb="sm">Staff Members</Title>
-                    <Group mb="md" grow>
-                        <div>
-                            <Text weight={500}>Teacher:</Text>
-                            {staff.teacher ? (
-                                <Group spacing="xs">
-                                    <Avatar src={staff.teacher.avatarUrl} size="sm" />
-                                    <Text>{staff.teacher.firstName} {staff.teacher.lastName}</Text>
-                                </Group>
-                            ) : <Text>N/A</Text>}
-                        </div>
-
-                        <div>
-                            <Text weight={500}>Coordinator:</Text>
-                            {staff.coordinator ? (
-                                <Group spacing="xs">
-                                    <Avatar src={staff.coordinator.avatarUrl} size="sm" />
-                                    <Text>{staff.coordinator.firstName} {staff.coordinator.lastName}</Text>
-                                </Group>
-                            ) : <Text>N/A</Text>}
-                        </div>
-                    </Group>
-
-                    {/* Support Staff Section */}
-                    <Group mb="md" grow>
-                        <div>
-                            <Text weight={500}>RSFs ({staff.rsf.length}):</Text>
-                            {staff.rsf.map((rsf, i) => (
-                                <Badge key={i} color="blue" variant="light" mr={4}>
-                                    {rsf.firstName} {rsf.lastName}
-                                </Badge>
-                            ))}
-                        </div>
-
-                        <div>
-                            <Text weight={500}>SFs ({staff.sf.length}):</Text>
-                            {staff.sf.map((sf, i) => (
-                                <Badge key={i} color="grape" variant="light" mr={4}>
-                                    {sf.firstName} {sf.lastName}
-                                </Badge>
-                            ))}
-                        </div>
-                    </Group>
-
-                    {/* Students Section */}
-                    <Title order={4} mb="sm">Students ({students.length})</Title>
-                    <Stack spacing="xs">
-                        {students.map(student => (
-                            <Group key={student._id} spacing="sm">
-                                <Avatar
-                                    src={student.avatarUrl}
-                                    size="md"
-                                    radius="xl"
-                                    alt={`${student.firstName} ${student.lastName}`}
-                                />
+                    {/* Teaching Team Section */}
+                    <Paper p="md" withBorder>
+                        <Title order={4} mb="md">{t('classDetails.teachingTeam')}</Title>
+                        <Grid gutter="xl">
+                            <Grid.Col span={6}>
                                 <div>
-                                    <Text weight={500}>
-                                        {student.firstName} {student.lastName}
-                                    </Text>
-                                    <Text size="sm" color="dimmed">
-                                        {student.email}
-                                    </Text>
-                                    {student.thinkificId && (
-                                        <Badge color="teal" variant="dot">
-                                            Thinkific Synced
-                                        </Badge>
+                                    <Text size="sm" c="dimmed" mb="xs">{t('classManager.teacher')}</Text>
+                                    {staff.teacher ? (
+                                        <Group>
+                                            <Avatar src={staff.teacher.avatarUrl} size="lg" />
+                                            <div>
+                                                <Text weight={500}>{staff.teacher.firstName} {staff.teacher.lastName}</Text>
+                                                <Text size="sm" c="dimmed">{staff.teacher.email}</Text>
+                                            </div>
+                                        </Group>
+                                    ) : (
+                                        <Text c="dimmed">{t('common.unassigned')}</Text>
                                     )}
                                 </div>
-                            </Group>
-                        ))}
-                    </Stack>
-                </>
+                            </Grid.Col>
+
+                            <Grid.Col span={6}>
+                                <div>
+                                    <Text size="sm" c="dimmed" mb="xs">{t('common.coordinator')}</Text>
+                                    {staff.coordinator ? (
+                                        <Group>
+                                            <Avatar src={staff.coordinator.avatarUrl} size="lg" />
+                                            <div>
+                                                <Text weight={500}>{staff.coordinator.firstName} {staff.coordinator.lastName}</Text>
+                                                <Text size="sm" c="dimmed">{staff.coordinator.email}</Text>
+                                            </div>
+                                        </Group>
+                                    ) : (
+                                        <Text c="dimmed">{t('common.unassigned')}</Text>
+                                    )}
+                                </div>
+                            </Grid.Col>
+                        </Grid>
+
+                        <Divider my="md" />
+
+                        <Grid gutter="xl"  style={{ height: '100%', overflow: 'auto'}}>
+                            <Grid.Col span={6}>
+                                <div>
+                                    <Text size="sm" c="dimmed" mb="xs">{t('common.rsf')}</Text>
+                                    {staff.rsf?.length > 0 ? (
+                                        <Group spacing="xs">
+                                            {staff.rsf.map((rsf, i) => (
+                                                <Badge
+                                                    key={i}
+                                                    variant="dot"
+                                                    color="blue"
+                                                    leftSection={<Avatar src={rsf.avatarUrl} size={20} radius="xl" />}
+                                                    style={{ height: '100%' }}
+                                                >
+                                                    {rsf.firstName} {rsf.lastName}
+                                                </Badge>
+                                            ))}
+                                        </Group>
+                                    ) : (
+                                        <Text c="dimmed">{t('common.noneAssigned')}</Text>
+                                    )}
+                                </div>
+                            </Grid.Col>
+
+                            <Grid.Col span={6}>
+                                <div>
+                                    <Text size="sm" c="dimmed" mb="xs">{t('common.sf')}</Text>
+                                    {staff.sf?.length > 0 ? (
+                                        <Group spacing="xs">
+                                            {staff.sf.map((sf, i) => (
+                                                <Badge
+                                                    key={i}
+                                                    variant="dot"
+                                                    color="grape"
+                                                    leftSection={<Avatar src={sf.avatarUrl} size={20} radius="xl" />}
+                                                    style={{ height: '100%' }}
+                                                >
+                                                    {sf.firstName} {sf.lastName}
+                                                </Badge>
+                                            ))}
+                                        </Group>
+                                    ) : (
+                                        <Text c="dimmed">{t('common.noneAssigned')}</Text>
+                                    )}
+                                </div>
+                            </Grid.Col>
+                        </Grid>
+                    </Paper>
+
+                    {/* Students Table */}
+                    <Paper withBorder shadow="xs">
+                        <MantineReactTable
+                            columns={studentColumns}
+                            data={classData.students || []}
+                            localization={currentLocale}
+                            enablePagination
+                            enableSorting
+                            enableColumnFilterModes
+                            enableColumnResizing
+                            initialState={{
+                                pagination: { pageSize: 10, pageIndex: 0 },
+                                showColumnFilters: true,
+                                density: 'xs'
+                            }}
+                            mantineTableProps={{
+                                striped: true,
+                            }}
+                            mantineTableContainerProps={{
+                                style: {  maxHeight: '100%', // Use 100% or a specific height like 500px
+                                    overflowY: 'auto',
+                                },
+                            }}
+                            mantineTableHeadCellFilterTextFieldProps={{
+                                variant: 'filled',
+                                placeholder: t('common.filter'),
+                            }}
+                            mantineTableHeadCellProps={{
+                                sx: {
+                                    '& .Mui-TableHeadCell-Content': {
+                                        fontWeight: 600,
+                                    }
+                                }
+                            }}
+                            displayColumnDefOptions={{
+                                'mrt-row-actions': {
+                                    header: t('common.actions'),
+                                },
+                            }}
+                            renderTopToolbarCustomActions={() => (
+                                <Group spacing="xs" px="sm">
+                                    <IconUsers size={20} />
+                                    <Text size="lg" weight={600}>
+                                        {classData.students?.length} {t('common.students')}
+                                    </Text>
+                                </Group>
+                            )}
+                        />
+                    </Paper>
+                </Stack>
             )}
         </Modal>
     );

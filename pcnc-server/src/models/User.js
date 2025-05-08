@@ -14,9 +14,15 @@ const userSchema = new mongoose.Schema(
          */
         thinkificId: {
             type: String,
-            index: true,
-            unique: true,
-            sparse: true
+            index: {
+                unique: true,
+                partialFilterExpression: {
+                    thinkificId: {
+                        $exists: true,
+                        $ne: null
+                    }
+                }
+            }
         },
 
         /**
@@ -233,7 +239,47 @@ const userSchema = new mongoose.Schema(
         /**
          * An optional global identifier for the user (if needed for external systems).
          */
-        gid: String
+        gid: String,
+
+        /**
+         * List of students managed by this user (SF role)
+         */
+        managedStudents: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User' // Reference to other User documents (students)
+            }
+        ],
+
+        /**
+         * List of classes where this user manages students
+         */
+        managedClasses: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Class' // Reference to Class documents
+            }
+        ],
+        attendance: [{
+            name: String,
+            presentDays: Number,
+            totalDays: Number
+        }],
+        results: {
+            average: { type: Number, min: 0, max: 100 },
+            tests: [{
+                name: String,
+                score: { type: Number, min: 0, max: 100 },
+                date: { type: Date, default: Date.now }
+            }]
+        },
+        parentalAuth: {
+            signature: String,     // Base64 signature image
+            signedAt: Date,        // Date of signature
+            parentName: String,    // Parent's full name
+            parentEmail: String,   // Parent's contact email
+            parentPhone: String    // Parent's contact phone
+        }
     },
     {
         timestamps: true
@@ -260,5 +306,6 @@ userSchema.pre('save', async function (next) {
 userSchema.statics.generateOAuthPassword = async function () {
     return bcrypt.hash(crypto.randomBytes(16).toString('hex'), 12);
 };
+userSchema.index({ 'thinkificEnrollments.courseId': 1 });
 
 export default mongoose.model('User', userSchema);

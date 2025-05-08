@@ -164,4 +164,47 @@ export const listCourses = async (req, res) => {
         res.status(502).json({ error: 'Upstream error' });
     }
 };
+export const assignStudentsToSf = async (req, res) => {
+    try {
+        const { classId, studentIds } = req.body;
+        const sfId = req.params.sfId;
+
+        // Verify SF exists and belongs to class
+        const classObj = await Class.findOne({
+            _id: classId,
+            sf: sfId
+        });
+
+        if (!classObj) return res.status(403).json({ error: 'SF not in class' });
+
+        // Verify all students belong to the class
+        const invalidStudents = studentIds.filter(id =>
+            !classObj.students.includes(id)
+        );
+
+        if (invalidStudents.length > 0) {
+            return res.status(400).json({
+                error: 'Some students not in class',
+                invalidStudents
+            });
+        }
+
+        // Update SF's managed students
+        const sf = await User.findByIdAndUpdate(
+            sfId,
+            {
+                $addToSet: {
+                    managedStudents: { $each: studentIds },
+                    managedClasses: classId
+                }
+            },
+            { new: true }
+        );
+
+        res.json(sf);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 

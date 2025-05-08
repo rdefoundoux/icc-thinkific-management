@@ -1,0 +1,209 @@
+/* dashboard.css */
+.sf-dashboard {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8f9fa;
+}
+
+.dashboard-title {
+    color: #2c3e50;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid #00B0CA;
+}
+
+.class-card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.student-table-container {
+    overflow-x: auto;
+    min-width: 1200px;
+}
+
+.attendance-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.results-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.test-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.test-score {
+    font-weight: 700;
+    min-width: 60px;
+    text-align: center;
+}
+
+.course-enrollment-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.course-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    background-color: #f1f3f5;
+    transition: background-color 0.2s;
+}
+
+.course-checkbox.enrolled {
+    background-color: #e3f9e5;
+    border-left: 3px solid #00B0CA;
+}
+
+.course-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.course-code {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.course-lang {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.progression-badge {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.attendance-edit,
+.results-edit {
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.test-edit-group {
+    gap: 12px;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.mantine-Table-th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mantine-Table-td {
+    vertical-align: middle;
+}
+/* Add these styles to dashboard.css */
+.attendance-container, .results-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 180px;
+}
+
+.attendance-item, .test-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+.attendance-edit, .results-edit {
+    width: 100%;
+    gap: 12px;
+}
+
+.attendance-edit-box, .results-edit-box {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+.mantine-NumberInput-root,
+.mantine-TextInput-root {
+    width: 100%;
+}
+
+
+.attendance-edit-group {
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    background-color: var(--mantine-color-gray-0);
+    border-radius: 6px;
+}
+/* Coordinator Dashboard Specific */
+.coordinator-dashboard .class-name {
+    font-size: 1.2rem;
+    color: #2b6cb0;
+}
+
+.coordinator-dashboard .class-card {
+    border-left: 4px solid #2b6cb0;
+}
+
+.coordinator-dashboard .mantine-Badge-root {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.admin-dashboard .accordion-control {
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.admin-dashboard .accordion-control:hover {
+    background: #e9ecef;
+}
+
+.signature-image {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px;
+    background: white;
+    max-width: 100%;
+    height: auto; /* Maintains aspect ratio */
+}
+
+.progress-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 16px;
+    background: rgba(13, 110, 253, 0.1);
+}

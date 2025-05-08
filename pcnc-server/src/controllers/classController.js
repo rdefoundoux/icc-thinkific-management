@@ -1,6 +1,9 @@
 import ThinkificService from '../services/ThinkificService.js';
 import Class from '../models/Class.js';
 import User from '../models/User.js';
+import CourseService from '../services/CourseService.js';
+import Course from '../models/Course.js';
+
 
 /**
  * Constructs a formatted class name based on various parameters.
@@ -53,9 +56,17 @@ export const getClasses = async (req, res) => {
         const limit = parseInt(req.query.limit, 10) || 10;
         const skip = (page - 1) * limit;
 
+
         const [classes, total] = await Promise.all([
             Class.find()
-                .populate('teacher coordinator rsf sf students', 'firstName lastName')
+                .populate('teacher coordinator rsf sf', 'firstName lastName email avatarUrl roles')
+                .populate({
+                    path: 'students',
+                    match: {
+                        roles: 'student'
+                    },
+                    select: 'firstName lastName email whatsappNumber city country gender iccMember avatarUrl attendance results thinkificEnrollments thinkificId'
+                })
                 .skip(skip)
                 .limit(limit),
             Class.countDocuments()
@@ -69,7 +80,11 @@ export const getClasses = async (req, res) => {
                 if (studentCount === 0) {
                     try {
                         const count = await ThinkificService.getGroupUsersCount(cls.thinkificGroupId);
-                        studentCount = count;
+                        studentCount = count
+                            - (cls.teacher ? 1 : 0)
+                            - (cls.coordinator ? 1 : 0)
+                            - (cls.sf?.length || 0)
+                            - (cls.rsf?.length || 0);
 
                         // Update local database with placeholder students.
                         await Class.findByIdAndUpdate(cls._id, {
@@ -89,6 +104,47 @@ export const getClasses = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+export const getClassesForRegistration = async (req, res) => {
+    try {
+        const classes = await Class.find({ registrable: true })
+            .select('_id courseCode thinkificGroupName registrable') // Explicitly select fields
+            .lean(); // Convert to plain JS objects
+
+
+
+        res.json({
+            success: true,
+            data: classes
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getClassesByTeacher = async (req, res) => {
+    try {
+        const classes = await Class.find({ teacher: req.params.teacherId })
+            .populate({
+                path: 'coordinator',
+                select: 'firstName lastName'
+            })
+            .populate({
+                path: 'sf',
+                select: 'firstName lastName'
+            })
+            .populate({
+                path: 'rsf',
+                select: 'firstName lastName'
+            })
+            .populate('students', 'firstName lastName email whatsappNumber city country gender iccMember avatarUrl');
+
+        res.json({ data: classes });
+    } catch (error) {
+        console.error('Server error:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
 
 /**
  * Creates a new class, alongside a corresponding Thinkific group.
@@ -133,8 +189,9 @@ export const createClass = async (req, res) => {
             description: `Group for ${formattedClassName} class`
         });
 
-        // Retrieve the group ID from Thinkific
+        // Retrieve the group ID and NAME from Thinkific
         const thinkificGroupId = thinkificResponse.group.id;
+        const thinkificGroupName = thinkificResponse.group.name;
 
         // Create the new class in our local database
         const newClass = await Class.create({
@@ -150,7 +207,8 @@ export const createClass = async (req, res) => {
             hour,
             minutes,
             lang,
-            thinkificGroupId
+            thinkificGroupId,
+            thinkificGroupName
         });
 
         res.status(201).json(newClass);
@@ -170,9 +228,19 @@ export const createClass = async (req, res) => {
  */
 export const updateClass = async (req, res) => {
     try {
+        // Optionally, fetch new group name from Thinkific if thinkificGroupId is changed
+        let thinkificGroupName;
+        if (req.body.thinkificGroupId) {
+            const group = await ThinkificService.getGroup(req.body.thinkificGroupId);
+            thinkificGroupName = group?.name;
+        }
+
         const updatedClass = await Class.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            {
+                ...req.body,
+                ...(thinkificGroupName ? { thinkificGroupName } : {})
+            },
             { new: true, runValidators: true }
         ).populate('teacher coordinator rsf sf students', 'firstName lastName');
 
@@ -232,6 +300,25 @@ export const getClassDetails = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const getClassStudents = async (req, res) => {
+    try {
+        const classObj = await Class.findById(req.params.classId)
+            .populate('students', 'firstName lastName email roles');
+
+        if (!classObj) {
+            return res.status(404).json({ error: 'Class not found' });
+        }
+
+        res.json({
+            success: true,
+            students: classObj.students
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 
 /**
  * Assigns roles (teacher, coordinator, RSF, SF) to a user or users on both Thinkific and the local database.
@@ -327,7 +414,7 @@ export const assignStudents = async (req, res) => {
         const students = await User.find({
             _id: { $in: userIds },
             roles: { $in: ['student'] }
-        }).select('_id');
+        }).select('_id thinkificId');
 
         if (students.length !== userIds.length) {
             return res.status(400).json({
@@ -338,26 +425,34 @@ export const assignStudents = async (req, res) => {
             });
         }
 
-        // Update class
-        const classObj = await Class.findByIdAndUpdate(
-            classId,
-            { $addToSet: { students: { $each: userIds } } }, // Prevent duplicates
-            { new: true, runValidators: true }
-        ).populate('students', 'firstName lastName email roles');
-
+        // Get class details
+        const classObj = await Class.findById(classId).select('thinkificGroupId');
         if (!classObj) {
             return res.status(404).json({ error: 'Class not found' });
         }
 
-        // Update users' classes (optional)
-        await User.updateMany(
-            { _id: { $in: userIds } },
-            { $addToSet: { classes: classId } }
+        // Add to Thinkific group only (no enrollment)
+        await Promise.all(
+            students.map(async (student) => {
+                if (student.thinkificId) {
+                    await ThinkificService.addUserToGroup(
+                        student.thinkificId,
+                        classObj.thinkificGroupId
+                    );
+                }
+            })
         );
+
+        // Update local class records
+        const updatedClass = await Class.findByIdAndUpdate(
+            classId,
+            { $addToSet: { students: { $each: userIds } } },
+            { new: true, runValidators: true }
+        ).populate('students', 'firstName lastName email roles');
 
         res.json({
             success: true,
-            students: classObj.students,
+            students: updatedClass.students,
             enrolledCount: userIds.length
         });
 
@@ -369,6 +464,7 @@ export const assignStudents = async (req, res) => {
         });
     }
 };
+
 
 /**
  * Retrieves courses from Thinkific.
@@ -470,3 +566,262 @@ export const getGroupUsers = async (req, res) => {
         });
     }
 };
+
+export const getClassesBySF = async (req, res) => {
+    try {
+        const allCourses = await Course.find({ code: { $in: ['001', '101', '201'] } }).lean();
+
+        const sfUser = await User.findById(req.params.sfId)
+            .select('managedStudents')
+            .populate({
+                path: 'managedStudents',
+                select: 'firstName lastName email roles whatsappNumber city country gender iccMember avatarUrl attendance results thinkificEnrollments thinkificId'
+            });
+
+        if (!sfUser) {
+            return res.status(404).json({ error: 'SF user not found' });
+        }
+
+        const classes = await Class.find({ sf: req.params.sfId })
+            .populate('teacher coordinator rsf sf', 'firstName lastName email avatarUrl roles')
+            .populate({
+                path: 'students',
+                match: {
+                    _id: { $in: sfUser.managedStudents },
+                    roles: 'student'
+                },
+                select: 'firstName lastName email whatsappNumber city country gender iccMember avatarUrl attendance results thinkificEnrollments thinkificId'
+            })
+            .lean();
+
+        const classesWithProgression = classes.map(cls => ({
+            ...cls,
+            students: cls.students
+                .filter(student => student)
+                .map(student => {
+                    // Build enrolledCourses from thinkificEnrollments
+                    const enrolledCourses = allCourses
+                        .filter(course =>
+                            student.thinkificEnrollments?.some(
+                                e => e.courseId === course.thinkificId && e.status === 'active'
+                            )
+                        )
+                        .map(course => course.code);
+
+                    return {
+                        ...student,
+                        enrolledCourses,
+                        canProgress: checkProgression(student, cls.courseCode)
+                    };
+                })
+        }));
+
+        res.json({ data: classesWithProgression });
+    } catch (error) {
+        console.error('SF Classes Error:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+const checkProgression = (student, currentCourse) => {
+    const requiredAverage = currentCourse === '201' ? 80 : 70;
+    const average = student.results?.average || 0;
+    return average >= requiredAverage;
+};
+
+export const updateStudentResults = async (req, res) => {
+    try {
+        const { attendance, results, enrolledCourses = [] } = req.body;
+        const student = await User.findById(req.params.studentId);
+        const allCourses = await Course.find({ code: { $in: ['001', '101', '201'] } }).lean();
+
+        // Build new thinkificEnrollments array
+        const newEnrollments = allCourses.map(course => {
+            const isActive = enrolledCourses.includes(course.code);
+            return {
+                courseId: course.thinkificId,
+                status: isActive ? 'active' : 'inactive',
+                courseCode: course.code,
+                updatedAt: new Date()
+            };
+        });
+
+        student.attendance = attendance;
+        student.results = results;
+        student.thinkificEnrollments = newEnrollments;
+        await student.save();
+
+        res.json({
+            attendance: student.attendance,
+            results: student.results,
+            thinkificEnrollments: student.thinkificEnrollments
+        });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const syncEnrollment = async (req, res) => {
+    try {
+        const { studentId, enrollmentChanges, language, classId } = req.body;
+        const { added = [], removed = [] } = enrollmentChanges;
+
+        // Validate student
+        const student = await User.findById(studentId).select('thinkificId');
+        if (!student?.thinkificId) {
+            return res.status(400).json({ error: 'Student not synced with Thinkific' });
+        }
+
+        // Process enrollments
+        const enrollPromises = added.map(async (courseCode) => {
+            const course = await Course.findOne({
+                code: courseCode,
+                language: language || 'english'
+            }).select('thinkificId language');
+
+            if (!course) {
+                await CourseService.syncCourses();
+                const syncedCourse = await Course.findOne({
+                    code: courseCode,
+                    language: language || 'english'
+                }).select('thinkificId language');
+
+                if (!syncedCourse) {
+                    throw new Error(`Course ${courseCode} (${language}) not found`);
+                }
+                return syncedCourse;
+            }
+            return course;
+        });
+
+        // Get enrolled course IDs
+        const coursesToEnroll = await Promise.all(enrollPromises);
+        const enrolledIds = coursesToEnroll
+            .filter(course => course)
+            .map(course => course.thinkificId);
+
+        // Process unenrollments and get unenrolled course IDs
+        const unenrolledCourses = await Promise.all(
+            removed.map(courseCode =>
+                Course.findOne({
+                    code: courseCode,
+                    language: language || 'english'
+                }).select('thinkificId')
+            )
+        );
+        const unenrolledIds = unenrolledCourses
+            .filter(course => course)
+            .map(course => course.thinkificId);
+
+        // Perform Thinkific operations
+        await Promise.all([
+            // Enrollments
+            ...coursesToEnroll.filter(Boolean).map(async (course) => {
+                await ThinkificService.enrollUserInCourse(student.thinkificId, course.thinkificId);
+                if (classId) {
+                    const classObj = await Class.findById(classId).select('thinkificGroupId');
+                    if (classObj?.thinkificGroupId) {
+                        await ThinkificService.addUserToGroup(student.thinkificId, classObj.thinkificGroupId);
+                    }
+                }
+            }),
+            // Unenrollments
+            ...unenrolledIds.map(id =>
+                ThinkificService.unenrollUserFromCourse(student.thinkificId, id)
+            )
+        ]);
+
+        // Update local records
+        await User.findByIdAndUpdate(
+            studentId,
+            [
+                {
+                    $set: {
+                        thinkificEnrollments: {
+                            $setUnion: [
+                                "$thinkificEnrollments",
+                                enrolledIds.filter(Boolean).map(id => ({
+                                    courseId: id,
+                                    status: 'active',
+                                    language: language || 'english',
+                                    updatedAt: new Date()
+                                }))
+                            ]
+                        }
+                    }
+                },
+                {
+                    $set: {
+                        thinkificEnrollments: {
+                            $filter: {
+                                input: "$thinkificEnrollments",
+                                cond: {
+                                    $not: {
+                                        $in: ["$$this.courseId", unenrolledIds.filter(Boolean)]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ],
+            { new: true }
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Enrollment Error:', error);
+        res.status(500).json({
+            error: 'Enrollment synchronization failed',
+            details: error.message
+        });
+    }
+};
+export const getClassesByCoordinator = async (req, res) => {
+    try {
+        const allCourses = await Course.find({ code: { $in: ['001', '101', '201'] } }).lean();
+
+        // Get all classes where this user is the coordinator
+        const classes = await Class.find({ coordinator: req.params.coordinatorId })
+            .populate('teacher coordinator rsf sf', 'firstName lastName email avatarUrl roles')
+            .populate({
+                path: 'students',
+                match: { roles: 'student' },
+                select: 'firstName lastName email whatsappNumber city country gender iccMember avatarUrl attendance results thinkificEnrollments thinkificId'
+            })
+            .lean();
+
+        // Enhance students with enrolledCourses and canProgress
+        const classesWithProgression = classes.map(cls => ({
+            ...cls,
+            students: (cls.students || [])
+                .filter(student => student)
+                .map(student => {
+                    // Build enrolledCourses from thinkificEnrollments
+                    const enrolledCourses = allCourses
+                        .filter(course =>
+                            student.thinkificEnrollments?.some(
+                                e => e.courseId === course.thinkificId && e.status === 'active'
+                            )
+                        )
+                        .map(course => course.code);
+
+                    return {
+                        ...student,
+                        enrolledCourses,
+                        canProgress: checkProgression(student, cls.courseCode),
+                        classId: cls._id
+                    };
+                })
+        }));
+
+        res.json({ data: classesWithProgression });
+    } catch (error) {
+        console.error('Coordinator Classes Error:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+
+
+

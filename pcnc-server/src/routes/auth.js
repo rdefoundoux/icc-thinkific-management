@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 // Placeholder: Implement this function in your email service
 import { sendEmail } from '../services/EmailService.js';
-import ElvantoAuth from '../controllers/elvantoAuth.js';
+
 
 const router = express.Router();
 const THINKIFIC_GRAPHQL_ENDPOINT = `https://api.thinkific.com/stable/graphql`;
@@ -127,18 +127,32 @@ router.post('/login', async (req, res) => {
         //     return res.status(401).json({ error: 'Invalid credentials' });
         // }
 
-        // 4. Set session cookie and return user info
-        setSessionCookie(res, user);
-        res.json({
-            success: true,
-            user: {
-                id: user.thinkificId,
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                roles: user.roles,
-                requiresPasswordReset: user.requiresPasswordReset
+        // 3. Store user in session
+        req.session.user = {
+            _id: user._id,
+            email: user.email,
+            roles: user.roles
+        };
+
+        // Explicitly save the session
+        req.session.save(err => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ error: 'Login failed' });
             }
+
+            res.json({
+                success: true,
+                user: {
+                    _id: user._id, // Add this line
+                    id: user.thinkificId,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    roles: user.roles,
+                    requiresPasswordReset: user.requiresPasswordReset
+                }
+            });
         });
     } catch (err) {
         console.error('Login error:', err);
@@ -149,11 +163,15 @@ router.post('/login', async (req, res) => {
 // PROFILE ROUTE
 router.get('/profile', async (req, res) => {
     try {
-        const token = req.cookies.session;
-        if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.sub).select('-__v -password');
+
+        // Check if session exists
+        if (!req.session || !req.session.user) {
+            return res.status(401).json({ error: 'Unauthorized - No session found' });
+        }
+
+        // Get user from session data
+        const user = await User.findById(req.session.user._id).select('-__v -password');
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         res.json({
@@ -173,12 +191,16 @@ router.get('/profile', async (req, res) => {
 
 // LOGOUT ROUTE
 router.post('/logout', (req, res) => {
-    res.clearCookie('session');
-    res.json({ success: true });
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Logout error:', err);
+            return res.status(500).json({ error: 'Logout failed' });
+        }
+        res.clearCookie('connect.sid'); // Clear the session cookie
+        res.json({ success: true });
+    });
 });
 
-// Elvanto OAuth routes
-router.get('/elvanto', ElvantoAuth.initiateAuth);
-router.get('/elvanto/callback', ElvantoAuth.handleCallback);
+
 
 export default router;

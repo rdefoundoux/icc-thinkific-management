@@ -9,7 +9,8 @@ import PQueue from 'p-queue';
 import { isAuthenticated, isAdmin, isCoordinator } from '../middleware/auth.js';
 import {
     createUser,
-    updateUser
+    updateUser,
+    assignStudentsToSf,
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -230,5 +231,9 @@ router.get('/', async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 });
+
+// Assign students to SF
+router.patch('/:sfId/students', assignStudentsToSf);
+
 
 export default router;

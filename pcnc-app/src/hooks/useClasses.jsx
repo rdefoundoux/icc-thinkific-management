@@ -16,6 +16,7 @@ const useClasses = () => {
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/classes?page=${newPage}&limit=${PAGE_SIZE}`
             );
             const { data, total } = await res.json();
+            console.log('data result:', data);
             setClasses(data);
             setTotal(total);
             setPage(newPage);

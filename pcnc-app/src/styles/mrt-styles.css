@@ -1,0 +1,88 @@
+@import '@mantine/core/styles.css';
+@import '@mantine/dates/styles.css';
+@import 'mantine-react-table/styles.css';
+/* mrt-styles.css - Additional styles for Mantine React Table */
+
+.mantine-Table-root {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.mantine-Table-tr:hover {
+    background-color: #f8fafc;
+}
+
+.mantine-Table-th {
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: #f1f5f9;
+    color: #475569;
+    font-weight: 600;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.mantine-Table-td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f3f5;
+    vertical-align: middle;
+}
+
+/* Row colors */
+.mantine-Table-tr:nth-of-type(odd) {
+    background-color: rgba(248, 250, 252, 0.5);
+}
+
+.mantine-Table-tr:nth-of-type(even) {
+    background-color: white;
+}
+
+/* Table head and footer */
+.mantine-TableThead-root {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+/* Pagination controls */
+.mantine-Pagination-root {
+    margin-top: 1rem;
+}
+
+.mantine-Pagination-item {
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Edit row styling */
+.mrt-row-edit {
+    background-color: #f1f5f9 !important;
+    box-shadow: inset 0 0 0 1px #e2e8f0;
+}
+
+/* Action buttons */
+.mantine-ActionIcon-root {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.mantine-ActionIcon-root:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scroll styling */
+.mantine-ScrollArea-root {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.mantine-ScrollArea-scrollbar {
+    width: 8px !important;
+    background-color: #f1f5f9;
+}
+
+.mantine-ScrollArea-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}

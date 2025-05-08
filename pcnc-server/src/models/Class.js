@@ -23,6 +23,10 @@ const classSchema = new mongoose.Schema({
             message: 'Invalid Thinkific group ID',
         },
     },
+    thinkificGroupName: {
+        type: String,
+        required: false
+    },
     courses: [{
         thinkificCourseId: String,
         name: String,
@@ -32,7 +36,11 @@ const classSchema = new mongoose.Schema({
     coordinator: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     rsf: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     sf: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    registrable: {
+        type: Boolean,
+        default: true
+    }
 }, { timestamps: true });
 
 // Add indexes
