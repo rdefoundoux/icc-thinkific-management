@@ -40,7 +40,7 @@ class AppServer {
         // Matches both preview and production Vercel deployments
         const vercelRegex = /^https:\/\/([a-zA-Z0-9-]+-)?rdefoundouxs-projects\.vercel\.app$/;
 
-        app.use(cors({
+        this.app.use(cors({
             origin: function(origin, callback) {
                 if (!origin) return callback(null, true); // Allow non-browser requests
                 if (allowedOrigins.includes(origin) || vercelRegex.test(origin)) {
