@@ -2,7 +2,7 @@
 import User from '../models/User.js';
 import asyncHandler from 'express-async-handler';
 import Class from '../models/Class.js';
-import thinkificService from '../services/thinkificService.js';
+import thinkificService from '../services/ThinkificService.js';
 
 
 const checkEligibility = async (studentData) => {

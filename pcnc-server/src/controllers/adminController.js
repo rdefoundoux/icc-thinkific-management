@@ -1,6 +1,6 @@
 import Class from '../models/Class.js';
 import User from '../models/User.js';
-import ThinkificService from '../services/thinkificService.js';
+import ThinkificService from '../services/ThinkificService.js';
 
 export const getAdminClasses = async (req, res) => {
     try {
