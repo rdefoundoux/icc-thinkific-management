@@ -34,7 +34,8 @@ class AppServer {
                 'http://localhost:5173',
                 'https://pcnc.tail30380e.ts.net',
                 config.THINKIFIC_OAUTH_REDIRECT_URI,
-                'https://api.elvanto.com'
+                'https://api.elvanto.com',
+                'https://pcnc-rmxdpd12u-rdefoundouxs-projects.vercel.app'
             ],
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -56,7 +57,7 @@ class AppServer {
                 sameSite: 'lax', // Allows cookies on same-site requests
                 httpOnly: true,
                 maxAge: 24 * 60 * 60 * 1000,
-                domain: '.tail30380e.ts.net' // Explicitly set domain for development
+                domain: '.erdv.pro' // Explicitly set domain for development
             },
             proxy: true
         }));
