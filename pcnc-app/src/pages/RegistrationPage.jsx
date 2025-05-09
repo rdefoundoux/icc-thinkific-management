@@ -219,9 +219,9 @@ const RegistrationPage = () => {
                 <Box mb={30}>
                     <Stack align="center" spacing="md" mb={30}>
                         <Group position="center" spacing="xl">
-                            <Image src="/src/assets/001-Nr-1.png" alt={t('registration.title')} height={80} />
-                            <Image src="/src/assets/101-Nr-1.png" alt={t('registration.title')} height={80} />
-                            <Image src="/src/assets/201-Nr-1.png" alt={t('registration.title')} height={80} fit="contain" />
+                            <Image src="/001-Nr-1.png" alt={t('registration.title')} height={80} />
+                            <Image src="/101-Nr-1.png" alt={t('registration.title')} height={80} />
+                            <Image src="/201-Nr-1.png" alt={t('registration.title')} height={80} fit="contain" />
                         </Group>
                     </Stack>
                     <Title order={1} align="center" mb="lg">{t('registration.title')}</Title>

@@ -115,7 +115,7 @@ const LoginPage = () => {
                             }}
                         >
                             <img
-                                src="/src/assets/pcnc-logo.png"
+                                src="/pcnc-logo.png"
                                 alt="PCNC Logo"
                                 style={{
                                     width: '180px',

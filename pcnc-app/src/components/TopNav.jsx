@@ -25,7 +25,7 @@ const TopNav = ({ onLanguageChange, showLoginButton }) => {
             }}
         >
             <Image
-                src="/src/assets/pcnc-logo.png"
+                src="/pcnc-logo.png"
                 alt="PCNC"
                 height={40}
                 fit="contain"
