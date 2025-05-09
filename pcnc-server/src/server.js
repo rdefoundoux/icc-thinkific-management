@@ -34,7 +34,8 @@ class AppServer {
             'http://localhost:5173',
             'https://pcnc.tail30380e.ts.net',
             config.THINKIFIC_OAUTH_REDIRECT_URI,
-            'https://api.elvanto.com'
+            'https://api.elvanto.com',
+            'https://pcnc-admin.erdv.pro'
         ];
 
         // Matches both preview and production Vercel deployments
