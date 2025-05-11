@@ -192,6 +192,7 @@ const AdminDashboard = () => {
                 <Checkbox
                     checked={selectedStudents.includes(row.original._id)}
                     onChange={(e) => {
+                        e.stopPropagation(); // Prevent row click from firing
                         const checked = e.currentTarget.checked;
                         setSelectedStudents(prev =>
                             checked ? [...prev, row.original._id] : prev.filter(id => id !== row.original._id)
