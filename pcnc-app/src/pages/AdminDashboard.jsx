@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useAdminClasses, usePendingStudents, useCoordinators, useSFs, useValidateStudents, useSyncThinkific } from '../hooks/useAdmin';
+import { useAdminClasses, usePendingStudents, useCoordinators, useSFs, useValidateStudents, useSyncThinkific, useAssignStudentsToClasses } from '../hooks/useAdmin';
 import {
     Accordion, ActionIcon, Avatar, Badge, Box, Button, Card, Checkbox, Flex,
     Group, Image, LoadingOverlay, Paper, Table, Text, Title
@@ -31,6 +31,7 @@ const AdminDashboard = () => {
 
     const validateMutation = useValidateStudents();
     const syncMutation = useSyncThinkific();
+    const assignMutation = useAssignStudentsToClasses();
 
     function shapeClassData(cls) {
         return {
@@ -53,9 +54,48 @@ const AdminDashboard = () => {
     };
 
     const handleValidate = async () => {
-        await validateMutation.mutateAsync(selectedStudents);
-        await syncMutation.mutateAsync(selectedStudents);
-        setSelectedStudents([]);
+        try {
+            // First validate the students
+            await validateMutation.mutateAsync(selectedStudents);
+
+            // Get the selected pending students with their details
+            const selectedStudentsDetails = pendingStudents.filter(
+                student => selectedStudents.includes(student._id)
+            );
+
+            // Prepare assignments
+            const assignments = [];
+
+            selectedStudentsDetails.forEach(student => {
+                if (student.preferredSchedule) {
+                    const matchingClass = classes?.find(cls =>
+                        cls.thinkificGroupName === student.preferredSchedule
+                    );
+
+                    if (matchingClass && !matchingClass.students.includes(student._id)) {
+                        assignments.push({
+                            classId: matchingClass._id,
+                            studentId: student._id
+                        });
+                    }
+                }
+            });
+
+            // Assign students to classes
+            if (assignments.length > 0) {
+                await assignMutation.mutateAsync(assignments);
+            }
+
+            // Finally, sync with Thinkific
+            await syncMutation.mutateAsync(selectedStudents);
+
+            // Clear selection and refresh data
+            setSelectedStudents([]);
+            refetchPending();
+        } catch (error) {
+            console.error("Error during validation and assignment:", error);
+            // Handle error notification here
+        }
     };
 
     const classColumns = [
@@ -332,15 +372,8 @@ const AdminDashboard = () => {
                             style: { maxHeight: '600px' }
                         }}
                         mantineTableBodyRowProps={({ row }) => ({
-                            sx: { cursor: 'pointer' },
-                            onClick: () => {
-                                const studentId = row.original._id;
-                                setSelectedStudents(prev =>
-                                    prev.includes(studentId)
-                                        ? prev.filter(id => id !== studentId)
-                                        : [...prev, studentId]
-                                );
-                            }
+                            sx: { cursor: 'default' },
+
                         })}
                     />
                 </Box>

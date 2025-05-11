@@ -1,7 +1,7 @@
 import express from 'express';
 import {
     getAdminClasses, getPendingStudents, validateStudents,
-    syncThinkificUsers, getCoordinators, getSFs
+    syncThinkificUsers, getCoordinators, getSFs,assignStudentsToClasses
 } from '../controllers/adminController.js';
 
 
@@ -15,6 +15,6 @@ router.get('/coordinators', getCoordinators);
 router.get('/sfs', getSFs);
 router.post('/validate-students', validateStudents);
 router.post('/sync-thinkific', syncThinkificUsers);
-
+router.post('/assign-students', assignStudentsToClasses);
 
 export default router;

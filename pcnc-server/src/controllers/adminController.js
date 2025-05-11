@@ -96,3 +96,31 @@ export const getSFs = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const assignStudentsToClasses = async (req, res) => {
+    try {
+        const { assignments } = req.body; // Array of {classId, studentId} objects
+
+        const results = await Promise.all(
+            assignments.map(async ({ classId, studentId }) => {
+                const classDoc = await Class.findById(classId);
+                if (!classDoc) {
+                    return { classId, studentId, success: false, message: 'Class not found' };
+                }
+
+                if (!classDoc.students.includes(studentId)) {
+                    classDoc.students.push(studentId);
+                    await classDoc.save();
+                    return { classId, studentId, success: true };
+                }
+
+                return { classId, studentId, success: true, message: 'Student already in class' };
+            })
+        );
+
+        res.json({ results });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+

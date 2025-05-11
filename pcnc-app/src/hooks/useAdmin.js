@@ -2,7 +2,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
     getAdminClasses, getPendingStudents, validateStudents,
-    syncThinkificUsers, getCoordinators, getSFs
+    syncThinkificUsers, getCoordinators, getSFs, assignStudentsToClasses
 } from "../api/admin";
 
 
@@ -35,4 +35,8 @@ export const useValidateStudents = () => useMutation({
 
 export const useSyncThinkific = () => useMutation({
     mutationFn: syncThinkificUsers
+});
+
+export const useAssignStudentsToClasses = () => useMutation({
+    mutationFn: assignStudentsToClasses
 });

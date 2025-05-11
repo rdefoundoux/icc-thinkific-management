@@ -32,3 +32,8 @@ export const getSFs = async () => {
     const response = await axios.get(`${API_BASE}/api/v1/admin/sfs`);
     return response.data;
 };
+
+export const assignStudentsToClasses = async (assignments) => {
+    const response = await axios.post(`${API_BASE}/api/v1/admin/assign-students`, { assignments });
+    return response.data;
+};
