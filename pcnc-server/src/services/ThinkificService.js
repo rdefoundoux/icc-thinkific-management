@@ -346,7 +346,22 @@ class ThinkificService {
             return null;
         }
     }
+    static async createUser(userData) {
+        try {
+            const response = await axios.post(`${API_BASE}/users`, {
+                first_name: userData.firstName,
+                last_name: userData.lastName,
+                email: userData.email
+            }, {
+                headers: this.headers()
+            });
 
+            return response.data;
+        } catch (error) {
+            console.error('Error creating Thinkific user:', error.response?.data || error.message);
+            throw error;
+        }
+    }
 
 }
 
