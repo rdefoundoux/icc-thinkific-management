@@ -59,6 +59,7 @@ export const syncThinkificUsers = async (req, res) => {
 
         res.json(results);
     } catch (error) {
+        console.error('Error syncing Thinkific users:', error);
         res.status(500).json({ error: error.message });
     }
 };
