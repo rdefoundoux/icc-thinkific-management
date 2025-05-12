@@ -28,6 +28,7 @@ export const createClass = async (classData) => {
 
 export const updateClass = async (classId, classData) => {
     const response = await axios.put(`${API_BASE}/classes/${classId}`, classData);
+    console.log("update response: ",response);
     return response.data;
 };
 

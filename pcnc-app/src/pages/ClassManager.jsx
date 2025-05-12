@@ -17,6 +17,7 @@ import CourseAssignmentModal from '../components/CourseAssignmentModal';
 import AssignStudentsModal from '../components/AssignStudentsModal';
 import ClassDetailsModal from '../components/ClassDetailsModal';
 import { useMediaQuery } from '@mantine/hooks';
+import {updateClass, createClass} from '../api/classes';
 
 const columnStyles = [
     { minWidth: 90 },   // Type
@@ -119,6 +120,7 @@ const ClassManager = () => {
     const handleFormSubmit = async (values) => {
         try {
             if (selectedClass?._id) {
+                console.log("selectedClass : ", selectedClass);
                 // Update existing class
                 await updateClass(selectedClass._id, values);
             } else {

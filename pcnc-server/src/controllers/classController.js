@@ -228,7 +228,7 @@ export const createClass = async (req, res) => {
  */
 export const updateClass = async (req, res) => {
     try {
-        const classId = req.params.classId;
+        const classId = req.params.id;
         const {
             type, region, version, className, courseCode,
             month, year, dayName, hour, minutes, lang, ...otherFields
