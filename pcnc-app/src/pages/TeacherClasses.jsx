@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     ActionIcon, Avatar, Badge, Box, Button, Card, Flex, Group,
-    Progress, Text, Menu, LoadingOverlay, Select
+    Progress, Text, Menu, LoadingOverlay, Select, ScrollArea, useMantineTheme
 } from '@mantine/core';
 import { IconEdit, IconUsers, IconCertificate, IconUserPlus } from '@tabler/icons-react';
 import { MantineReactTable } from 'mantine-react-table';
@@ -13,6 +13,7 @@ import AssignCoordinatorModal from '../components/AssignCoordinatorModal';
 import AssignSFModal from '../components/AssignSFModal';
 import AssignRSFModal from '../components/AssignRSFModal';
 import AssignStudentsModal from '../components/AssignStudentsModal';
+import { useMediaQuery } from '@mantine/hooks';
 import "../styles/dashboard.css";
 
 const TeacherClasses = () => {
@@ -20,6 +21,8 @@ const TeacherClasses = () => {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const [activeModal, setActiveModal] = useState({ type: null, classId: null });
+    const theme = useMantineTheme();
+    const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
 
     const { data: classes, isLoading } = useQuery({
         queryKey: ['teacherClasses', user._id],
@@ -162,6 +165,12 @@ const TeacherClasses = () => {
         }
     ], [t]);
 
+    // Helper for role assignment modals
+    const handleRoleAssignment = (classId, type, value) => {
+        queryClient.invalidateQueries(['teacherClasses', user._id]);
+        setActiveModal({ type: null });
+    };
+
     return (
         <Box p="md" className="teacher-dashboard">
             <Text size="xl" fw={700} mb="md" className="dashboard-title">
@@ -172,7 +181,7 @@ const TeacherClasses = () => {
 
             {classes?.map((cls) => (
                 <Card key={cls._id} mb="xl" shadow="sm" padding="lg" radius="md" className="class-card">
-                    <Group position="apart" mb="md">
+                    <Group position="apart" mb="md" wrap="wrap">
                         <Group spacing="xs">
                             <Text fw={600} className="class-name">
                                 {cls.thinkificGroupName}
@@ -182,7 +191,7 @@ const TeacherClasses = () => {
                             </Badge>
                         </Group>
 
-                        <Group spacing="xl">
+                        <Group spacing="xl" wrap="wrap">
                             <Menu shadow="md" position="bottom-end">
                                 <Menu.Target>
                                     <Button variant="light" leftIcon={<IconUserPlus size={16} />}>
@@ -220,7 +229,7 @@ const TeacherClasses = () => {
                         </Group>
                     </Group>
 
-                    <Group spacing="xl" mb="md">
+                    <Group spacing="xl" mb="md" wrap="wrap">
                         <div className="role-section">
                             <Text size="sm" c="dimmed">{t('common.coordinators')}:</Text>
                             <Group spacing="xs">
@@ -259,22 +268,24 @@ const TeacherClasses = () => {
                         </div>
                     </Group>
 
-                    <MantineReactTable
-                        columns={studentColumns}
-                        data={cls.students}
-                        enableColumnResizing
-                        enableEditing
-                        editingMode="row"
-                        mantineTableContainerProps={{
-                            className: "student-table-container",
-                            style: { maxHeight: 'calc(100vh - 310px)' }
-                        }}
-                        renderRowActions={({ row }) => (
-                            <ActionIcon onClick={() => row.toggleEditMode()}>
-                                <IconEdit size={20} />
-                            </ActionIcon>
-                        )}
-                    />
+                    <ScrollArea type="auto" style={{ maxWidth: '100vw', minWidth: isMobile ? 0 : 700 }}>
+                        <MantineReactTable
+                            columns={studentColumns}
+                            data={cls.students}
+                            enableColumnResizing
+                            enableEditing
+                            editingMode="row"
+                            mantineTableContainerProps={{
+                                className: "student-table-container",
+                                style: { maxHeight: 'calc(100vh - 310px)' }
+                            }}
+                            renderRowActions={({ row }) => (
+                                <ActionIcon onClick={() => row.toggleEditMode()}>
+                                    <IconEdit size={20} />
+                                </ActionIcon>
+                            )}
+                        />
+                    </ScrollArea>
                 </Card>
             ))}
 
@@ -283,21 +294,21 @@ const TeacherClasses = () => {
                 opened={activeModal.type === 'coordinator'}
                 onClose={() => setActiveModal({ type: null })}
                 classObj={classes?.find(c => c._id === activeModal.classId)}
-                onAssigned={(userId) => handleRoleAssignment(activeModal.classId, 'coordinator', userId)}
+                onAssigned={() => handleRoleAssignment(activeModal.classId, 'coordinator')}
             />
 
             <AssignSFModal
                 opened={activeModal.type === 'sf'}
                 onClose={() => setActiveModal({ type: null })}
                 classObj={classes?.find(c => c._id === activeModal.classId)}
-                onAssigned={(userIds) => handleRoleAssignment(activeModal.classId, 'sf', userIds)}
+                onAssigned={() => handleRoleAssignment(activeModal.classId, 'sf')}
             />
 
             <AssignRSFModal
                 opened={activeModal.type === 'rsf'}
                 onClose={() => setActiveModal({ type: null })}
                 classObj={classes?.find(c => c._id === activeModal.classId)}
-                onAssigned={(userId) => handleRoleAssignment(activeModal.classId, 'rsf', userId)}
+                onAssigned={() => handleRoleAssignment(activeModal.classId, 'rsf')}
             />
 
             <AssignStudentsModal

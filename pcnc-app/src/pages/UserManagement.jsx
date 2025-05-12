@@ -27,6 +27,8 @@ import {
 } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { ScrollArea, useMantineTheme } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import debounce from 'lodash.debounce';
 
 const ROLE_OPTIONS = [
@@ -44,6 +46,8 @@ function validateRoles(roles) {
 }
 
 export default function UserManagement() {
+    const theme = useMantineTheme();
+    const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
     const { user: currentUser } = useAuth();
     const { t } = useTranslation();
     const [users, setUsers] = useState([]);
@@ -236,8 +240,8 @@ export default function UserManagement() {
     return (
         <div className="classter-container">
             {/* Control Bar */}
-            <Group position="apart" mb="md">
-                <Group>
+            <Group position="apart" mb="md" wrap="wrap">
+                <Group wrap="wrap">
                     <TextInput
                         placeholder={t('common.searchUsers')}
                         icon={<IconSearch size={18} />}
@@ -253,7 +257,7 @@ export default function UserManagement() {
                         style={{ width: 220 }}
                     />
                 </Group>
-                <Group>
+                <Group wrap="wrap">
                     <Select
                         data={[
                             { value: '10', label: '10 per page' },
@@ -292,55 +296,57 @@ export default function UserManagement() {
             {loading ? (
                 <Loader />
             ) : (
-                <Table highlightOnHover withColumnBorders className="classter-table">
-                    <thead>
-                    <tr>
-                        <th>{t('loginPage.emailAddress')}</th>
-                        <th>{t('common.name')}</th>
-                        <th>{t('common.roles')}</th>
-                        <th>{t('classManager.actions')}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {users.map((u) => (
-                        <tr key={u._id || u.email}>
-                            <td>{u.email}</td>
-                            <td>
-                                {u.firstName} {u.lastName}
-                            </td>
-                            <td>
-                                <Group spacing="xs">
-                                    {u.roles.map((role) => (
-                                        <Badge key={role} variant={role}>
-                                            {role}
-                                        </Badge>
-                                    ))}
-                                </Group>
-                            </td>
-                            <td>
-                                <Group spacing="xs">
-                                    <Tooltip label={t('common.edit')}>
-                                        <ActionIcon
-                                            color="blue"
-                                            onClick={() => handleEditClick(u)}
-                                        >
-                                            <IconEdit size={18} />
-                                        </ActionIcon>
-                                    </Tooltip>
-                                    <Tooltip label={t('common.attendance')}>
-                                        <ActionIcon
-                                            color="teal"
-                                            onClick={() => handleAttendanceClick(u)}
-                                        >
-                                            <IconCalendarEvent size={18} />
-                                        </ActionIcon>
-                                    </Tooltip>
-                                </Group>
-                            </td>
+                <ScrollArea type="auto" style={{ maxWidth: '100vw', minWidth: isMobile ? 0 : 700 }}>
+                    <Table highlightOnHover withColumnBorders className="classter-table" style={{ minWidth: 600 }}>
+                        <thead>
+                        <tr>
+                            <th>{t('loginPage.emailAddress')}</th>
+                            <th>{t('common.name')}</th>
+                            <th>{t('common.roles')}</th>
+                            <th>{t('classManager.actions')}</th>
                         </tr>
-                    ))}
-                    </tbody>
-                </Table>
+                        </thead>
+                        <tbody>
+                        {users.map((u) => (
+                            <tr key={u._id || u.email}>
+                                <td>{u.email}</td>
+                                <td>
+                                    {u.firstName} {u.lastName}
+                                </td>
+                                <td>
+                                    <Group spacing="xs" wrap="wrap">
+                                        {u.roles.map((role) => (
+                                            <Badge key={role} variant={role}>
+                                                {role}
+                                            </Badge>
+                                        ))}
+                                    </Group>
+                                </td>
+                                <td>
+                                    <Group spacing="xs">
+                                        <Tooltip label={t('common.edit')}>
+                                            <ActionIcon
+                                                color="blue"
+                                                onClick={() => handleEditClick(u)}
+                                            >
+                                                <IconEdit size={18} />
+                                            </ActionIcon>
+                                        </Tooltip>
+                                        <Tooltip label={t('common.attendance')}>
+                                            <ActionIcon
+                                                color="teal"
+                                                onClick={() => handleAttendanceClick(u)}
+                                            >
+                                                <IconCalendarEvent size={18} />
+                                            </ActionIcon>
+                                        </Tooltip>
+                                    </Group>
+                                </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </Table>
+                </ScrollArea>
             )}
 
             <Pagination

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, Select, Loader, Button, Text } from '@mantine/core';
+import { Modal, Select, Loader, Button, Stack } from '@mantine/core';
 
 export default function CourseAssignmentModal({ classId, opened, onClose, onAssigned }) {
     const [courses, setCourses] = useState([]);
@@ -18,12 +18,12 @@ export default function CourseAssignmentModal({ classId, opened, onClose, onAssi
 
     const handleAssign = async () => {
         if (!selectedCourse) return;
-
+        setAssigning(true);
         await fetch( `${import.meta.env.VITE_API_BASE_URL}/api/v1/classes/${classId}/courses`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                courseId: Number(selectedCourse) // Convert to number
+                courseId: Number(selectedCourse)
             })
         });
         setAssigning(false);
@@ -32,33 +32,36 @@ export default function CourseAssignmentModal({ classId, opened, onClose, onAssi
     };
 
     return (
-        <Modal opened={opened} onClose={onClose} title="Assign Thinkific Course" size="md">
-            {loading ? (
-                <Loader />
-            ) : (
-                <>
-                    <Select
-                        label="Select course"
-                        data={courses.map(c => ({
-                            value: c.id.toString(), // Ensure string for Mantine Select
-                            label: c.name
-                        }))}
-                        value={selectedCourse}
-                        onChange={setSelectedCourse}
-                        searchable
-                        nothingFound="No courses found"
-                    />
-                    <Button
-                        mt="md"
-                        disabled={!selectedCourse}
-                        loading={assigning}
-                        onClick={handleAssign}
-                        fullWidth
-                    >
-                        Assign Course
-                    </Button>
-                </>
-            )}
+        <Modal opened={opened} onClose={onClose} title="Assign Thinkific Course" size={{ base: '100%', sm: 400 }} centered>
+            <Stack>
+                {loading ? (
+                    <Loader />
+                ) : (
+                    <>
+                        <Select
+                            label="Select course"
+                            data={courses.map(c => ({
+                                value: c.id.toString(),
+                                label: c.name
+                            }))}
+                            value={selectedCourse}
+                            onChange={setSelectedCourse}
+                            searchable
+                            nothingFound="No courses found"
+                            fullWidth
+                        />
+                        <Button
+                            mt="md"
+                            disabled={!selectedCourse}
+                            loading={assigning}
+                            onClick={handleAssign}
+                            fullWidth
+                        >
+                            Assign Course
+                        </Button>
+                    </>
+                )}
+            </Stack>
         </Modal>
     );
 }

@@ -1,4 +1,4 @@
-import { Modal, Select, Button, Loader, Group } from '@mantine/core';
+import { Modal, Select, Button, Loader, Group, Stack } from '@mantine/core';
 import { useState } from 'react';
 import useTeachers from '../hooks/useTeachers';
 import { notifications } from '@mantine/notifications';
@@ -41,26 +41,36 @@ const AssignTeacherModal = ({ opened, onClose, classObj, onAssigned }) => {
     };
 
     return (
-        <Modal opened={opened} onClose={onClose} title="Assign Teacher" centered>
-            {loading ? (
-                <Loader />
-            ) : (
-                <Select
-                    label="Select Teacher"
-                    placeholder="Choose a teacher"
-                    data={teachers.map(t => ({
-                        value: t._id,
-                        label: `${t.firstName} ${t.lastName} (${t.email})`,
-                    }))}
-                    value={selectedTeacher}
-                    onChange={setSelectedTeacher}
-                />
-            )}
-            <Group position="right" mt="md">
-                <Button onClick={handleAssign} loading={assigning} disabled={!selectedTeacher}>
-                    Assign
-                </Button>
-            </Group>
+        <Modal
+            opened={opened}
+            onClose={onClose}
+            title="Assign Teacher"
+            size={{ base: '100%', sm: 400 }}
+            centered
+        >
+            <Stack>
+                {loading ? (
+                    <Loader />
+                ) : (
+                    <Select
+                        label="Select Teacher"
+                        placeholder="Choose a teacher"
+                        data={teachers.map(t => ({
+                            value: t._id,
+                            label: `${t.firstName} ${t.lastName} (${t.email})`,
+                        }))}
+                        value={selectedTeacher}
+                        onChange={setSelectedTeacher}
+                        searchable
+                        fullWidth
+                    />
+                )}
+                <Group position="right" mt="md" grow>
+                    <Button onClick={handleAssign} loading={assigning} disabled={!selectedTeacher} fullWidth>
+                        Assign
+                    </Button>
+                </Group>
+            </Stack>
         </Modal>
     );
 };

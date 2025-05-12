@@ -1,24 +1,18 @@
 import React, { useEffect, useState } from "react";
 import {
-    Avatar,
-    Card,
-    Text,
-    Title,
-    Button,
-    SimpleGrid,
-    Group,
-    Stack,
-    Progress,
-    Loader,
+    Avatar, Card, Text, Title, Button, SimpleGrid, Group, Stack, Progress, Loader, useMantineTheme
 } from "@mantine/core";
 import { IconMail, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { useAuth } from "../context/AuthContext";
 import { Navigate } from "react-router-dom";
+import { useMediaQuery } from "@mantine/hooks";
 
 const ProfilePage = () => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [userData, setUserData] = useState(null);
+    const theme = useMantineTheme();
+    const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
 
     const fetchUserData = async () => {
         setLoading(true);
@@ -43,7 +37,7 @@ const ProfilePage = () => {
 
     return (
         <SimpleGrid
-            cols={3}
+            cols={isMobile ? 1 : 3}
             spacing="xl"
             p="xl"
             breakpoints={[{ maxWidth: "md", cols: 1 }]}
@@ -64,7 +58,7 @@ const ProfilePage = () => {
                     </Button>
                 </Stack>
             </Card>
-            <Card withBorder shadow="xl" p="xl" radius="md" style={{ gridColumn: "span 2" }}>
+            <Card withBorder shadow="xl" p="xl" radius="md" style={{ gridColumn: isMobile ? undefined : "span 2" }}>
                 <Title order={4} mb="lg">
                     Learning Progress
                 </Title>
@@ -74,7 +68,7 @@ const ProfilePage = () => {
                     </Group>
                 ) : (
                     <SimpleGrid
-                        cols={3}
+                        cols={isMobile ? 1 : 3}
                         spacing="xl"
                         breakpoints={[{ maxWidth: "sm", cols: 1 }]}
                     >
@@ -109,7 +103,7 @@ const StatCard = ({ label, value, color, children }) => (
             <Text size="sm" color="dimmed">
                 {label}
             </Text>
-            <Text size={24} weight={600} color={color}>
+            <Text size={24} fw={600} color={color}>
                 {value}
             </Text>
             {children}

@@ -228,31 +228,57 @@ export const createClass = async (req, res) => {
  */
 export const updateClass = async (req, res) => {
     try {
-        // Optionally, fetch new group name from Thinkific if thinkificGroupId is changed
-        let thinkificGroupName;
-        if (req.body.thinkificGroupId) {
-            const group = await ThinkificService.getGroup(req.body.thinkificGroupId);
-            thinkificGroupName = group?.name;
-        }
+        const classId = req.params.classId;
+        const {
+            type, region, version, className, courseCode,
+            month, year, dayName, hour, minutes, lang, ...otherFields
+        } = req.body;
 
-        const updatedClass = await Class.findByIdAndUpdate(
-            req.params.id,
-            {
-                ...req.body,
-                ...(thinkificGroupName ? { thinkificGroupName } : {})
-            },
-            { new: true, runValidators: true }
-        ).populate('teacher coordinator rsf sf students', 'firstName lastName');
+        const formattedClassName = formatClassName({
+            type, region, version, className, courseCode,
+            month, year, dayName, hour, minutes, lang
+        });
 
-        if (!updatedClass) {
+        const existingClass = await Class.findById(classId);
+        if (!existingClass) {
             return res.status(404).json({ error: 'Class not found' });
         }
 
-        res.json(updatedClass);
+        // Update Thinkific group if name changed
+        if (formattedClassName !== existingClass.thinkificGroupName) {
+            await ThinkificService.updateGroup(
+                existingClass.thinkificGroupId,
+                { name: formattedClassName }
+            );
+        }
+
+        // Update local class
+        const updatedClass = await Class.findByIdAndUpdate(
+            classId,
+            {
+                ...otherFields,
+                type,
+                region,
+                version,
+                className,
+                courseCode,
+                month,
+                year,
+                dayName,
+                hour,
+                minutes,
+                lang,
+                thinkificGroupName: formattedClassName
+            },
+            { new: true }
+        );
+
+        res.json({ success: true, data: updatedClass });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(500).json({ error: error.message });
     }
 };
+
 
 /**
  * Retrieves detailed information about a single class, including Thinkific data.

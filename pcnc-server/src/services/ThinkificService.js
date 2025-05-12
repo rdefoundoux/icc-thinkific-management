@@ -133,7 +133,21 @@ class ThinkificService {
             this.handleError(error, 'Failed to create group');
         }
     }
-
+    static async updateGroup(groupId, { name, description = '' }) {
+        try {
+            const response = await axios.put(
+                `${API_BASE}/groups/${groupId}`,
+                { name, description },
+                {
+                    headers: this.headers()
+                }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error updating Thinkific group:', error.response?.data || error.message);
+            throw new Error('Failed to update Thinkific group');
+        }
+    }
     static async addUserToGroup(thinkificUserId, groupId) {
         let groupName; // Declare outside try/catch scope
         try {

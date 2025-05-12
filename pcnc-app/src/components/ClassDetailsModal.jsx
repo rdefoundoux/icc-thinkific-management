@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
     Modal, Group, Text, Avatar, Title, Badge, Loader,
-    Stack, Paper, Image, Flex, Divider, Grid, ActionIcon
+    Stack, Paper, Divider, Grid
 } from '@mantine/core';
 import { MantineReactTable } from 'mantine-react-table';
-import { IconUsers, IconCertificate, IconZoomCheck, IconFilter, IconArrowsSort } from '@tabler/icons-react';
+import { IconUsers, IconCertificate, IconZoomCheck } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { MRT_Localization_EN } from 'mantine-react-table/locales/en/index.cjs';
 import { MRT_Localization_FR } from 'mantine-react-table/locales/fr/index.cjs';
@@ -17,8 +17,6 @@ const localeMap = {
 export default function ClassDetailsModal({ opened, onClose, classData }) {
     const { t } = useTranslation();
     const { i18n } = useTranslation();
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
     const currentLocale = localeMap[i18n.language] || MRT_Localization_EN;
 
     const staff = classData?.staff || {
@@ -37,7 +35,7 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                 <Group>
                     <Avatar src={row.original.avatarUrl} size={40} radius="xl" />
                     <div>
-                        <Text weight={500}>{row.original.firstName} {row.original.lastName}</Text>
+                        <Text fw={500}>{row.original.firstName} {row.original.lastName}</Text>
                         <Text size="sm" c="dimmed">{row.original.email}</Text>
                     </div>
                 </Group>
@@ -85,7 +83,7 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
         <Modal
             opened={opened}
             onClose={onClose}
-            size="100%"
+            size={{ base: '100%', sm: '90vw', md: '80vw', lg: '70vw' }}
             title={
                 <Group spacing="xs">
                     <IconZoomCheck size={24} />
@@ -93,6 +91,8 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                 </Group>
             }
             overlayProps={{ blur: 3 }}
+            centered
+            scrollAreaComponent="div"
         >
             {!classData ? (
                 <Loader />
@@ -100,9 +100,9 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                 <Stack spacing="lg">
                     {/* Class Header */}
                     <Paper p="md" withBorder shadow="xs">
-                        <Group position="apart">
+                        <Group position="apart" wrap="wrap">
                             <div>
-                                <Text size="xl" weight={600}>{classData.thinkificGroupName}</Text>
+                                <Text size="xl" fw={600}>{classData.thinkificGroupName}</Text>
                                 <Text c="dimmed">{classData.courseCode} • {classData.students?.length} {t('common.students')}</Text>
                             </div>
                             <Badge
@@ -119,14 +119,14 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                     <Paper p="md" withBorder>
                         <Title order={4} mb="md">{t('classDetails.teachingTeam')}</Title>
                         <Grid gutter="xl">
-                            <Grid.Col span={6}>
+                            <Grid.Col span={{ base: 12, sm: 6 }}>
                                 <div>
                                     <Text size="sm" c="dimmed" mb="xs">{t('classManager.teacher')}</Text>
                                     {staff.teacher ? (
                                         <Group>
                                             <Avatar src={staff.teacher.avatarUrl} size="lg" />
                                             <div>
-                                                <Text weight={500}>{staff.teacher.firstName} {staff.teacher.lastName}</Text>
+                                                <Text fw={500}>{staff.teacher.firstName} {staff.teacher.lastName}</Text>
                                                 <Text size="sm" c="dimmed">{staff.teacher.email}</Text>
                                             </div>
                                         </Group>
@@ -136,14 +136,14 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                                 </div>
                             </Grid.Col>
 
-                            <Grid.Col span={6}>
+                            <Grid.Col span={{ base: 12, sm: 6 }}>
                                 <div>
                                     <Text size="sm" c="dimmed" mb="xs">{t('common.coordinator')}</Text>
                                     {staff.coordinator ? (
                                         <Group>
                                             <Avatar src={staff.coordinator.avatarUrl} size="lg" />
                                             <div>
-                                                <Text weight={500}>{staff.coordinator.firstName} {staff.coordinator.lastName}</Text>
+                                                <Text fw={500}>{staff.coordinator.firstName} {staff.coordinator.lastName}</Text>
                                                 <Text size="sm" c="dimmed">{staff.coordinator.email}</Text>
                                             </div>
                                         </Group>
@@ -156,19 +156,18 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
 
                         <Divider my="md" />
 
-                        <Grid gutter="xl"  style={{ height: '100%', overflow: 'auto'}}>
-                            <Grid.Col span={6}>
+                        <Grid gutter="xl">
+                            <Grid.Col span={{ base: 12, sm: 6 }}>
                                 <div>
                                     <Text size="sm" c="dimmed" mb="xs">{t('common.rsf')}</Text>
                                     {staff.rsf?.length > 0 ? (
-                                        <Group spacing="xs">
+                                        <Group spacing="xs" wrap="wrap">
                                             {staff.rsf.map((rsf, i) => (
                                                 <Badge
                                                     key={i}
                                                     variant="dot"
                                                     color="blue"
                                                     leftSection={<Avatar src={rsf.avatarUrl} size={20} radius="xl" />}
-                                                    style={{ height: '100%' }}
                                                 >
                                                     {rsf.firstName} {rsf.lastName}
                                                 </Badge>
@@ -180,18 +179,17 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                                 </div>
                             </Grid.Col>
 
-                            <Grid.Col span={6}>
+                            <Grid.Col span={{ base: 12, sm: 6 }}>
                                 <div>
                                     <Text size="sm" c="dimmed" mb="xs">{t('common.sf')}</Text>
                                     {staff.sf?.length > 0 ? (
-                                        <Group spacing="xs">
+                                        <Group spacing="xs" wrap="wrap">
                                             {staff.sf.map((sf, i) => (
                                                 <Badge
                                                     key={i}
                                                     variant="dot"
                                                     color="grape"
                                                     leftSection={<Avatar src={sf.avatarUrl} size={20} radius="xl" />}
-                                                    style={{ height: '100%' }}
                                                 >
                                                     {sf.firstName} {sf.lastName}
                                                 </Badge>
@@ -224,9 +222,7 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                                 striped: true,
                             }}
                             mantineTableContainerProps={{
-                                style: {  maxHeight: '100%', // Use 100% or a specific height like 500px
-                                    overflowY: 'auto',
-                                },
+                                style: { maxHeight: 400, overflowY: 'auto' },
                             }}
                             mantineTableHeadCellFilterTextFieldProps={{
                                 variant: 'filled',
@@ -247,7 +243,7 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                             renderTopToolbarCustomActions={() => (
                                 <Group spacing="xs" px="sm">
                                     <IconUsers size={20} />
-                                    <Text size="lg" weight={600}>
+                                    <Text size="lg" fw={600}>
                                         {classData.students?.length} {t('common.students')}
                                     </Text>
                                 </Group>

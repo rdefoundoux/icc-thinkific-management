@@ -55,8 +55,7 @@ const AdminDashboard = () => {
 
     const handleValidate = async () => {
         try {
-            // First validate the students
-            await validateMutation.mutateAsync(selectedStudents);
+
 
             // Get the selected pending students with their details
             const selectedStudentsDetails = pendingStudents.filter(
@@ -68,26 +67,32 @@ const AdminDashboard = () => {
 
             selectedStudentsDetails.forEach(student => {
                 if (student.preferredSchedule) {
-                    const matchingClass = classes?.find(cls =>
-                        cls.thinkificGroupName === student.preferredSchedule
-                    );
+                    // preferredSchedule is the class ID
+                    const matchingClass = classes?.find(cls => {
+                        console.log(`Class _id: ${cls._id}, Student Preferred Schedule: ${student.preferredSchedule}`); // Log both values
+                        return cls._id === student.preferredSchedule; // Compare by _id, not group name!
+                    });
 
                     if (matchingClass && !matchingClass.students.includes(student._id)) {
                         assignments.push({
                             classId: matchingClass._id,
                             studentId: student._id
                         });
+
                     }
                 }
             });
 
+
             // Assign students to classes
             if (assignments.length > 0) {
                 await assignMutation.mutateAsync(assignments);
+                // Finally, sync with Thinkific
+                await syncMutation.mutateAsync(selectedStudents);
+
             }
 
-            // Finally, sync with Thinkific
-            await syncMutation.mutateAsync(selectedStudents);
+
 
             // Clear selection and refresh data
             setSelectedStudents([]);

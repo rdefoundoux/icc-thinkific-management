@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Select, Loader, Group } from '@mantine/core';
+import { Modal, Button, Select, Loader, Group, Stack } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
 const AssignCoordinatorModal = ({ opened, onClose, classObj, onAssigned }) => {
@@ -33,7 +33,13 @@ const AssignCoordinatorModal = ({ opened, onClose, classObj, onAssigned }) => {
     };
 
     return (
-        <Modal opened={opened} onClose={onClose} title={t('classManager.assignCoordinator')}>
+        <Modal
+            opened={opened}
+            onClose={onClose}
+            title={t('classManager.assignCoordinator')}
+            size={{ base: '100%', sm: 400 }}
+            centered
+        >
             {loading ? (
                 <Loader />
             ) : (
@@ -43,20 +49,27 @@ const AssignCoordinatorModal = ({ opened, onClose, classObj, onAssigned }) => {
                         handleAssign();
                     }}
                 >
-                    <Select
-                        label={t('classManager.selectCoordinator')}
-                        placeholder={t('classManager.selectCoordinator')}
-                        data={users.map(u => ({
-                            value: u._id,
-                            label: `${u.firstName} ${u.lastName} (${u.email})`
-                        }))}
-                        value={coordinatorId}
-                        onChange={setCoordinatorId}
-                        required
-                    />
-                    <Group mt="md" position="right">
-                        <Button type="submit" disabled={!coordinatorId}>{t('common.assign')}</Button>
-                    </Group>
+                    <Stack>
+                        <Select
+                            label={t('classManager.selectCoordinator')}
+                            placeholder={t('classManager.selectCoordinator')}
+                            data={users.map(u => ({
+                                value: u._id,
+                                label: `${u.firstName} ${u.lastName} (${u.email})`
+                            }))}
+                            value={coordinatorId}
+                            onChange={setCoordinatorId}
+                            required
+                            searchable
+                            nothingFound={t('common.noUsersFound')}
+                            fullWidth
+                        />
+                        <Group mt="md" position="right" grow>
+                            <Button type="submit" disabled={!coordinatorId} fullWidth>
+                                {t('common.assign')}
+                            </Button>
+                        </Group>
+                    </Stack>
                 </form>
             )}
         </Modal>

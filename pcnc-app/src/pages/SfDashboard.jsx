@@ -1,16 +1,24 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from 'axios';
 import {
     ActionIcon, Avatar, Badge, Box, Checkbox, Flex, Group,
-    NumberInput, Progress, Text, TextInput, Tooltip, Card, Button
+    NumberInput, Progress, Text, TextInput, Tooltip, Card, Button, ScrollArea, useMantineTheme
 } from '@mantine/core';
-import { IconEdit, IconCheck, IconX, IconPlus, IconCertificate } from '@tabler/icons-react';
+import { IconEdit, IconCheck, IconX, IconPlus } from '@tabler/icons-react';
 import { MantineReactTable } from 'mantine-react-table';
 import { getClassesBySF, updateStudentResults } from '../api/classes';
 import { useTranslation } from 'react-i18next';
-import "../styles/dashboard.css";
+import { useMediaQuery } from '@mantine/hooks';
+
+function getLanguageNameFromCode(code) {
+    switch (code) {
+        case 'fr': return 'Français';
+        case 'en': return 'English';
+        default: return code;
+    }
+}
 
 const SfDashboard = () => {
     const { i18n } = useTranslation();
@@ -18,6 +26,8 @@ const SfDashboard = () => {
     const currentLanguage = getLanguageNameFromCode(currentLanguageCode);
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const theme = useMantineTheme();
+    const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
 
     const { data: classes, refetch } = useQuery({
         queryKey: ['sfClasses', user._id],
@@ -77,7 +87,7 @@ const SfDashboard = () => {
                 <Group spacing="sm">
                     <Avatar src={row.original.avatarUrl} size={40} radius="xl" />
                     <div>
-                        <Text className="student-name">{row.original.firstName} {row.original.lastName}</Text>
+                        <Text fw={500}>{row.original.firstName} {row.original.lastName}</Text>
                         <Text size="sm" c="dimmed">{row.original.email}</Text>
                     </div>
                 </Group>
@@ -89,8 +99,8 @@ const SfDashboard = () => {
             header: 'WHATSAPP',
             size: 150,
             Cell: ({ row }) => (
-                <Text className="whatsapp-number">
-                    {row.original.whatsappNumber?.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')}
+                <Text>
+                    {row.original.whatsappNumber}
                 </Text>
             )
         },
@@ -123,13 +133,13 @@ const SfDashboard = () => {
             header: 'PRÉSENCE',
             size: 200,
             Cell: ({ row }) => (
-                <div className="attendance-container">
+                <div>
                     {(row.original.attendance || []).map((att, i) => {
                         const percentage = att.totalDays > 0
                             ? (att.presentDays / att.totalDays) * 100
                             : 0;
                         return (
-                            <div key={i} className="attendance-item">
+                            <div key={i}>
                                 <Text size="xs" fw={500}>{att.name}</Text>
                                 <Badge color="blue" size="sm" variant="light">
                                     {att.presentDays}/{att.totalDays}
@@ -146,12 +156,12 @@ const SfDashboard = () => {
                 </div>
             ),
             Edit: ({ row }) => {
-                const [attendance, setAttendance] = useState([...(row.original.attendance || [])]);
-                useEffect(() => { row._valuesCache.attendance = attendance; }, [attendance]);
+                const [attendance, setAttendance] = React.useState([...(row.original.attendance || [])]);
+                React.useEffect(() => { row._valuesCache.attendance = attendance; }, [attendance]);
                 return (
-                    <Flex direction="column" gap="sm" className="attendance-edit">
+                    <Flex direction="column" gap="sm">
                         {attendance.map((att, i) => (
-                            <Box key={i} className="attendance-edit-box">
+                            <Box key={i}>
                                 <Text size="xs" fw={500} mb={4}>Session {i + 1}</Text>
                                 <Flex direction="column" gap="xs">
                                     <TextInput
@@ -216,14 +226,13 @@ const SfDashboard = () => {
             header: 'RÉSULTATS',
             size: 200,
             Cell: ({ row }) => (
-                <div className="results-container">
+                <div>
                     {(row.original.results?.tests || []).map((test, i) => (
-                        <div key={i} className="test-result">
+                        <div key={i}>
                             <Text size="xs">{test.name}</Text>
                             <Badge
                                 variant="light"
                                 color={test.score >= 70 ? 'green' : 'orange'}
-                                className="test-score"
                             >
                                 {test.score}%
                             </Badge>
@@ -232,12 +241,12 @@ const SfDashboard = () => {
                 </div>
             ),
             Edit: ({ row }) => {
-                const [tests, setTests] = useState([...(row.original.results?.tests || [])]);
-                useEffect(() => { row._valuesCache.results = { tests }; }, [tests]);
+                const [tests, setTests] = React.useState([...(row.original.results?.tests || [])]);
+                React.useEffect(() => { row._valuesCache.results = { tests }; }, [tests]);
                 return (
-                    <Flex direction="column" gap="sm" className="results-edit">
+                    <Flex direction="column" gap="sm">
                         {tests.map((test, i) => (
-                            <Box key={i} className="results-edit-box">
+                            <Box key={i}>
                                 <Text size="xs" fw={500} mb={4}>Test {i + 1}</Text>
                                 <Flex direction="column" gap="xs">
                                     <TextInput
@@ -291,34 +300,36 @@ const SfDashboard = () => {
             accessorKey: 'enrolledCourses',
             header: 'INSCRIPTION AU COURS',
             size: 200,
-            Cell: ({ row }) => (
-                <div className="course-enrollment-container">
-                    {['001', '101', '201'].map(courseCode => (
-                        <div
-                            key={courseCode}
-                            className={`course-checkbox ${row.original.enrolledCourses?.includes(courseCode) ? 'enrolled' : ''}`}
-                        >
-                            <Checkbox
-                                checked={row.original.enrolledCourses?.includes(courseCode)}
-                                readOnly
-                                className="enrollment-checkbox"
-                            />
-                            <div className="course-label">
-                                <Text className="course-code">{courseCode}</Text>
-                                <Text className="course-lang">({currentLanguageCode.toUpperCase()})</Text>
+            Cell: ({ row }) => {
+                const enrolled = row.original.enrolledCourses || [];
+                return (
+                    <div>
+                        {['001', '101', '201'].map(courseCode => (
+                            <div
+                                key={courseCode}
+                                style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                            >
+                                <Checkbox
+                                    checked={enrolled.includes(courseCode)}
+                                    readOnly
+                                />
+                                <div>
+                                    <Text>{courseCode}</Text>
+                                    <Text size="xs">({currentLanguageCode.toUpperCase()})</Text>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            ),
+                        ))}
+                    </div>
+                );
+            },
             Edit: ({ row }) => {
-                const [initialCourses] = useState(row.original.enrolledCourses || []);
-                const [checkedCourses, setCheckedCourses] = useState([...initialCourses]);
+                const initialCourses = row.original.enrolledCourses || [];
+                const [checkedCourses, setCheckedCourses] = React.useState([...initialCourses]);
 
                 return (
-                    <div className="course-enrollment-edit">
+                    <div>
                         {['001', '101', '201'].map(courseCode => (
-                            <div key={courseCode} className="course-edit-item">
+                            <div key={courseCode} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                 <Checkbox
                                     checked={checkedCourses.includes(courseCode)}
                                     onChange={(e) => {
@@ -331,11 +342,10 @@ const SfDashboard = () => {
                                             removed: initialCourses.filter(c => !newCourses.includes(c))
                                         };
                                     }}
-                                    className="enrollment-edit-checkbox"
                                 />
-                                <div className="course-edit-label">
-                                    <Text className="course-code">{courseCode}</Text>
-                                    <Text className="course-lang">({currentLanguageCode.toUpperCase()})</Text>
+                                <div>
+                                    <Text>{courseCode}</Text>
+                                    <Text size="xs">({currentLanguageCode.toUpperCase()})</Text>
                                 </div>
                             </div>
                         ))}
@@ -351,7 +361,6 @@ const SfDashboard = () => {
                 <Badge
                     color={row.original.canProgress ? 'green' : 'red'}
                     variant="filled"
-                    className="progression-badge"
                 >
                     {row.original.canProgress ? 'Prêt pour la suite' : 'Révision nécessaire'}
                 </Badge>
@@ -360,69 +369,71 @@ const SfDashboard = () => {
         }
     ], [currentLanguageCode]);
 
-    function getLanguageNameFromCode(code) {
-        switch (code) {
-            case 'en': return 'english';
-            case 'fr': return 'french';
-            case 'de': return 'german';
-            default: return 'english';
-        }
-    }
-
     return (
-        <Box p="md" className="sf-dashboard">
-            <Text size="xl" fw={700} mb="md" className="dashboard-title">Mes Étudiants Assignés</Text>
+        <Box p="md">
+            <Text size="xl" fw={700} mb="md">
+                {user.role === 'sf' ? 'Mes Classes SF' : 'Toutes les Classes'}
+            </Text>
             {classes?.map((cls, index) => (
-                <Card key={index} mb="xl" shadow="sm" padding="lg" radius="md" className="class-card">
-                    <Group position="apart" mb="md">
-                        <Text fw={600} className="class-name">
-                            {cls.thinkificGroupName}
-                        </Text>
-                        <Text fw={500}>
-                            Enseignant: {cls.teacher?.firstName} {cls.teacher?.lastName}
-                        </Text>
+                <Card key={index} mb="xl" shadow="sm" padding="lg" radius="md">
+                    <Group position="apart" mb="md" wrap="wrap">
+                        <Group spacing="xs">
+                            <Text fw={600}>{cls.thinkificGroupName}</Text>
+                            <Badge color="blue" variant="light">
+                                {cls.students.length} étudiants
+                            </Badge>
+                        </Group>
+                        <Group spacing="xl">
+                            <Text fw={500}>
+                                Enseignant: {cls.teacher?.firstName} {cls.teacher?.lastName}
+                            </Text>
+                            <Text fw={500}>
+                                Coord: {cls.coordinator?.firstName} {cls.coordinator?.lastName}
+                            </Text>
+                        </Group>
                     </Group>
-                    <MantineReactTable
-                        columns={columns}
-                        data={cls.students}
-                        enableRowVirtualization
-                        enableColumnResizing
-                        enableEditing
-                        editDisplayMode="row"
-                        mantineTableContainerProps={{
-                            className: "student-table-container",
-                            style: { maxHeight: 'calc(100vh - 210px)' }
-                        }}
-                        mantineEditTextInputProps={{ variant: 'filled' }}
-                        onEditingRowSave={handleSaveResults}
-                        renderRowActions={({ row, table }) => (
-                            <Flex gap="md">
-                                {table.getState().editingRow?.id === row.id ? (
-                                    <>
-                                        <Tooltip label="Enregistrer">
-                                            <ActionIcon
-                                                color="green"
-                                                onClick={() => handleSaveResults({ row, values: row._valuesCache, table })}
-                                            >
-                                                <IconCheck />
+                    <ScrollArea type="auto" style={{ maxWidth: '100vw', minWidth: isMobile ? 0 : 800 }}>
+                        <MantineReactTable
+                            columns={columns}
+                            data={cls.students}
+                            enableRowVirtualization
+                            enableColumnResizing
+                            enableEditing
+                            editDisplayMode="row"
+                            mantineTableContainerProps={{
+                                style: { maxHeight: isMobile ? 400 : 'calc(100vh - 210px)' }
+                            }}
+                            mantineEditTextInputProps={{ variant: 'filled' }}
+                            onEditingRowSave={handleSaveResults}
+                            renderRowActions={({ row, table }) => (
+                                <Flex gap="md">
+                                    {table.getState().editingRow?.id === row.id ? (
+                                        <>
+                                            <Tooltip label="Enregistrer">
+                                                <ActionIcon
+                                                    color="green"
+                                                    onClick={() => handleSaveResults({ row, values: row._valuesCache, table })}
+                                                >
+                                                    <IconCheck />
+                                                </ActionIcon>
+                                            </Tooltip>
+                                            <Tooltip label="Annuler">
+                                                <ActionIcon color="red" onClick={() => table.setEditingRow(null)}>
+                                                    <IconX />
+                                                </ActionIcon>
+                                            </Tooltip>
+                                        </>
+                                    ) : (
+                                        <Tooltip label="Modifier">
+                                            <ActionIcon onClick={() => table.setEditingRow(row)}>
+                                                <IconEdit />
                                             </ActionIcon>
                                         </Tooltip>
-                                        <Tooltip label="Annuler">
-                                            <ActionIcon color="red" onClick={() => table.setEditingRow(null)}>
-                                                <IconX />
-                                            </ActionIcon>
-                                        </Tooltip>
-                                    </>
-                                ) : (
-                                    <Tooltip label="Modifier">
-                                        <ActionIcon onClick={() => table.setEditingRow(row)}>
-                                            <IconEdit />
-                                        </ActionIcon>
-                                    </Tooltip>
-                                )}
-                            </Flex>
-                        )}
-                    />
+                                    )}
+                                </Flex>
+                            )}
+                        />
+                    </ScrollArea>
                 </Card>
             ))}
         </Box>

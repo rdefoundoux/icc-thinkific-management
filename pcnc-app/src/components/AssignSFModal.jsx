@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, MultiSelect, Loader, Group } from '@mantine/core';
+import { Modal, Button, MultiSelect, Loader, Group, Stack } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
 const AssignSFModal = ({ opened, onClose, classObj, onAssigned }) => {
@@ -32,22 +32,34 @@ const AssignSFModal = ({ opened, onClose, classObj, onAssigned }) => {
     };
 
     return (
-        <Modal opened={opened} onClose={onClose} title={t('classManager.assignSF')}>
+        <Modal
+            opened={opened}
+            onClose={onClose}
+            title={t('classManager.assignSF')}
+            size={{ base: '100%', sm: 400 }}
+            centered
+        >
             {loading ? <Loader /> : (
                 <form onSubmit={(e) => { e.preventDefault(); handleAssign(); }}>
-                    <MultiSelect
-                        label={t('classManager.selectSF')}
-                        data={users.map(u => ({
-                            value: u._id,
-                            label: `${u.firstName} ${u.lastName}`
-                        }))}
-                        value={selectedUserIds}
-                        onChange={setSelectedUserIds}
-                        searchable
-                    />
-                    <Group mt="md" position="right">
-                        <Button type="submit">{t('common.assign')}</Button>
-                    </Group>
+                    <Stack>
+                        <MultiSelect
+                            label={t('classManager.selectSF')}
+                            data={users.map(u => ({
+                                value: u._id,
+                                label: `${u.firstName} ${u.lastName}`
+                            }))}
+                            value={selectedUserIds}
+                            onChange={setSelectedUserIds}
+                            searchable
+                            nothingFound={t('common.noUsersFound')}
+                            fullWidth
+                        />
+                        <Group mt="md" position="right" grow>
+                            <Button type="submit" fullWidth disabled={selectedUserIds.length === 0}>
+                                {t('common.assign')}
+                            </Button>
+                        </Group>
+                    </Stack>
                 </form>
             )}
         </Modal>

@@ -1,5 +1,3 @@
-// src/components/Sidebar.js
-
 import React from 'react';
 import {
     Box,
@@ -11,6 +9,7 @@ import {
     Text,
     UnstyledButton,
     useMantineTheme,
+    ScrollArea
 } from '@mantine/core';
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import {
@@ -33,7 +32,6 @@ const Sidebar = () => {
     const theme = useMantineTheme();
 
     const navItems = [
-
         ...(user?.roles?.includes('admin')
             ? [
                 {
@@ -90,7 +88,7 @@ const Sidebar = () => {
 
     return (
         <Box
-            w={256}
+            w={{ base: '100vw', sm: 256 }}
             p="sm"
             sx={{
                 borderRight: '1px solid #dadce0',
@@ -99,31 +97,38 @@ const Sidebar = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
+                position: 'fixed',
+                zIndex: 99,
+                top: 0,
+                left: 0,
+                maxWidth: '100vw',
             }}
         >
             {/* Top Section: Navigation */}
-            <Stack spacing={2}>
-                {navItems.map(({ label, to, icon: Icon }) => (
-                    <NavLink
-                        key={label}
-                        component={RouterNavLink}
-                        to={to}
-                        label={label}
-                        icon={<Icon size={20} />}
-                        pl="xl"
-                        sx={{
-                            borderRadius: theme.radius.md,
-                            backgroundColor:
-                                location.pathname === to ? theme.colors.blue[0] : 'transparent',
-                            color:
-                                location.pathname === to
-                                    ? theme.colors.blue[6]
-                                    : theme.colors.gray[7],
-                            '&:hover': { backgroundColor: theme.colors.blue[0] },
-                        }}
-                    />
-                ))}
-            </Stack>
+            <ScrollArea h="70vh">
+                <Stack spacing={2}>
+                    {navItems.map(({ label, to, icon: Icon }) => (
+                        <NavLink
+                            key={label}
+                            component={RouterNavLink}
+                            to={to}
+                            label={label}
+                            icon={<Icon size={20} />}
+                            pl="xl"
+                            sx={{
+                                borderRadius: theme.radius.md,
+                                backgroundColor:
+                                    location.pathname === to ? theme.colors.blue[0] : 'transparent',
+                                color:
+                                    location.pathname === to
+                                        ? theme.colors.blue[6]
+                                        : theme.colors.gray[7],
+                                '&:hover': { backgroundColor: theme.colors.blue[0] },
+                            }}
+                        />
+                    ))}
+                </Stack>
+            </ScrollArea>
 
             {/* Bottom Section: User Profile Menu */}
             <Menu shadow="md" width={200} position="right-end">
@@ -147,40 +152,23 @@ const Sidebar = () => {
                                 {user?.lastName?.[0]}
                             </Avatar>
                             <Flex direction="column" sx={{ flex: 1 }}>
-                                <Text weight={500}>
+                                <Text fw={500}>
                                     {user?.firstName} {user?.lastName}
                                 </Text>
                                 <Text size="sm" color="dimmed">
                                     {user?.roles?.join(', ')}
                                 </Text>
                             </Flex>
-                            <IconChevronDown size={16} />
+                            <IconChevronDown size={18} />
                         </Flex>
                     </UnstyledButton>
                 </Menu.Target>
                 <Menu.Dropdown>
-                    <Menu.Label>{t('sidebar.userMenu')}</Menu.Label>
-                    <Menu.Item
-                        icon={<IconUser size={14} />}
-                        component={RouterNavLink}
-                        to="/profile"
-                    >
-                        {t('sidebar.profile')}
+                    <Menu.Item icon={<IconUser size={16} />} component={RouterNavLink} to="/profile">
+                        Profile
                     </Menu.Item>
-                    <Menu.Item
-                        icon={<IconSettings size={14} />}
-                        component={RouterNavLink}
-                        to="/settings"
-                    >
-                        {t('sidebar.settings')}
-                    </Menu.Item>
-                    <Menu.Divider />
-                    <Menu.Item
-                        color="red"
-                        icon={<IconLogout size={14} />}
-                        onClick={logout}
-                    >
-                        {t('sidebar.logout')}
+                    <Menu.Item icon={<IconLogout size={16} />} color="red" onClick={logout}>
+                        Logout
                     </Menu.Item>
                 </Menu.Dropdown>
             </Menu>

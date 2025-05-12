@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, MultiSelect, Loader, Button, Group } from '@mantine/core';
+import { Modal, MultiSelect, Loader, Button, Group, Stack } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { IconUsersPlus } from '@tabler/icons-react';
 
@@ -53,34 +53,39 @@ const AssignStudentsModal = ({ opened, onClose, classObj, onAssigned }) => {
             opened={opened}
             onClose={onClose}
             title={t('classManager.assignStudents')}
-            size="lg"
+            size={{ base: '100%', sm: 600, md: 800 }}
+            centered
         >
             {loading ? (
                 <Loader />
             ) : (
                 <form onSubmit={handleSubmit}>
-                    <MultiSelect
-                        label={t('classManager.selectStudents')}
-                        data={students.map(student => ({
-                            value: student._id,
-                            label: `${student.firstName} ${student.lastName} (${student.email})`,
-                            description: student.roles.join(', ')
-                        }))}
-                        value={selectedIds}
-                        onChange={setSelectedIds}
-                        searchable
-                        nothingFound={t('classManager.noStudentsFound')}
-                        clearable
-                    />
-                    <Group position="right" mt="md">
-                        <Button
-                            type="submit"
-                            leftIcon={<IconUsersPlus size={16} />}
-                            disabled={!selectedIds.length}
-                        >
-                            {t('classManager.assignSelected')}
-                        </Button>
-                    </Group>
+                    <Stack>
+                        <MultiSelect
+                            label={t('classManager.selectStudents')}
+                            data={students.map(student => ({
+                                value: student._id,
+                                label: `${student.firstName} ${student.lastName} (${student.email})`,
+                                description: student.roles.join(', ')
+                            }))}
+                            value={selectedIds}
+                            onChange={setSelectedIds}
+                            searchable
+                            nothingFound={t('classManager.noStudentsFound')}
+                            clearable
+                            fullWidth
+                        />
+                        <Group position="right" mt="md" grow>
+                            <Button
+                                type="submit"
+                                leftIcon={<IconUsersPlus size={16} />}
+                                disabled={!selectedIds.length}
+                                fullWidth
+                            >
+                                {t('classManager.assignSelected')}
+                            </Button>
+                        </Group>
+                    </Stack>
                 </form>
             )}
         </Modal>

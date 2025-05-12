@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import TopNav from '../components/TopNav';
 import { getClassesForRegistration } from '../api/classes';
+import { useMediaQuery } from '@mantine/hooks';
 
 const RegistrationPage = () => {
     const [classOptions, setClassOptions] = useState([]);
@@ -161,7 +162,6 @@ const RegistrationPage = () => {
         if (!formData.baptized) errors.baptized = t('errors.required');
         if (!formData.preferredSchedule) errors.preferredSchedule = t('errors.required');
         if (!gdprConsent.dataProcessing) errors.gdpr = t('errors.gdprRequired');
-
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -180,7 +180,7 @@ const RegistrationPage = () => {
 
         const age = calculateAge(formData.birthDate);
         if (age < 18) {
-            navigate('/parent-auth', { state: { formData: { ...formData, gdprConsent } }});
+            navigate('/parent-auth', { state: { formData: { ...formData, gdprConsent } } });
             return;
         }
 
@@ -212,13 +212,15 @@ const RegistrationPage = () => {
         }
     };
 
+    const isMobile = useMediaQuery('(max-width: 768px)');
+
     return (
         <Box style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <TopNav showLoginButton />
             <Container size="lg" py="xl" style={{ flex: 1 }}>
                 <Box mb={30}>
                     <Stack align="center" spacing="md" mb={30}>
-                        <Group position="center" spacing="xl">
+                        <Group position="center" spacing="xl" noWrap={isMobile}>
                             <Image src="/001-Nr-1.png" alt={t('registration.title')} height={80} />
                             <Image src="/101-Nr-1.png" alt={t('registration.title')} height={80} />
                             <Image src="/201-Nr-1.png" alt={t('registration.title')} height={80} fit="contain" />
@@ -251,7 +253,6 @@ const RegistrationPage = () => {
                     </Text>
                 </Alert>
 
-
                 <Box sx={(theme) => ({
                     backgroundColor: theme.white,
                     borderRadius: theme.radius.md,
@@ -262,7 +263,7 @@ const RegistrationPage = () => {
                         <LoadingOverlay visible={loading} />
                         <Title order={3} mb="md">{t('registration.personalInfo')}</Title>
 
-                        <Group grow mb="md">
+                        <Group grow mb="md" direction={isMobile ? 'column' : 'row'}>
                             <TextInput
                                 required
                                 label={t('registration.lastName')}
@@ -283,7 +284,7 @@ const RegistrationPage = () => {
                             />
                         </Group>
 
-                        <Group grow mb="md">
+                        <Group grow mb="md" direction={isMobile ? 'column' : 'row'}>
                             <TextInput
                                 required
                                 label={t('registration.email')}
@@ -312,7 +313,7 @@ const RegistrationPage = () => {
                             mb="md"
                         />
 
-                        <Group grow mb="md">
+                        <Group grow mb="md" direction={isMobile ? 'column' : 'row'}>
                             <TextInput
                                 label={t('registration.city')}
                                 value={formData.city}
@@ -333,7 +334,7 @@ const RegistrationPage = () => {
                             />
                         </Group>
 
-                        <Group grow mb="md">
+                        <Group grow mb="md" direction={isMobile ? 'column' : 'row'}>
                             <Select
                                 label={t('registration.country')}
                                 value={formData.country}
@@ -399,7 +400,7 @@ const RegistrationPage = () => {
 
                         {showIccFields && (
                             <>
-                                <Group grow mb="md">
+                                <Group grow mb="md" direction={isMobile ? 'column' : 'row'}>
                                     <TextInput
                                         label={t('registration.memberSince')}
                                         type="date"
@@ -433,7 +434,7 @@ const RegistrationPage = () => {
                         <Divider my="lg" />
                         <Title order={3} mb="md">{t('registration.spiritualInfo')}</Title>
 
-                        <Group grow mb="md">
+                        <Group grow mb="md" direction={isMobile ? 'column' : 'row'}>
                             <TextInput
                                 label={t('registration.convertedDate')}
                                 type="date"
@@ -468,7 +469,7 @@ const RegistrationPage = () => {
                         <Select
                             label={t('registration.previousCourses')}
                             value={formData.previousCourses}
-                            onChange={(value) => setFormData({...formData, previousCourses: value})}
+                            onChange={(value) => setFormData({ ...formData, previousCourses: value })}
                             data={[
                                 { value: '001', label: '001 - ' + t('courses.course001') },
                                 { value: '101', label: '101 - ' + t('courses.course101') },

@@ -18,7 +18,8 @@ import { notifications } from '@mantine/notifications';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import i18n from 'i18next'; // Import i18n so we can call changeLanguage
+import i18n from 'i18next';
+import { useMediaQuery } from '@mantine/hooks';
 
 const LoginPage = () => {
     const [credentials, setCredentials] = useState({ email: '', password: '' });
@@ -26,8 +27,8 @@ const LoginPage = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const isMobile = useMediaQuery('(max-width: 768px)');
 
-    // Handler for switching languages
     const handleLanguageChange = (value) => {
         i18n.changeLanguage(value);
     };
@@ -72,7 +73,6 @@ const LoginPage = () => {
         }
     };
 
-
     return (
         <Box
             style={{
@@ -86,7 +86,12 @@ const LoginPage = () => {
             <Container
                 size="lg"
                 p="xl"
-                style={{ display: 'flex', justifyContent: 'space-between', gap: '2rem' }}
+                style={{
+                    display: 'flex',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    justifyContent: 'space-between',
+                    gap: '2rem'
+                }}
             >
                 {/* Left Panel */}
                 <Box
@@ -101,6 +106,7 @@ const LoginPage = () => {
                         textAlign: 'center',
                         position: 'relative',
                         overflow: 'hidden',
+                        marginBottom: isMobile ? '2rem' : 0,
                     }}
                 >
                     <motion.div

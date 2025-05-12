@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
     Table, Button, Group, Text, Loader, ActionIcon,
-    Tooltip, Pagination, Box, Paper, Avatar, Badge
+    Tooltip, Pagination, Box, Paper, Avatar, Badge, ScrollArea, useMantineTheme
 } from '@mantine/core';
 import {
-    IconPlus, IconEdit, IconUsers, IconUserPlus, IconBook,
-    IconUserCheck  // Add this
+    IconPlus, IconEdit, IconUsers, IconUserPlus, IconBook, IconUserCheck
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import ClassForm from '../components/ClassForm';
@@ -17,6 +16,7 @@ import AssignRSFModal from '../components/AssignRSFModal';
 import CourseAssignmentModal from '../components/CourseAssignmentModal';
 import AssignStudentsModal from '../components/AssignStudentsModal';
 import ClassDetailsModal from '../components/ClassDetailsModal';
+import { useMediaQuery } from '@mantine/hooks';
 
 const columnStyles = [
     { minWidth: 90 },   // Type
@@ -47,6 +47,24 @@ const ClassManager = () => {
     const [assignRSFModalOpen, setAssignRSFModalOpen] = useState(false);
     const [assignStudentsModalOpen, setAssignStudentsModalOpen] = useState(false);
 
+    const theme = useMantineTheme();
+    const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
+
+    function shapeClassData(cls) {
+        return {
+            ...cls,
+            thinkificGroup: { name: cls.thinkificGroupName },
+            staff: {
+                teacher: cls.teacher,
+                coordinator: cls.coordinator,
+                rsf: cls.rsf || [],
+                sf: cls.sf || [],
+            },
+            students: cls.students || [],
+            thinkificGroupId: cls.thinkificGroupId,
+        };
+    }
+
     useEffect(() => {
         const fetchGroups = async (retries = 3) => {
             setGroupsLoading(true);
@@ -54,36 +72,24 @@ const ClassManager = () => {
                 const response = await fetch(
                     `${import.meta.env.VITE_API_BASE_URL}/api/v1/classes/groups`
                 );
-
                 if (!response.ok) {
                     if (retries > 0 && response.status >= 500) {
-                        console.log(`Retrying... ${retries} attempts left`);
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         return fetchGroups(retries - 1);
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
                 const data = await response.json();
-                console.log('Groups fetched:', data);
                 setExistingGroups(Array.isArray(data) ? data : []);
-
             } catch (error) {
-                console.error('Error fetching groups:', error);
                 setExistingGroups([]);
-                // Show error to user
-                showNotification({
-                    title: 'Connection Error',
-                    message: 'Failed to load Thinkific groups',
-                    color: 'red'
-                });
             } finally {
                 setGroupsLoading(false);
             }
         };
         fetchGroups();
     }, []);
-    // Fetch users when class is selected for details
+
     useEffect(() => {
         const fetchGroupUsers = async (groupId) => {
             try {
@@ -92,9 +98,7 @@ const ClassManager = () => {
                 );
                 const data = await response.json();
                 setGroupUsers(prev => ({ ...prev, [groupId]: data }));
-            } catch (error) {
-                console.error('Error fetching group users:', error);
-            }
+            } catch (error) {}
         };
 
         if (selectedClass?.thinkificGroupId) {
@@ -111,18 +115,33 @@ const ClassManager = () => {
         setShowForm(false);
         fetchClasses();
     };
-
+    // Add this new handler function
+    const handleFormSubmit = async (values) => {
+        try {
+            if (selectedClass?._id) {
+                // Update existing class
+                await updateClass(selectedClass._id, values);
+            } else {
+                // Create new class
+                await createClass(values);
+            }
+            fetchClasses();
+            setShowForm(false);
+            setSelectedClass(null);
+        } catch (error) {
+            console.error('Error saving class:', error);
+        }
+    };
     return (
         <>
-            <Box className="classter-container">
-                <Group position="apart" mb="xl" className="smooth-transition">
-                    <Text size="xl" weight={700} className="gradient-text">
+            <Box>
+                <Group position="apart" mb="xl">
+                    <Text size="xl" fw={700} variant="gradient" gradient={{ from: '#662D91', to: '#00B0CA' }}>
                         {t('classManager.classManagement')}
                     </Text>
                     <Button
                         leftIcon={<IconPlus />}
                         onClick={() => setShowForm(true)}
-                        className="hover-scale"
                         radius="xl"
                         variant="gradient"
                         gradient={{ from: '#662D91', to: '#00B0CA' }}
@@ -133,18 +152,28 @@ const ClassManager = () => {
 
                 <ClassForm
                     opened={showForm}
-                    onClose={() => setShowForm(false)}
-                    onSubmit={handleCreate}
+                    onClose={() => {
+                        setShowForm(false);
+                        setSelectedClass(null);
+                    }}
+                    onSubmit={handleFormSubmit}
                     existingGroups={existingGroups}
+                    classToEdit={selectedClass}
                 />
 
-                <Paper withBorder radius="md" p="md" shadow="sm" className="smooth-shadow">
+                <Paper withBorder radius="md" p="md" shadow="sm">
                     {loading ? (
                         <Loader size="lg" variant="dots" />
                     ) : (
-                        <Box className="classter-table-wrapper">
+                        <ScrollArea
+                            type="auto"
+                            style={{
+                                minWidth: isMobile ? 0 : 1100,
+                                maxWidth: '100vw',
+                                overflowX: 'auto'
+                            }}
+                        >
                             <Table
-                                className="classter-table"
                                 highlightOnHover
                                 verticalSpacing="sm"
                                 horizontalSpacing="md"
@@ -152,7 +181,7 @@ const ClassManager = () => {
                                 striped
                                 withBorder
                                 withColumnBorders
-                                style={{ minWidth: 1100 }}
+                                style={{ minWidth: 900 }}
                             >
                                 <thead>
                                 <tr>
@@ -181,7 +210,7 @@ const ClassManager = () => {
                                             style={{ cursor: 'pointer' }}
                                             onClick={(e) => {
                                                 if (!e.target.closest('button, a')) {
-                                                    setSelectedClass(cls);
+                                                    setSelectedClass(shapeClassData(cls));
                                                     setDetailsModalOpen(true);
                                                 }
                                             }}
@@ -195,7 +224,7 @@ const ClassManager = () => {
                                                 {groupsLoading ? (
                                                     <Loader size="xs" />
                                                 ) : group ? (
-                                                    <Text size="sm" className="overflow-ellipsis">
+                                                    <Text size="sm" style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: 140 }}>
                                                         {group.name || 'Unnamed Group'}
                                                     </Text>
                                                 ) : (
@@ -213,7 +242,7 @@ const ClassManager = () => {
                                                             src={cls.teacher.avatarUrl}
                                                             alt={cls.teacher.firstName}
                                                         />
-                                                        <Text size="sm" weight={500}>
+                                                        <Text size="sm" fw={500}>
                                                             {cls.teacher.firstName} {cls.teacher.lastName}
                                                         </Text>
                                                     </Group>
@@ -227,7 +256,7 @@ const ClassManager = () => {
                                                 {cls.coordinator ? (
                                                     <Group spacing={8} align="center" noWrap>
                                                         <Avatar size={28} radius="xl" src={cls.coordinator.avatarUrl} alt={cls.coordinator.firstName} />
-                                                        <Text size="sm" weight={500}>
+                                                        <Text size="sm" fw={500}>
                                                             {cls.coordinator.firstName} {cls.coordinator.lastName}
                                                         </Text>
                                                     </Group>
@@ -254,7 +283,7 @@ const ClassManager = () => {
                                             </td>
                                             <td>
                                                 {cls.courses?.length > 0 ? (
-                                                    <Group spacing="xs">
+                                                    <Group spacing="xs" wrap="wrap">
                                                         {cls.courses.map((course, index) => (
                                                             <Badge key={index} variant="outline">
                                                                 {course.name || course.thinkificCourseId}
@@ -267,17 +296,17 @@ const ClassManager = () => {
                                             </td>
                                             <td>
                                                 <Text size="sm" color="dimmed">
-                                                    {cls.studentCount }
+                                                    {cls.studentCount}
                                                 </Text>
                                             </td>
                                             <td>
-                                                <Group spacing={4}>
+                                                <Group spacing={4} noWrap>
                                                     <Tooltip label={t('common.edit')} position="bottom">
                                                         <ActionIcon
                                                             color="blue"
-                                                            className="hover-scale"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
+                                                                console.log("cls : ", cls)
                                                                 setSelectedClass(cls);
                                                                 setShowForm(true);
                                                             }}
@@ -288,7 +317,6 @@ const ClassManager = () => {
                                                     <Tooltip label={t('classManager.assignTeacher')} position="bottom">
                                                         <ActionIcon
                                                             color="indigo"
-                                                            className="hover-scale"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setSelectedClass(cls);
@@ -301,7 +329,6 @@ const ClassManager = () => {
                                                     <Tooltip label={t('classManager.assignCoordinator')} position="bottom">
                                                         <ActionIcon
                                                             color="teal"
-                                                            className="hover-scale"
                                                             onClick={e => {
                                                                 e.stopPropagation();
                                                                 setSelectedClass(cls);
@@ -322,7 +349,6 @@ const ClassManager = () => {
                                                             <IconUserCheck />
                                                         </ActionIcon>
                                                     </Tooltip>
-
                                                     <Tooltip label={t('classManager.assignSF')}>
                                                         <ActionIcon
                                                             color="indigo"
@@ -345,11 +371,9 @@ const ClassManager = () => {
                                                             <IconUserPlus size={18} />
                                                         </ActionIcon>
                                                     </Tooltip>
-
                                                     <Tooltip label="Assign Course" position="bottom">
                                                         <ActionIcon
                                                             color="orange"
-                                                            className="hover-scale"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setSelectedClass(cls);
@@ -366,7 +390,7 @@ const ClassManager = () => {
                                 })}
                                 </tbody>
                             </Table>
-                        </Box>
+                        </ScrollArea>
                     )}
                 </Paper>
 
@@ -375,7 +399,7 @@ const ClassManager = () => {
                     onChange={fetchClasses}
                     total={Math.ceil(total / 10)}
                     mt="lg"
-                    position="right"
+                    position={isMobile ? 'center' : 'right'}
                 />
             </Box>
 

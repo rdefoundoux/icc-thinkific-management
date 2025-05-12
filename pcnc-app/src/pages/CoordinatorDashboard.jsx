@@ -1,22 +1,24 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from 'axios';
 import {
     ActionIcon, Avatar, Badge, Box, Checkbox, Flex, Group,
-    NumberInput, Progress, Text, TextInput, Tooltip, Card, Button
+    NumberInput, Progress, Text, TextInput, Tooltip, Card, Button, ScrollArea, useMantineTheme
 } from '@mantine/core';
-import { IconEdit, IconCheck, IconX, IconPlus, IconCertificate } from '@tabler/icons-react';
+import { IconEdit, IconCheck, IconX, IconPlus } from '@tabler/icons-react';
 import { MantineReactTable } from 'mantine-react-table';
 import { getClassesByCoordinator, updateStudentResults } from '../api/classes';
 import { useTranslation } from 'react-i18next';
-import "../styles/dashboard.css";
+import { useMediaQuery } from '@mantine/hooks';
 
 const CoordinatorDashboard = () => {
     const { i18n } = useTranslation();
     const currentLanguageCode = i18n.language;
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const theme = useMantineTheme();
+    const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
 
     const { data: classes, refetch } = useQuery({
         queryKey: ['coordinatorClasses', user._id],
@@ -53,7 +55,7 @@ const CoordinatorDashboard = () => {
             await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/v1/classes/sync-enrollment`, {
                 studentId: row.original._id,
                 enrollmentChanges,
-                language: currentLanguage,
+                language: currentLanguageCode,
                 classId: row.original.classId
             });
         },
@@ -68,7 +70,7 @@ const CoordinatorDashboard = () => {
         await refetch();
     };
 
-    // Reuse the exact same columns array from SfDashboard
+    // Columns definition (unchanged, but you can add responsive tweaks if needed)
     const columns = useMemo(() => [
         {
             accessorKey: 'avatar',
@@ -78,7 +80,7 @@ const CoordinatorDashboard = () => {
                 <Group spacing="sm">
                     <Avatar src={row.original.avatarUrl} size={40} radius="xl" />
                     <div>
-                        <Text className="student-name">{row.original.firstName} {row.original.lastName}</Text>
+                        <Text fw={500}>{row.original.firstName} {row.original.lastName}</Text>
                         <Text size="sm" c="dimmed">{row.original.email}</Text>
                     </div>
                 </Group>
@@ -365,17 +367,15 @@ const CoordinatorDashboard = () => {
     ], [currentLanguageCode]);
 
     return (
-        <Box p="md" className="coordinator-dashboard">
-            <Text size="xl" fw={700} mb="md" className="dashboard-title">
+        <Box p="md">
+            <Text size="xl" fw={700} mb="md">
                 {user.role === 'coordinator' ? 'Mes Classes Coordonnées' : 'Toutes les Classes'}
             </Text>
             {classes?.map((cls, index) => (
-                <Card key={index} mb="xl" shadow="sm" padding="lg" radius="md" className="class-card">
-                    <Group position="apart" mb="md">
+                <Card key={index} mb="xl" shadow="sm" padding="lg" radius="md">
+                    <Group position="apart" mb="md" wrap="wrap">
                         <Group spacing="xs">
-                            <Text fw={600} className="class-name">
-                                {cls.thinkificGroupName}
-                            </Text>
+                            <Text fw={600}>{cls.thinkificGroupName}</Text>
                             <Badge color="blue" variant="light">
                                 {cls.students.length} étudiants
                             </Badge>
@@ -389,47 +389,48 @@ const CoordinatorDashboard = () => {
                             </Text>
                         </Group>
                     </Group>
-                    <MantineReactTable
-                        columns={columns}
-                        data={cls.students}
-                        enableRowVirtualization
-                        enableColumnResizing
-                        enableEditing
-                        editDisplayMode="row"
-                        mantineTableContainerProps={{
-                            className: "student-table-container",
-                            style: { maxHeight: 'calc(100vh - 210px)' }
-                        }}
-                        mantineEditTextInputProps={{ variant: 'filled' }}
-                        onEditingRowSave={handleSaveResults}
-                        renderRowActions={({ row, table }) => (
-                            <Flex gap="md">
-                                {table.getState().editingRow?.id === row.id ? (
-                                    <>
-                                        <Tooltip label="Enregistrer">
-                                            <ActionIcon
-                                                color="green"
-                                                onClick={() => handleSaveResults({ row, values: row._valuesCache, table })}
-                                            >
-                                                <IconCheck />
+                    <ScrollArea type="auto" style={{ maxWidth: '100vw', minWidth: isMobile ? 0 : 800 }}>
+                        <MantineReactTable
+                            columns={columns}
+                            data={cls.students}
+                            enableRowVirtualization
+                            enableColumnResizing
+                            enableEditing
+                            editDisplayMode="row"
+                            mantineTableContainerProps={{
+                                style: { maxHeight: isMobile ? 400 : 'calc(100vh - 210px)' }
+                            }}
+                            mantineEditTextInputProps={{ variant: 'filled' }}
+                            onEditingRowSave={handleSaveResults}
+                            renderRowActions={({ row, table }) => (
+                                <Flex gap="md">
+                                    {table.getState().editingRow?.id === row.id ? (
+                                        <>
+                                            <Tooltip label="Enregistrer">
+                                                <ActionIcon
+                                                    color="green"
+                                                    onClick={() => handleSaveResults({ row, values: row._valuesCache, table })}
+                                                >
+                                                    <IconCheck />
+                                                </ActionIcon>
+                                            </Tooltip>
+                                            <Tooltip label="Annuler">
+                                                <ActionIcon color="red" onClick={() => table.setEditingRow(null)}>
+                                                    <IconX />
+                                                </ActionIcon>
+                                            </Tooltip>
+                                        </>
+                                    ) : (
+                                        <Tooltip label="Modifier">
+                                            <ActionIcon onClick={() => table.setEditingRow(row)}>
+                                                <IconEdit />
                                             </ActionIcon>
                                         </Tooltip>
-                                        <Tooltip label="Annuler">
-                                            <ActionIcon color="red" onClick={() => table.setEditingRow(null)}>
-                                                <IconX />
-                                            </ActionIcon>
-                                        </Tooltip>
-                                    </>
-                                ) : (
-                                    <Tooltip label="Modifier">
-                                        <ActionIcon onClick={() => table.setEditingRow(row)}>
-                                            <IconEdit />
-                                        </ActionIcon>
-                                    </Tooltip>
-                                )}
-                            </Flex>
-                        )}
-                    />
+                                    )}
+                                </Flex>
+                            )}
+                        />
+                    </ScrollArea>
                 </Card>
             ))}
         </Box>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, MultiSelect, Button, Group } from '@mantine/core';
+import { Modal, MultiSelect, Button, Group, Stack } from '@mantine/core';
 
 const AssignStudentsToSFModal = ({ sf, classObj, onClose }) => {
     const [students, setStudents] = useState([]);
@@ -33,18 +33,28 @@ const AssignStudentsToSFModal = ({ sf, classObj, onClose }) => {
     };
 
     return (
-        <Modal opened={!!sf} onClose={onClose} title="Assign Students">
-            <MultiSelect
-                data={students.map(s => ({
-                    value: s._id,
-                    label: `${s.firstName} ${s.lastName}`
-                }))}
-                value={selected}
-                onChange={setSelected}
-            />
-            <Group position="right" mt="md">
-                <Button onClick={handleAssign}>Save</Button>
-            </Group>
+        <Modal
+            opened={!!sf}
+            onClose={onClose}
+            title="Assign Students"
+            size={{ base: '100%', sm: 400 }}
+            centered
+        >
+            <Stack>
+                <MultiSelect
+                    data={students.map(s => ({
+                        value: s._id,
+                        label: `${s.firstName} ${s.lastName}`
+                    }))}
+                    value={selected}
+                    onChange={setSelected}
+                    searchable
+                    fullWidth
+                />
+                <Group position="right" mt="md" grow>
+                    <Button onClick={handleAssign} fullWidth disabled={selected.length === 0}>Save</Button>
+                </Group>
+            </Stack>
         </Modal>
     );
 };
