@@ -107,7 +107,10 @@
     "whatsapp": "WhatsApp",
     "cityCountry": "Ville/Pays",
     "assignedCourses": "Cours assignés",
-    "iccMember": "Membre ICC"
+    "iccMember": "Membre ICC",
+    "thinkificGroupChangeTitle": "Nom du groupe mis à jour localement",
+    "thinkificGroupChangeMessage": "Veuillez mettre à jour manuellement le nom du groupe dans Thinkific.",
+    "localNameWarning": "(Nom local : {{localName}} - mettez à jour dans Thinkific)"
   },
   "classForm": {
     "createNewClass": "Créer une nouvelle classe",

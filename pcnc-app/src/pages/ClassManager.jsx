@@ -17,6 +17,7 @@ import CourseAssignmentModal from '../components/CourseAssignmentModal';
 import AssignStudentsModal from '../components/AssignStudentsModal';
 import ClassDetailsModal from '../components/ClassDetailsModal';
 import { useMediaQuery } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import {updateClass, createClass} from '../api/classes';
 
 const columnStyles = [
@@ -120,11 +121,22 @@ const ClassManager = () => {
     const handleFormSubmit = async (values) => {
         try {
             if (selectedClass?._id) {
-                console.log("selectedClass : ", selectedClass);
-                // Update existing class
-                await updateClass(selectedClass._id, values);
+                // Update existing class in local DB only
+                const response = await updateClass(selectedClass._id, values);
+                const updatedClass = response.data?.data || response.data;
+                // Notify if name changed
+                if (
+                    updatedClass &&
+                    selectedClass.thinkificGroupName &&
+                    updatedClass.thinkificGroupName !== selectedClass.thinkificGroupName
+                ) {
+                    notifications.show({
+                        title: t('classManager.thinkificGroupChangeTitle') || 'Group Name Updated Locally',
+                        message: t('classManager.thinkificGroupChangeMessage') || 'Please update the group name in Thinkific manually.',
+                        color: 'orange',
+                    });
+                }
             } else {
-                // Create new class
                 await createClass(values);
             }
             fetchClasses();
@@ -226,9 +238,17 @@ const ClassManager = () => {
                                                 {groupsLoading ? (
                                                     <Loader size="xs" />
                                                 ) : group ? (
-                                                    <Text size="sm" style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: 140 }}>
-                                                        {group.name || 'Unnamed Group'}
-                                                    </Text>
+                                                    <div>
+                                                        <Text size="sm" style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: 140 }}>
+                                                            {group.name || 'Unnamed Group'}
+                                                        </Text>
+                                                        {group.name !== cls.thinkificGroupName && (
+                                                            <Text size="xs" color="orange">
+                                                                {t('classManager.localNameWarning', { localName: cls.thinkificGroupName }) ||
+                                                                    `(Local name: ${cls.thinkificGroupName} - update in Thinkific)`}
+                                                            </Text>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <Text size="sm" color="orange">
                                                         Group not found

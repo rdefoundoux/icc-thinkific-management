@@ -244,13 +244,7 @@ export const updateClass = async (req, res) => {
             return res.status(404).json({ error: 'Class not found' });
         }
 
-        // Update Thinkific group if name changed
-        if (formattedClassName !== existingClass.thinkificGroupName) {
-            await ThinkificService.updateGroup(
-                existingClass.thinkificGroupId,
-                { name: formattedClassName }
-            );
-        }
+
 
         // Update local class
         const updatedClass = await Class.findByIdAndUpdate(

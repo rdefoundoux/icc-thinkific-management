@@ -45,7 +45,10 @@
     "noStudentsAssigned": "No students assigned to this class",
     "students": "Students",
     "assignedCourses": "Assigned Courses",
-    "iccMember": "ICC Member"
+    "iccMember": "ICC Member",
+    "thinkificGroupChangeTitle": "Group Name Updated Locally",
+    "thinkificGroupChangeMessage": "Please update the group name in Thinkific manually.",
+    "localNameWarning": "(Local name: {{localName}} - update in Thinkific)"
   },
   "classForm": {
     "createNewClass": "Create New Class",
