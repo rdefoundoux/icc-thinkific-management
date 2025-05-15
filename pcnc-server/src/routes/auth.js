@@ -123,8 +123,8 @@ router.post('/login', async (req, res) => {
         const { email, password, otp } = req.body;
         let user = await User.findOne({ email });
 
-        // Existing user with password
-        if (user && user.password && password && password.length >= 8) {
+        // Existing user with valid password
+        if (user?.password?.trim() && password?.length >= 8) {
             const validPassword = await bcrypt.compare(password, user.password);
             if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
 
@@ -147,19 +147,25 @@ router.post('/login', async (req, res) => {
                 return res.status(400).json({ error: 'Password must be at least 8 characters' });
             }
 
-            user = await createUserFromThinkific(thinkificUser, password);
-            setSessionCookie(res, user);
+            user = await createUserFromThinkific(thinkificUser);
+            user.password = await bcrypt.hash(password, SALT_ROUNDS);
+            await user.save();
 
+            setSessionCookie(res, user);
             return res.json({
                 success: true,
                 user: formatUserResponse(user)
             });
         }
 
-        // First-time user initiation
-        if (!user) {
+        // Handle users without password (existing or new)
+        if (!user?.password?.trim()) {
             const thinkificUser = await fetchThinkificUser(email);
             if (!thinkificUser) return res.status(404).json({ error: 'User not found in Thinkific' });
+
+            if (!user) {
+                user = await createUserFromThinkific(thinkificUser);
+            }
 
             await generateOTP(email);
             return res.status(202).json({
@@ -175,6 +181,7 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ error: 'Login failed. ' + (process.env.NODE_ENV === 'development' ? err.message : '') });
     }
 });
+
 
 // Helper to format user response
 function formatUserResponse(user) {
