@@ -167,7 +167,19 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                                                     key={i}
                                                     variant="dot"
                                                     color="blue"
-                                                    leftSection={<Avatar src={rsf.avatarUrl} size={20} radius="xl" />}
+                                                    size="sm"
+                                                    radius="xl"
+                                                    leftSection={<Avatar src={rsf.avatarUrl} size={24} radius="xl" />}
+                                                    styles={{
+                                                        root: {
+                                                            height: 32,            // Ensures badge is tall enough
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            paddingTop: 0,
+                                                            paddingBottom: 0,
+                                                        },
+                                                        section: { marginRight: 8 }, // Adjust avatar spacing if needed
+                                                    }}
                                                 >
                                                     {rsf.firstName} {rsf.lastName}
                                                 </Badge>
@@ -189,7 +201,19 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                                                     key={i}
                                                     variant="dot"
                                                     color="grape"
-                                                    leftSection={<Avatar src={sf.avatarUrl} size={20} radius="xl" />}
+                                                    size="sm"
+                                                    radius="xl"
+                                                    leftSection={<Avatar src={sf.avatarUrl} size={24} radius="xl" />}
+                                                    styles={{
+                                                        root: {
+                                                            height: 32,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            paddingTop: 0,
+                                                            paddingBottom: 0,
+                                                        },
+                                                        section: { marginRight: 8 },
+                                                    }}
                                                 >
                                                     {sf.firstName} {sf.lastName}
                                                 </Badge>
@@ -215,7 +239,7 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                             enableColumnResizing
                             initialState={{
                                 pagination: { pageSize: 10, pageIndex: 0 },
-                                showColumnFilters: true,
+                                showColumnFilters: false,
                                 density: 'xs'
                             }}
                             mantineTableProps={{

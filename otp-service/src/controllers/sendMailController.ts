@@ -16,25 +16,54 @@ class SendMailController {
     });
   }
 
-  async sendMail(email: string, otp: string, organization: string, subject: string): Promise<void> {
+  async sendMail(email: string, otp: string, organization: string, subject: string, language: 'fr' | 'en' = 'fr'): Promise<void> {
     try {
+      // Localize text and HTML based on the language
+      const localizedContent = this.localizeEmailContent(otp, organization, language);
+
       const mailOptions = {
         from: `"${organization}" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: subject,
-        text: `Your OTP is ${otp}`,
-        html: this.generateHtmlTemplate(otp, organization),
+        text: localizedContent.text,
+        html: localizedContent.html,
       };
 
       await this.transporter.sendMail(mailOptions);
-      logger.info(`Sent OTP to ${email}`);
+      logger.info(`Sent OTP to ${email} in ${language === 'fr' ? 'French' : 'English'}`);
     } catch (error: any) {
       logger.error(`Failed to send OTP to ${email}:`, error.message);
       throw new Error(`Failed to send OTP to ${email}`);
     }
   }
 
-  private generateHtmlTemplate(otp: string, organization: string): string {
+  private localizeEmailContent(otp: string, organization: string, language: 'fr' | 'en'): { text: string; html: string } {
+    if (language === 'fr') {
+      // French content
+      return {
+        text: `Votre OTP est ${otp}`,
+        html: this.generateHtmlTemplate(
+            otp,
+            organization,
+            'Votre mot de passe à usage unique (OTP) est :',
+            'Vous recevez cet email parce que vous avez demandé un OTP.'
+        ),
+      };
+    } else {
+      // English content
+      return {
+        text: `Your OTP is ${otp}`,
+        html: this.generateHtmlTemplate(
+            otp,
+            organization,
+            'Your One-Time Password (OTP) is:',
+            'You received this email because you requested an OTP.'
+        ),
+      };
+    }
+  }
+
+  private generateHtmlTemplate(otp: string, organization: string, otpMessage: string, description: string): string {
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -92,16 +121,12 @@ class SendMailController {
                   <div class="header">
                       <h1>${organization}</h1>
                       <p style="font-size: 14px;color: #ffffff;">
-                          You received this email because you requested an OTP.
+                          ${description}
                       </p>
                   </div>
                   <div class="content">
-                      <p>Your One-Time Password (OTP) is:</p>
+                      <p>${otpMessage}</p>
                       <p class="otp">${otp}</p>
-                  </div>
-                  <div class="footer">
-                      <p>For more information, visit our GitHub repository:</p>
-                      <p><a href="https://github.com/sauravhathi/otp-service" target="_blank">Saurav Hathi</a></p>
                   </div>
               </div>
           </body>

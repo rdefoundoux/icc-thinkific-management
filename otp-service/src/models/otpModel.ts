@@ -6,16 +6,18 @@ export interface IOtp extends Document {
   id: string;
   email: string;
   otp: string;
+  language: string;
   attempts: number;
   createdAt: Date;
 }
 
 const otpSchema: Schema<IOtp> = new Schema(
   {
-    id: { type: String, required: true },
-    email: { type: String, required: true, index: true },
-    otp: { type: String, required: true },
-    attempts: { type: Number, default: 0 }
+      id: { type: String, required: true },
+      email: { type: String, required: true, index: true },
+      otp: { type: String, required: true },
+      language: { type: String, required: false },
+      attempts: { type: Number, default: 0 }
   },
   { timestamps: true }
 );

@@ -141,7 +141,15 @@
     "errorTitle": "Accès refusé",
     "newHere": "Nouveau ici ?",
     "createAccount": "Créer un compte",
-    "forgotPassword": "Mot de passe oublié ?"
+    "forgotPassword": "Mot de passe oublié ?",
+    "adminPortal": "Portail d'administration du PCNC",
+    "otpSentTitle": "Code de vérification envoyé",
+    "otpSentMessage": "Un code de vérification a été envoyé à votre email.",
+    "otpLabel": "Code de vérification",
+    "otpPlaceholder": "Entrez le code",
+    "resendOtp": "Renvoyer le code",
+    "newPassword": "Définissez votre mot de passe",
+    "verifyOtp": "Vérifier et définir le mot de passe"
   },
   "pagination": {
     "showing": "Affichage de",
@@ -222,7 +230,8 @@
     "female": "Femme",
     "none": "Aucun",
     "noClassesFound": "Aucune classe disponible",
-    "selectClass": "Sélectionnez une classe"
+    "selectClass": "Sélectionnez une classe",
+    "na": "N/D"
   },
   "teacherDashboard": {
     "myClasses": "Mes classes",

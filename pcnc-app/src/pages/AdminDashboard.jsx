@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useAdminClasses, usePendingStudents, useCoordinators, useSFs, useValidateStudents, useSyncThinkific, useAssignStudentsToClasses } from '../hooks/useAdmin';
+import {
+    useAdminClasses,
+    usePendingStudents,
+    useCoordinators,
+    useSFs,
+    useValidateStudents,
+    useSyncThinkific,
+    useAssignStudentsToClasses
+} from '../hooks/useAdmin';
 import {
     Accordion, ActionIcon, Avatar, Badge, Box, Button, Card, Checkbox, Flex,
     Group, Image, LoadingOverlay, Paper, Table, Text, Title
@@ -55,51 +63,29 @@ const AdminDashboard = () => {
 
     const handleValidate = async () => {
         try {
-
-
-            // Get the selected pending students with their details
             const selectedStudentsDetails = pendingStudents.filter(
                 student => selectedStudents.includes(student._id)
             );
-
-            // Prepare assignments
             const assignments = [];
-
             selectedStudentsDetails.forEach(student => {
                 if (student.preferredSchedule) {
-                    // preferredSchedule is the class ID
-                    const matchingClass = classes?.find(cls => {
-                        console.log(`Class _id: ${cls._id}, Student Preferred Schedule: ${student.preferredSchedule}`); // Log both values
-                        return cls._id === student.preferredSchedule; // Compare by _id, not group name!
-                    });
-
+                    const matchingClass = classes?.find(cls => cls._id === student.preferredSchedule);
                     if (matchingClass && !matchingClass.students.includes(student._id)) {
                         assignments.push({
                             classId: matchingClass._id,
                             studentId: student._id
                         });
-
                     }
                 }
             });
-
-
-            // Assign students to classes
             if (assignments.length > 0) {
                 await assignMutation.mutateAsync(assignments);
-                // Finally, sync with Thinkific
                 await syncMutation.mutateAsync(selectedStudents);
-
             }
-
-
-
-            // Clear selection and refresh data
             setSelectedStudents([]);
             refetchPending();
         } catch (error) {
             console.error("Error during validation and assignment:", error);
-            // Handle error notification here
         }
     };
 
@@ -125,7 +111,7 @@ const AdminDashboard = () => {
         },
         {
             accessorKey: 'coordinator',
-            header: t('common.coordinator'),
+            header: t('classManager.coordinator'),
             size: 180,
             Cell: ({ row }) => row.original.coordinator ? (
                 <Group spacing="xs">
@@ -138,7 +124,7 @@ const AdminDashboard = () => {
         },
         {
             accessorKey: 'sf',
-            header: t('common.sf'),
+            header: t('classManager.sf'),
             size: 140,
             Cell: ({ row }) => (
                 <Group spacing="xs">
@@ -152,7 +138,7 @@ const AdminDashboard = () => {
         },
         {
             accessorKey: 'rsf',
-            header: t('common.rsf'),
+            header: t('classManager.rsf'),
             size: 140,
             Cell: ({ row }) => (
                 <Group spacing="xs">
@@ -237,7 +223,7 @@ const AdminDashboard = () => {
                 <Checkbox
                     checked={selectedStudents.includes(row.original._id)}
                     onChange={(e) => {
-                        e.stopPropagation(); // Prevent row click from firing
+                        e.stopPropagation();
                         const checked = e.currentTarget.checked;
                         setSelectedStudents(prev =>
                             checked ? [...prev, row.original._id] : prev.filter(id => id !== row.original._id)
@@ -302,7 +288,6 @@ const AdminDashboard = () => {
                 const student = row.original;
                 const birthDate = student.birthDate;
                 const isMinor = birthDate ? (new Date().getFullYear() - new Date(birthDate).getFullYear() < 18) : false;
-
                 if (isMinor && student.parentalAuth) {
                     return (
                         <Paper p="sm" withBorder style={{ display: 'inline-block', textAlign: 'center' }}>
@@ -361,7 +346,6 @@ const AdminDashboard = () => {
                             <IconRefresh size={20} />
                         </ActionIcon>
                     </Flex>
-
                     <MantineReactTable
                         columns={pendingColumns}
                         data={pendingStudents || []}
@@ -378,7 +362,6 @@ const AdminDashboard = () => {
                         }}
                         mantineTableBodyRowProps={({ row }) => ({
                             sx: { cursor: 'default' },
-
                         })}
                     />
                 </Box>
@@ -412,7 +395,6 @@ const AdminDashboard = () => {
                                     <Text c="dimmed">{coordinator.email}</Text>
                                 </div>
                             </Flex>
-
                             <Box mt="md">
                                 <Text weight={600} mb="sm">{t('common.assignedClasses')}:</Text>
                                 <Group spacing="xs">
@@ -454,7 +436,6 @@ const AdminDashboard = () => {
                                     <Text size="sm" c="dimmed">{sf.email}</Text>
                                 </div>
                             </Flex>
-
                             <Box mt="md">
                                 <Text weight={600}>{t('common.assignedClasses')}:</Text>
                                 <Group spacing="xs" mt="sm">
@@ -481,7 +462,6 @@ const AdminDashboard = () => {
     return (
         <Box p="md" className="admin-dashboard">
             <Title order={2} mb="xl">{t('sidebar.dashboard')}</Title>
-
             <Flex mb="md" gap="md">
                 <Button
                     leftIcon={<IconChevronUp />}
@@ -500,7 +480,6 @@ const AdminDashboard = () => {
                     {t('common.uncollapseAll')}
                 </Button>
             </Flex>
-
             <Accordion
                 value={expandedSections}
                 onChange={setExpandedSections}
@@ -512,7 +491,6 @@ const AdminDashboard = () => {
                 {renderCoordinators()}
                 {renderSFs()}
             </Accordion>
-
             <LoadingOverlay
                 visible={validateMutation.isLoading || syncMutation.isLoading}
                 overlayBlur={2}

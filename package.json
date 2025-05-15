@@ -4,7 +4,8 @@
   "private": true,
   "workspaces": [
     "pcnc-app",
-    "pcnc-server"
+    "pcnc-server",
+    "otp-service"
   ],
   "dependencies": {
     "@mantine/core": "^7.17.4",

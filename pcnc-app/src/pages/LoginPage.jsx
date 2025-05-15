@@ -1,18 +1,17 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
     TextInput,
     PasswordInput,
     Button,
     Text,
     Anchor,
-    Divider,
     Box,
     Container,
     LoadingOverlay,
     Group,
     Select
 } from '@mantine/core';
-import { IconMail, IconLock } from '@tabler/icons-react';
+import { IconMail, IconLock, IconKey } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
 import { notifications } from '@mantine/notifications';
 import { motion } from 'framer-motion';
@@ -22,8 +21,12 @@ import i18n from 'i18next';
 import { useMediaQuery } from '@mantine/hooks';
 
 const LoginPage = () => {
+    const [step, setStep] = useState('login'); // 'login' | 'otp'
     const [credentials, setCredentials] = useState({ email: '', password: '' });
+    const [otp, setOtp] = useState('');
+    const [newPassword, setNewPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -33,35 +36,112 @@ const LoginPage = () => {
         i18n.changeLanguage(value);
     };
 
+    // Handle the initial login or OTP verification
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
+        try {
+            if (step === 'login') {
+                // Step 1: Try password login or trigger OTP
+                const response = await fetch(
+                    `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/login`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(credentials),
+                        credentials: 'include',
+                    }
+                );
+
+                if (response.status === 202) {
+                    // OTP required
+                    setStep('otp');
+                    setEmailSent(true);
+                    notifications.show({
+                        title: t('loginPage.otpSentTitle') || 'OTP Sent',
+                        message: t('loginPage.otpSentMessage') || 'A verification code has been sent to your email.',
+                        color: 'pcncPurple',
+                    });
+                } else if (response.ok) {
+                    // Password login success
+                    const data = await response.json();
+                    login(data.user);
+
+                    notifications.show({
+                        title: t('loginPage.welcomeBack'),
+                        message: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
+                        color: 'pcncPurple',
+                    });
+                    navigate('/users');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Login failed');
+                }
+            } else if (step === 'otp') {
+                // Step 2: Submit OTP + new password
+                const response = await fetch(
+                    `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/login`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: credentials.email,
+                            otp,
+                            password: newPassword,
+                        }),
+                        credentials: 'include',
+                    }
+                );
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'OTP verification failed');
+                }
+                const data = await response.json();
+                login(data.user);
+
+                notifications.show({
+                    title: t('loginPage.welcomeBack'),
+                    message: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
+                    color: 'pcncPurple',
+                });
+                navigate('/users');
+            }
+        } catch (err) {
+            notifications.show({
+                title: t('loginPage.errorTitle'),
+                message: err.message,
+                color: 'red',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Resend OTP handler
+    const handleResendOTP = async () => {
+        setLoading(true);
         try {
             const response = await fetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/login`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(credentials),
+                    body: JSON.stringify({ email: credentials.email }),
                     credentials: 'include',
                 }
             );
-
-            if (!response.ok) {
+            if (response.status === 202) {
+                setEmailSent(true);
+                notifications.show({
+                    title: t('loginPage.otpSentTitle') || 'OTP Sent',
+                    message: t('loginPage.otpSentMessage') || 'A new verification code has been sent.',
+                    color: 'pcncPurple',
+                });
+            } else {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Login failed');
+                throw new Error(errorData.error || 'Failed to resend OTP');
             }
-
-            const data = await response.json();
-            login(data.user);
-
-            notifications.show({
-                title: t('loginPage.welcomeBack'),
-                message: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
-                color: 'pcncPurple',
-            });
-            navigate('/users');
         } catch (err) {
             notifications.show({
                 title: t('loginPage.errorTitle'),
@@ -130,16 +210,16 @@ const LoginPage = () => {
                                 }}
                             />
                         </motion.div>
-                        <Text size="xl" weight={700} mt="md" style={{ lineHeight: 1.5 }}>
+                        <Text size="xl" fw={700} mt="md" style={{ lineHeight: 1.5 }}>
                             {t('loginPage.signInTitle')}
                         </Text>
                         <Text mt="sm" style={{ opacity: 0.9, color: '#d1d5db' }}>
-                            PCNC Academy Portal
+                            {t('loginPage.adminPortal')}
                         </Text>
                     </motion.div>
                 </Box>
 
-                {/* Login Form */}
+                {/* Login/OTP Form */}
                 <Box
                     style={{
                         width: '100%',
@@ -156,7 +236,7 @@ const LoginPage = () => {
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <Text size="xl" weight={700} align="center" mb="lg" color="pcncNavy.0">
+                        <Text size="xl" fw={700} align="center" mb="lg" color="pcncNavy.0">
                             {t('loginPage.signInTitle')}
                         </Text>
 
@@ -197,22 +277,66 @@ const LoginPage = () => {
                                 styles={{ input: { borderColor: '#e0e0e6' } }}
                                 mb="md"
                                 required
+                                disabled={step === 'otp'}
                             />
 
-                            <PasswordInput
-                                label={t('loginPage.password')}
-                                placeholder="••••••••"
-                                icon={<IconLock size={18} />}
-                                value={credentials.password}
-                                onChange={(e) =>
-                                    setCredentials({ ...credentials, password: e.target.value })
-                                }
-                                radius="md"
-                                size="md"
-                                styles={{ input: { borderColor: '#e0e0e6' } }}
-                                mb="xl"
-                                required
-                            />
+                            {step === 'login' && (
+                                <PasswordInput
+                                    label={t('loginPage.password')}
+                                    placeholder="••••••••"
+                                    icon={<IconLock size={18} />}
+                                    value={credentials.password}
+                                    onChange={(e) =>
+                                        setCredentials({ ...credentials, password: e.target.value })
+                                    }
+                                    radius="md"
+                                    size="md"
+                                    styles={{ input: { borderColor: '#e0e0e6' } }}
+                                    mb="xl"
+                                    required
+                                />
+                            )}
+
+                            {step === 'otp' && (
+                                <>
+                                    <TextInput
+                                        label={t('loginPage.otpLabel') || 'Verification Code'}
+                                        placeholder={t('loginPage.otpPlaceholder') || 'Enter the code'}
+                                        icon={<IconKey size={18} />}
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value)}
+                                        radius="md"
+                                        size="md"
+                                        mb="md"
+                                        required
+                                    />
+                                    <PasswordInput
+                                        label={t('loginPage.newPassword') || 'Set your password'}
+                                        placeholder="••••••••"
+                                        icon={<IconLock size={18} />}
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        radius="md"
+                                        size="md"
+                                        mb="xl"
+                                        required
+                                    />
+                                    {emailSent && (
+                                        <Text size="sm" color="dimmed" mb="sm">
+                                            {t('loginPage.otpSentMessage') || 'A code was sent to your email.'}
+                                        </Text>
+                                    )}
+                                    <Button
+                                        variant="subtle"
+                                        size="xs"
+                                        onClick={handleResendOTP}
+                                        mb="md"
+                                        type="button"
+                                    >
+                                        {t('loginPage.resendOtp') || 'Resend code'}
+                                    </Button>
+                                </>
+                            )}
 
                             <Button
                                 type="submit"
@@ -227,38 +351,11 @@ const LoginPage = () => {
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
                             >
-                                {t('loginPage.signInTitle')}
+                                {step === 'login'
+                                    ? t('loginPage.signInTitle')
+                                    : t('loginPage.verifyOtp') || 'Verify & Set Password'}
                             </Button>
                         </form>
-
-                        <Divider
-                            label={`${t('common.or')} ${t('common.continueWith')}`}
-                            labelPosition="center"
-                            my="lg"
-                            styles={{
-                                label: { fontWeight: 500, color: '#6b7280' },
-                            }}
-                        />
-
-                        <Button
-                            variant="outline"
-                            fullWidth
-                            radius="md"
-                            size="lg"
-                            href={`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/thinkific`}
-                            component="a"
-                            styles={{
-                                root: {
-                                    borderColor: '#662D91',
-                                    color: '#662D91',
-                                    '&:hover': {
-                                        backgroundColor: '#f5f6f9',
-                                    },
-                                },
-                            }}
-                        >
-                            {t('loginPage.institutionalLogin')}
-                        </Button>
 
                         <Group position="apart" mt="xl" style={{ padding: '0 12px' }}>
                             <Text size="sm" color="dimmed">

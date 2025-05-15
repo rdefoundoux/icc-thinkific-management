@@ -206,7 +206,7 @@ const ClassManager = () => {
                                     <th style={columnStyles[4]}>{t('classManager.year')}</th>
                                     <th style={columnStyles[5]}>{t('classManager.thinkificGroup')}</th>
                                     <th style={columnStyles[6]}>{t('classManager.teacher')}</th>
-                                    <th style={columnStyles[10]}>Coordinator</th>
+                                    <th style={columnStyles[10]}>{t('classManager.coordinator')}</th>
                                     <th style={columnStyles[10]}>{t('classManager.rsf')}</th>
                                     <th style={columnStyles[7]}>{t('classManager.assignedCourses')}</th>
                                     <th style={columnStyles[8]}>{t('classManager.students')}</th>
@@ -214,14 +214,18 @@ const ClassManager = () => {
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {classes.map((cls) => {
+                                {classes.map((cls, index) => {
                                     const group = existingGroups.find(
                                         (g) => g.id?.toString() === cls.thinkificGroupId?.toString()
                                     );
                                     return (
                                         <tr
                                             key={cls._id}
-                                            style={{ cursor: 'pointer' }}
+                                            style={{
+                                                cursor: 'pointer',
+                                                background: index % 2 === 0 ? 'white' : '#f5faff', // Alternate row colors
+                                                borderBottom: index % 2 === 0 ? '1px solid #dcdcdc' : 'none',
+                                            }}
                                             onClick={(e) => {
                                                 if (!e.target.closest('button, a')) {
                                                     setSelectedClass(shapeClassData(cls));
@@ -239,13 +243,25 @@ const ClassManager = () => {
                                                     <Loader size="xs" />
                                                 ) : group ? (
                                                     <div>
-                                                        <Text size="sm" style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: 140 }}>
+                                                        <Text
+                                                            size="sm"
+                                                            style={{
+                                                                whiteSpace: 'nowrap',
+                                                                textOverflow: 'ellipsis',
+                                                                overflow: 'hidden',
+                                                                maxWidth: 140,
+                                                            }}
+                                                        >
                                                             {group.name || 'Unnamed Group'}
                                                         </Text>
                                                         {group.name !== cls.thinkificGroupName && (
                                                             <Text size="xs" color="orange">
-                                                                {t('classManager.localNameWarning', { localName: cls.thinkificGroupName }) ||
-                                                                    `(Local name: ${cls.thinkificGroupName} - update in Thinkific)`}
+                                                                {t('classManager.localNameWarning', {
+                                                                        localName: cls.thinkificGroupName,
+                                                                    }) ||
+                                                                    `(Local name: ${cls.thinkificGroupName} - ` +
+                                                                    t('classManager.update_in') +
+                                                                    ` Thinkific)`}
                                                             </Text>
                                                         )}
                                                     </div>
@@ -277,7 +293,12 @@ const ClassManager = () => {
                                             <td>
                                                 {cls.coordinator ? (
                                                     <Group spacing={8} align="center" noWrap>
-                                                        <Avatar size={28} radius="xl" src={cls.coordinator.avatarUrl} alt={cls.coordinator.firstName} />
+                                                        <Avatar
+                                                            size={28}
+                                                            radius="xl"
+                                                            src={cls.coordinator.avatarUrl}
+                                                            alt={cls.coordinator.firstName}
+                                                        />
                                                         <Text size="sm" fw={500}>
                                                             {cls.coordinator.firstName} {cls.coordinator.lastName}
                                                         </Text>
@@ -336,6 +357,7 @@ const ClassManager = () => {
                                                             <IconEdit size={18} />
                                                         </ActionIcon>
                                                     </Tooltip>
+
                                                     <Tooltip label={t('classManager.assignTeacher')} position="bottom">
                                                         <ActionIcon
                                                             color="indigo"
