@@ -32,6 +32,7 @@ class SendMailController {
       await this.transporter.sendMail(mailOptions);
       logger.info(`Sent OTP to ${email} in ${language === 'fr' ? 'French' : 'English'}`);
     } catch (error: any) {
+      console.log('error mail:' ,error);
       logger.error(`Failed to send OTP to ${email}:`, error.message);
       throw new Error(`Failed to send OTP to ${email}`);
     }

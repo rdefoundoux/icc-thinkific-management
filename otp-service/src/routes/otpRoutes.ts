@@ -20,6 +20,7 @@ router.post('/otp/generate', validateSpamMiddleware, async (req, res) => {
 
     res.status(200).json({ message: 'OTP is generated and sent to your email' });
   } catch (error) {
+    console.log("gen otp error",error);
     logger.error('Failed to generate OTP', (error as Error).message);
     res.status(400).json({ error: (error as Error).message });
   }
