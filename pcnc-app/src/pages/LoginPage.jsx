@@ -304,7 +304,7 @@ const LoginPage = () => {
                                         placeholder={t('loginPage.otpPlaceholder') || 'Enter the code'}
                                         icon={<IconKey size={18} />}
                                         value={otp}
-                                        onChange={(e) => setOtp(e.target.value)}
+                                        onChange={(e) => setOtp(e.target.value.trim())}
                                         radius="md"
                                         size="md"
                                         mb="md"
