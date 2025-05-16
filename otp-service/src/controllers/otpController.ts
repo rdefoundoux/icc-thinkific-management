@@ -38,7 +38,9 @@ class OtpController {
 
   async verifyOtp(email: string, otp: string): Promise<boolean> {
     try {
-      
+      console.log('otp',otp);
+      console.log('otp length',otp.length);
+      console.log('otp size',OTP_SIZE);
       if (!otp || otp.length !== OTP_SIZE) {
         throw new Error('Invalid OTP');
       }
