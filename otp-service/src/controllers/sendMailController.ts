@@ -6,7 +6,8 @@ class SendMailController {
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 2525, // DigitalOcean allows this port
       secure: true,
       auth: {
         user: process.env.GMAIL_USER as string,
