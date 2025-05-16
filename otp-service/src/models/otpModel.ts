@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-const expiryTime = parseInt(process.env.OTP_VALIDITY_PERIOD_MINUTES || '5') + 1;
+const expiryTime = parseInt(process.env.OTP_VALIDITY_PERIOD_MINUTES || '5') * 60; // Convert to seconds
 
 export interface IOtp extends Document {
   id: string;
@@ -22,8 +22,14 @@ const otpSchema: Schema<IOtp> = new Schema(
   { timestamps: true }
 );
 
-otpSchema.index({ createdAt: 1 }, { expireAfterSeconds: expiryTime * 60 });
+otpSchema.index(
+    { createdAt: 1 },
+    { expireAfterSeconds: expiryTime } // Fix TTL calculation
+);
 
 const Otp: Model<IOtp> = mongoose.model<IOtp>('Otp', otpSchema);
+
+
+
 
 export default Otp;

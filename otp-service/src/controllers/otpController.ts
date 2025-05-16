@@ -38,18 +38,18 @@ class OtpController {
 
   async verifyOtp(email: string, otp: string): Promise<boolean> {
     try {
-      console.log('otp',otp);
-      console.log('otp length',otp.length);
-      console.log('otp size',OTP_SIZE);
+
       if (!otp || otp.length !== OTP_SIZE) {
         throw new Error('Invalid OTP');
       }
 
       const otpDocument = await Otp.findOneAndDelete({
-        email,
-        otp,
+        email: email,
+        otp: otp,
         createdAt: { $gte: new Date(Date.now() - validityPeriodMs) }
       }).select('_id').lean();
+
+      console.log('otpDocument',otpDocument);
 
       if (!otpDocument) {
         throw new Error('Invalid OTP');
@@ -57,6 +57,7 @@ class OtpController {
 
       return true;
     } catch (error: any) {
+      console.log('error',error);
       logger.error('OTP verification failed:', error.message);
       throw new Error(error.message);
     }
