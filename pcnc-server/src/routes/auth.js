@@ -121,66 +121,58 @@ async function verifyOTP(email, otp) {
 router.post('/login', async (req, res) => {
     try {
         const { email, password, otp } = req.body;
-        let user = await User.findOne({ email });
+        const emailNorm = email.trim().toLowerCase(); // Normalize email
 
-        // Existing user with valid password
-        if (user?.password?.trim() && password?.length >= 8) {
+        // Existing user with password
+        const user = await User.findOne({ email: emailNorm });
+        if (user?.password) {
             const validPassword = await bcrypt.compare(password, user.password);
             if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
 
             setSessionCookie(res, user);
-            return res.json({
-                success: true,
-                user: formatUserResponse(user)
-            });
+            return res.json({ success: true, user: formatUserResponse(user) });
         }
 
         // OTP Verification Flow
         if (otp) {
-            const isValidOTP = await verifyOTP(email, otp);
+            const isValidOTP = await verifyOTP(emailNorm, otp.toString().trim());
             if (!isValidOTP) return res.status(401).json({ error: 'Invalid OTP' });
-
-            const thinkificUser = await fetchThinkificUser(email);
-            if (!thinkificUser) return res.status(404).json({ error: 'User not found in Thinkific' });
 
             if (!password || password.length < 8) {
                 return res.status(400).json({ error: 'Password must be at least 8 characters' });
             }
 
-            user = await createUserFromThinkific(thinkificUser);
-            user.password = await bcrypt.hash(password, SALT_ROUNDS);
-            await user.save();
+            // Create/update user
+            const thinkificUser = await fetchThinkificUser(emailNorm);
+            if (!thinkificUser) return res.status(404).json({ error: 'User not found' });
+
+            const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+            let user = await User.findOneAndUpdate(
+                { email: emailNorm },
+                { password: hashedPassword, requiresPasswordReset: false },
+                { new: true, upsert: true }
+            );
 
             setSessionCookie(res, user);
-            return res.json({
-                success: true,
-                user: formatUserResponse(user)
-            });
+            return res.json({ success: true, user: formatUserResponse(user) });
         }
 
-        // Handle users without password (existing or new)
-        if (!user?.password?.trim()) {
-            const thinkificUser = await fetchThinkificUser(email);
-            if (!thinkificUser) return res.status(404).json({ error: 'User not found in Thinkific' });
+        // Trigger OTP Generation
+        await generateOTP(emailNorm);
+        return res.status(202).json({
+            success: true,
+            message: 'OTP sent to email',
+            requiresOTP: true
+        });
 
-            if (!user) {
-                user = await createUserFromThinkific(thinkificUser);
-            }
-
-            await generateOTP(email);
-            return res.status(202).json({
-                success: true,
-                message: 'OTP sent to email',
-                requiresOTP: true
-            });
-        }
-
-        return res.status(400).json({ error: 'Invalid request' });
     } catch (err) {
         console.error('Login error:', err);
-        res.status(500).json({ error: 'Login failed. ' + (process.env.NODE_ENV === 'development' ? err.message : '') });
+        res.status(500).json({
+            error: 'Login failed' + (process.env.NODE_ENV === 'development' ? ': ' + err.message : '')
+        });
     }
 });
+
 
 
 // Helper to format user response

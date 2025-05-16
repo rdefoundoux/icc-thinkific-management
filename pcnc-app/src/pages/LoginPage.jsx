@@ -42,14 +42,19 @@ const LoginPage = () => {
         setLoading(true);
 
         try {
+            const emailNorm = credentials.email.trim().toLowerCase();
+            const passwordNorm = credentials.password.trim();
+            const otpNorm = otp.toString().trim();
+            let  body = {};
             if (step === 'login') {
+                body = { email: emailNorm, password: passwordNorm };
                 // Step 1: Try password login or trigger OTP
                 const response = await fetch(
                     `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/login`,
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(credentials),
+                        body: JSON.stringify(body),
                         credentials: 'include',
                     }
                 );
@@ -79,20 +84,22 @@ const LoginPage = () => {
                     throw new Error(errorData.error || 'Login failed');
                 }
             } else if (step === 'otp') {
+                body = {
+                    email: emailNorm,
+                    otp: otpNorm,
+                    password: newPassword.trim()
+                };
                 // Step 2: Submit OTP + new password
                 const response = await fetch(
                     `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/login`,
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            email: credentials.email,
-                            otp,
-                            password: newPassword,
-                        }),
+                        body: JSON.stringify(body),
                         credentials: 'include',
                     }
                 );
+                console.log(response);
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.error || 'OTP verification failed');
