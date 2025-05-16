@@ -6,14 +6,13 @@ class SendMailController {
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 2525, // DigitalOcean allows this port
-      secure: true,
+      host: "smtp-relay.sendinblue.com",
+      port: 2525, // use 587 (TLS), or 465/2525 if needed
+      secure: false, // true for 465, false for 587/2525
       auth: {
-        user: process.env.GMAIL_USER as string,
-        pass: process.env.GMAIL_PASS as string,
-      },
-      pool: true,
+        user: '8300b4002@smtp-brevo.com', // your Brevo login (email)
+        pass: 'Smt7sh6Zv8QkAG5V'   // your Brevo SMTP key
+      }
     });
   }
 
