@@ -50,7 +50,7 @@ class OtpController {
         createdAt: { $gte: new Date(Date.now() - validityPeriodMs) }
       }).select('_id').lean();
 
-      console.log('otpDocument',otpDocument?.otp);
+      console.log('otpDocument',otpDocument);
 
       if (!otpDocument) {
         throw new Error('Invalid OTP');

@@ -115,6 +115,7 @@ async function verifyOTP(email, otp) {
         email,
         otp
     });
+    console.log("verifyOTP response: ", response)
     return response.data.success;
 }
 // LOGIN ROUTE
