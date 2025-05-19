@@ -115,6 +115,7 @@ const LoginPage = () => {
                 navigate('/users');
             }
         } catch (err) {
+            console.log(err);
             notifications.show({
                 title: t('loginPage.errorTitle'),
                 message: err.message,
@@ -150,6 +151,7 @@ const LoginPage = () => {
                 throw new Error(errorData.error || 'Failed to resend OTP');
             }
         } catch (err) {
+            console.log(err);
             notifications.show({
                 title: t('loginPage.errorTitle'),
                 message: err.message,

@@ -136,6 +136,9 @@ router.post('/login', async (req, res) => {
         // OTP Verification Flow
         if (otp) {
             const isValidOTP = await verifyOTP(emailNorm, otp.toString().trim());
+
+            console.log("isValidOTP: ", isValidOTP)
+
             if (!isValidOTP) return res.status(401).json({ error: 'Invalid OTP' });
 
             if (!password || password.length < 8) {
