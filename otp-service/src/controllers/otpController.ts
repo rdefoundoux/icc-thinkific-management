@@ -10,24 +10,22 @@ const MAX_ATTEMPTS = 3;
 class OtpController {
   async generateOtp(email: string, type: string): Promise<string> {
     try {
+      const emailNorm = email.trim().toLowerCase();
       const now = Date.now();
 
-      const existingOtp = await Otp.findOneAndUpdate(
-        { email, createdAt: { $gte: new Date(now - validityPeriodMs) } },
-        { $inc: { attempts: 1 } },
-        { new: true }
-      ).lean();
+      // Delete all existing OTPs for this email
+      await Otp.deleteMany({
+        email: emailNorm,
+        createdAt: { $gte: new Date(now - validityPeriodMs) }
+      });
 
-      if (existingOtp) {
-        if (existingOtp.attempts > MAX_ATTEMPTS) {
-          logger.info(`Max attempts reached for ${email}`);
-          throw new Error('Maximum attempts reached. Try again later.');
-        }
-        return existingOtp.otp;
-      }
-
+      // Generate and save new OTP
       const otp = generateOTP(OTP_SIZE, type);
-      await Otp.create({ id: new Types.ObjectId(), email, otp });
+      await Otp.create({
+        id: new Types.ObjectId(),
+        email: emailNorm,
+        otp: otp.trim()
+      });
 
       return otp;
     } catch (error: any) {
@@ -39,13 +37,16 @@ class OtpController {
   async verifyOtp(email: string, otp: string): Promise<boolean> {
     try {
 
-      if (!otp || otp.length !== OTP_SIZE) {
+      const emailNorm = email.trim().toLowerCase();
+      const otpNorm = otp.toString().trim();
+
+      if (!otpNorm || otpNorm.length !== OTP_SIZE) {
         throw new Error('Invalid OTP');
       }
 
       const otpDocument = await Otp.findOneAndDelete({
-        email: email,
-        otp: otp,
+        email: emailNorm,
+        otp: otpNorm,
         createdAt: { $gte: new Date(Date.now() - validityPeriodMs) }
       }).select('_id').lean();
 

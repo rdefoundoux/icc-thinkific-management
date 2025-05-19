@@ -102,9 +102,11 @@ const LoginPage = () => {
                 console.log(response);
                 if (!response.ok) {
                     const errorData = await response.json();
+                    console.log("verif step done error: ",errorData);
                     throw new Error(errorData.error || 'OTP verification failed');
                 }
                 const data = await response.json();
+                console.log("verif step done data: ",data);
                 login(data.user);
 
                 notifications.show({
