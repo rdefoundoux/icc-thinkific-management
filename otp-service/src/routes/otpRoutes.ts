@@ -40,6 +40,7 @@ router.post('/otp/verify', async (req, res) => {
 
     res.status(200).json({ message: 'OTP is verified' });
   } catch (error) {
+    console.log("verify otp error",error);
     logger.error('Failed to verify OTP', (error as Error).message);
     res.status(400).json({ error: (error as Error).message });
   }
