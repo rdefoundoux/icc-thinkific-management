@@ -37,7 +37,7 @@ router.post('/otp/verify', async (req, res) => {
     console.log("email",email);
 
     await otpController.verifyOtp(email, otp?.toString().trim());
-
+    console.log("otp verified");
     res.status(200).json({ message: 'OTP is verified' });
   } catch (error) {
     console.log("verify otp error",error);
