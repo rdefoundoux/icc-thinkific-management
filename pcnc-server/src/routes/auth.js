@@ -115,8 +115,7 @@ async function verifyOTP(email, otp) {
         email,
         otp
     });
-    console.log("verifyOTP response: ", response)
-    return response.data.success;
+    return response.status === 200  && response.data.message === 'OTP is verified';
 }
 // LOGIN ROUTE
 router.post('/login', async (req, res) => {
