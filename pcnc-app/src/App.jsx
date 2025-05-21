@@ -20,6 +20,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
 
 const App = () => {
+    const location = useLocation();
     return (
         <Routes>
             {/* Public Routes */}
@@ -33,14 +34,14 @@ const App = () => {
             <Route element={<ProtectedRoute />}>
                 <Route element={<DashboardLayout />}>
                     <Route index element={<ClassManager />} />
-                    <Route path="users" element={<UserManagement />} />
+                    <Route path="users" element={<UserManagement key={location.key}/>} />
                     <Route path="profile" element={<ProfilePage />} />
                     <Route path="elvanto" element={<ElvantoIntegration />} />
                     <Route path="classes" element={<ClassManager />} />
-                    <Route path="teacher-classes" element={<TeacherClasses />} />
-                    <Route path="admin-dashboard" element={<AdminDashboard />} />
-                    <Route path="sf-dashboard" element={<SfDashboard />} />
-                    <Route path="co-dashboard" element={<CoordinatorDashboard />} />
+                    <Route path="teacher-classes" element={<TeacherClasses key={location.key}/>} />
+                    <Route path="admin-dashboard" element={<AdminDashboard key={location.key}/>} />
+                    <Route path="sf-dashboard" element={<SfDashboard key={location.key}/>} />
+                    <Route path="co-dashboard" element={<CoordinatorDashboard key={location.key}/>} />
                 </Route>
             </Route>
 

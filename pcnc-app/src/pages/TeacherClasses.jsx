@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from 'react-router-dom'; // Import useLocation
+import axios from 'axios';
 import {
     ActionIcon, Avatar, Badge, Box, Button, Card, Flex, Group,
     Progress, Text, Menu, LoadingOverlay, Select, ScrollArea, useMantineTheme
 } from '@mantine/core';
-import { IconEdit, IconUsers, IconCertificate, IconUserPlus } from '@tabler/icons-react';
+import { IconEdit, IconUsers, IconCertificate, IconUserPlus, IconRefresh } from '@tabler/icons-react';
 import { MantineReactTable } from 'mantine-react-table';
 import { getClassesByTeacher } from '../api/classes';
 import { useTranslation } from 'react-i18next';
@@ -20,14 +22,18 @@ const TeacherClasses = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const location = useLocation(); // Use location for page focus detection
     const [activeModal, setActiveModal] = useState({ type: null, classId: null });
     const theme = useMantineTheme();
     const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
 
-    const { data: classes, isLoading } = useQuery({
-        queryKey: ['teacherClasses', user._id],
+    // Check if user has Teacher role using includes for array of roles
+    const isTeacherRole = user?.roles?.includes('teacher') || user?.role === 'teacher';
+
+    const { data: classes, isLoading, refetch } = useQuery({
+        queryKey: ['teacherClasses', user._id, location.pathname],
         queryFn: () => getClassesByTeacher(user._id),
-        select: data => data.map(cls => ({
+        select: data => data?.map(cls => ({
             ...cls,
             coordinator: cls.coordinator ? (Array.isArray(cls.coordinator) ? cls.coordinator : [cls.coordinator]) : [],
             students: cls.students?.map(student => ({
@@ -40,7 +46,12 @@ const TeacherClasses = () => {
                 rsfId: student.rsfId || null,
                 canProgress: checkProgression(student, cls.courseCode)
             })) || []
-        }))
+        })) || [],
+        enabled: !!user._id && isTeacherRole,
+        staleTime: 0, // Make data always stale to ensure refetch
+        cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
+        refetchOnMount: 'always', // Always refetch on mount
+        refetchOnWindowFocus: false
     });
 
     const checkProgression = (student, currentCourse) => {
@@ -48,6 +59,23 @@ const TeacherClasses = () => {
         const average = student.results?.average || 0;
         return average >= requiredAverage;
     };
+
+    // Add this effect to clear the cache when navigating away
+    useEffect(() => {
+        // Cleanup function runs when component unmounts
+        return () => {
+            // Remove this query from cache when navigating away
+            queryClient.removeQueries(['teacherClasses', user._id]);
+        };
+    }, [queryClient, user._id]);
+
+    useEffect(() => {
+        // Only refetch if we already have data (meaning we've navigated away and back)
+        if (classes) {
+            refetch();
+        }
+    }, [location.pathname]); // Only depend on pathname changes, not refetch
+
 
     const updateClassMutation = useMutation({
         mutationFn: (updatedClass) =>
@@ -173,11 +201,25 @@ const TeacherClasses = () => {
 
     return (
         <Box p="md" className="teacher-dashboard">
-            <Text size="xl" fw={700} mb="md" className="dashboard-title">
-                {t('teacherClasses.title')}
-            </Text>
+            <Flex align="center" justify="space-between" mb="md">
+                <Text size="xl" fw={700} className="dashboard-title">
+                    {isTeacherRole ? t('teacherDashboard.myClasses') : 'Toutes les Classes'}
+                </Text>
+                <Button
+                    leftIcon={<IconRefresh size={16} />}
+                    variant="light"
+                    onClick={() => refetch()}
+                    loading={isLoading}
+                >
+                    Actualiser
+                </Button>
+            </Flex>
 
             <LoadingOverlay visible={isLoading} overlayBlur={2} />
+
+            {!isLoading && classes?.length === 0 && (
+                <Text>Aucune classe trouvée</Text>
+            )}
 
             {classes?.map((cls) => (
                 <Card key={cls._id} mb="xl" shadow="sm" padding="lg" radius="md" className="class-card">
@@ -248,22 +290,30 @@ const TeacherClasses = () => {
                         <div className="role-section">
                             <Text size="sm" c="dimmed">{t('common.sf')}:</Text>
                             <Group spacing="xs">
-                                {cls.sf?.map(sf => (
-                                    <Badge key={sf._id} color="blue" variant="outline">
-                                        {sf.firstName} {sf.lastName}
-                                    </Badge>
-                                ))}
+                                {cls.sf?.length > 0 ? (
+                                    cls.sf.map(sf => (
+                                        <Badge key={sf._id} color="blue" variant="outline">
+                                            {sf.firstName} {sf.lastName}
+                                        </Badge>
+                                    ))
+                                ) : (
+                                    <Badge color="gray">{t('common.unassigned')}</Badge>
+                                )}
                             </Group>
                         </div>
 
                         <div className="role-section">
                             <Text size="sm" c="dimmed">{t('common.rsf')}:</Text>
                             <Group spacing="xs">
-                                {cls.rsf?.map(rsf => (
-                                    <Badge key={rsf._id} color="orange" variant="outline">
-                                        {rsf.firstName} {rsf.lastName}
-                                    </Badge>
-                                ))}
+                                {cls.rsf?.length > 0 ? (
+                                    cls.rsf.map(rsf => (
+                                        <Badge key={rsf._id} color="orange" variant="outline">
+                                            {rsf.firstName} {rsf.lastName}
+                                        </Badge>
+                                    ))
+                                ) : (
+                                    <Badge color="gray">{t('common.unassigned')}</Badge>
+                                )}
                             </Group>
                         </div>
                     </Group>

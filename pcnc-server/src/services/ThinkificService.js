@@ -149,10 +149,10 @@ class ThinkificService {
         }
     }
     static async addUserToGroup(thinkificUserId, groupId) {
-        let groupName; // Declare outside try/catch scope
+        let groupName = 'N/A'; // Declare outside try/catch scope with default value
         try {
             const groupResponse = await this.getGroup(groupId);
-            const groupName = groupResponse.group?.name; // Correctly access the name
+            groupName = groupResponse.group?.name; // Correctly access the name
             console.log('Group Name:', groupName);
 
             await axios.post(
@@ -160,17 +160,28 @@ class ThinkificService {
                 { user_id: thinkificUserId, group_names: [groupName] },
                 { headers: this.headers() }
             );
+            console.log(`User ${thinkificUserId} successfully added to group ${groupName}`);
             return true;
         } catch (error) {
+            // Check specifically for the "already in group" error
+            if (error.response?.data?.error === 'This user is already a part of this group') {
+                console.log(`User ${thinkificUserId} is already in group ${groupName} - skipping addition`);
+                return true; // Return success, as the desired state (user in group) is already achieved
+            }
+
+            // Log the error for other error types
             console.error('Thinkific API Error Details:', {
                 userIdUsed: thinkificUserId,
                 groupIdUsed: groupId,
-                groupNameAttempted: groupName || 'N/A', // ✅ Use captured value
+                groupNameAttempted: groupName,
                 errorResponse: error.response?.data
             });
+
+            // Rethrow for other errors
             throw new Error(`Failed to add user to group: ${error.response?.data?.error || error.message}`);
         }
     }
+
 
 
 

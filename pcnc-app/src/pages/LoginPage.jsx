@@ -45,10 +45,10 @@ const LoginPage = () => {
             const emailNorm = credentials.email.trim().toLowerCase();
             const passwordNorm = credentials.password.trim();
             const otpNorm = otp.toString().trim();
-            let  body = {};
+            let body = {};
+
             if (step === 'login') {
                 body = { email: emailNorm, password: passwordNorm };
-                // Step 1: Try password login or trigger OTP
                 const response = await fetch(
                     `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/login`,
                     {
@@ -60,36 +60,60 @@ const LoginPage = () => {
                 );
 
                 if (response.status === 202) {
-                    // OTP required
                     setStep('otp');
                     setEmailSent(true);
                     notifications.show({
-                        title: t('loginPage.otpSentTitle') || 'OTP Sent',
-                        message: t('loginPage.otpSentMessage') || 'A verification code has been sent to your email.',
+                        title: t('loginPage.otpSentTitle'),
+                        message: t('loginPage.otpSentMessage'),
                         color: 'pcncPurple',
                     });
                 } else if (response.ok) {
-                    // Password login success
                     const data = await response.json();
                     login(data.user);
+
+                    // Generate navItems based on user roles using i18n keys
+                    const navItems = [
+                        ...(data.user.roles?.includes('admin')
+                            ? [
+                                { label: t('sidebar.dashboard'), to: '/admin-dashboard' },
+                                { label: t('sidebar.classes'), to: '/classes' },
+                                { label: t('sidebar.users'), to: '/users' },
+                            ]
+                            : []),
+                        ...(data.user.roles?.includes('teacher')
+                            ? [{ label: t('sidebar.myClasses'), to: '/teacher-classes' }]
+                            : []),
+                        ...(data.user.roles?.includes('sf')
+                            ? [{ label: t('sidebar.myStudents_sf'), to: '/sf-dashboard' }]
+                            : []),
+                        ...(data.user.roles?.includes('coordinator')
+                            ? [{ label: t('sidebar.myStudents_coo'), to: '/co-dashboard' }]
+                            : []),
+                        { label: t('sidebar.settings'), to: '/profile' },
+                    ];
+
+                    // Navigate to the first available menu item
+                    if (navItems.length > 0) {
+                        navigate(navItems[0].to);
+                    } else {
+                        navigate('/profile'); // Default fallback
+                    }
 
                     notifications.show({
                         title: t('loginPage.welcomeBack'),
                         message: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
                         color: 'pcncPurple',
                     });
-                    navigate('/users');
                 } else {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Login failed');
+                    throw new Error(errorData.error || t('loginPage.errorTitle'));
                 }
             } else if (step === 'otp') {
                 body = {
                     email: emailNorm,
                     otp: otpNorm,
-                    password: newPassword.trim()
+                    password: newPassword.trim(),
                 };
-                // Step 2: Submit OTP + new password
                 const response = await fetch(
                     `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/login`,
                     {
@@ -99,28 +123,54 @@ const LoginPage = () => {
                         credentials: 'include',
                     }
                 );
-                console.log(response);
+
                 if (!response.ok) {
                     const errorData = await response.json();
-                    console.log("verif step done error: ",errorData);
-                    throw new Error(errorData.error || 'OTP verification failed');
+                    throw new Error(errorData.error || t('loginPage.errorTitle'));
                 }
+
                 const data = await response.json();
-                console.log("verif step done data: ",data);
                 login(data.user);
+
+                // Generate navItems using roles and i18n keys
+                const navItems = [
+                    ...(data.user.roles?.includes('admin')
+                        ? [
+                            { label: t('sidebar.dashboard'), to: '/admin-dashboard' },
+                            { label: t('sidebar.classes'), to: '/classes' },
+                            { label: t('sidebar.users'), to: '/users' },
+                        ]
+                        : []),
+                    ...(data.user.roles?.includes('teacher')
+                        ? [{ label: t('sidebar.myClasses'), to: '/teacher-classes' }]
+                        : []),
+                    ...(data.user.roles?.includes('sf')
+                        ? [{ label: t('sidebar.myStudents_sf'), to: '/sf-dashboard' }]
+                        : []),
+                    ...(data.user.roles?.includes('coordinator')
+                        ? [{ label: t('sidebar.myStudents_coo'), to: '/co-dashboard' }]
+                        : []),
+                    { label: t('sidebar.settings'), to: '/profile' },
+                ];
+
+                // Navigate the user to the first relevant menu item
+                if (navItems.length > 0) {
+                    navigate(navItems[0].to);
+                } else {
+                    navigate('/profile'); // Default fallback
+                }
 
                 notifications.show({
                     title: t('loginPage.welcomeBack'),
                     message: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
                     color: 'pcncPurple',
                 });
-                navigate('/users');
             }
         } catch (err) {
-            console.log(err);
+            console.error(err);
             notifications.show({
                 title: t('loginPage.errorTitle'),
-                message: err.message,
+                message: err.message || t('loginPage.errorTitle'),
                 color: 'red',
             });
         } finally {

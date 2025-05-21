@@ -12,7 +12,9 @@
     "students": "Students",
     "settings": "Settings",
     "logout": "Logout",
-    "myStudents": "My Students",
+    "myStudents_sf": "My Students as SF",
+    "myStudents_coo": "My Students as Coordinator",
+    "myStudents_rsf": "My Students as RSF",
     "userMenu": "User Menu",
     "profile": "Profile",
     "myClasses": "My Classes",
@@ -151,7 +153,8 @@
     "unassigned": "Unassigned",
     "viewDetails": "View Details",
     "minor": "Minor",
-    "parentalAuthorization": "Parental Authorization"
+    "parentalAuthorization": "Parental Authorization",
+    "progression": "Progression"
   },
   "registration": {
     "title": "PCNC DIGITAL REGISTRATION",

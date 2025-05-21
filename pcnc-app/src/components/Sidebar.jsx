@@ -68,7 +68,7 @@ const Sidebar = () => {
         ...(user?.roles?.includes('sf')
             ? [
                 {
-                    label: t('sidebar.myStudents'),
+                    label: t('sidebar.myStudents_sf'),
                     to: '/sf-dashboard',
                     icon: IconUsersGroup,
                 },
@@ -77,7 +77,7 @@ const Sidebar = () => {
         ...(user?.roles?.includes('coordinator')
             ? [
                 {
-                    label: t('sidebar.myStudents'),
+                    label: t('sidebar.myStudents_coo'),
                     to: '/co-dashboard',
                     icon: IconUsersGroup,
                 },
@@ -107,23 +107,33 @@ const Sidebar = () => {
             {/* Top Section: Navigation */}
             <ScrollArea h="70vh">
                 <Stack spacing={2}>
-                    {navItems.map(({ label, to, icon: Icon }) => (
+                    {navItems.map(({ label, to, icon: Icon },index) => (
                         <NavLink
-                            key={label}
+                            key={index}
                             component={RouterNavLink}
                             to={to}
                             label={label}
                             icon={<Icon size={20} />}
                             pl="xl"
                             sx={{
-                                borderRadius: theme.radius.md,
-                                backgroundColor:
-                                    location.pathname === to ? theme.colors.blue[0] : 'transparent',
-                                color:
-                                    location.pathname === to
-                                        ? theme.colors.blue[6]
-                                        : theme.colors.gray[7],
-                                '&:hover': { backgroundColor: theme.colors.blue[0] },
+                                "&[data-active]": {
+                                    borderRadius: theme.radius.md,
+                                    backgroundColor:
+                                        location.pathname === to ? theme.colors.blue[0] : 'transparent',
+                                    color:
+                                        location.pathname === to
+                                            ? theme.colors.blue[6]
+                                            : theme.colors.gray[7],
+                                    '&:hover': {backgroundColor: theme.colors.blue[0]},
+                                }
+                            }}
+                            onClick={e => {
+                                // If already on this route, force a remount by navigating away and back
+                                if (location.pathname === to) {
+                                    navigate(to, { replace: true });
+                                    setTimeout(() => navigate(to, { replace: true }), 0);
+                                    e.preventDefault(); // Prevent default link behavior
+                                }
                             }}
                         />
                     ))}
