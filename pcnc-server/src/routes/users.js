@@ -11,6 +11,7 @@ import {
     createUser,
     updateUser,
     assignStudentsToSf,
+    assignStudentsToRsf
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -234,6 +235,8 @@ router.get('/', async (req, res) => {
 
 // Assign students to SF
 router.patch('/:sfId/students', assignStudentsToSf);
+router.patch('/:rsfId/studentsRsf', assignStudentsToRsf);
+
 
 
 export default router;

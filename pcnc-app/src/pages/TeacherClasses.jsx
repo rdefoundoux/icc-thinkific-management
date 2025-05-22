@@ -15,6 +15,7 @@ import AssignCoordinatorModal from '../components/AssignCoordinatorModal';
 import AssignSFModal from '../components/AssignSFModal';
 import AssignRSFModal from '../components/AssignRSFModal';
 import AssignStudentsModal from '../components/AssignStudentsModal';
+import AssignStudentsToSFOrRSFModal from '../components/AssignStudentsToSFOrRSFModal';
 import { useMediaQuery } from '@mantine/hooks';
 import "../styles/dashboard.css";
 
@@ -26,6 +27,13 @@ const TeacherClasses = () => {
     const [activeModal, setActiveModal] = useState({ type: null, classId: null });
     const theme = useMantineTheme();
     const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
+
+    const [assignModal, setAssignModal] = useState({
+        open: false,
+        staffType: '',
+        classObj: null,
+        staffList: [],
+    });
 
     // Check if user has Teacher role using includes for array of roles
     const isTeacherRole = user?.roles?.includes('teacher') || user?.role === 'teacher';
@@ -268,6 +276,43 @@ const TeacherClasses = () => {
                             >
                                 {t('common.assignStudents')}
                             </Button>
+                            <Menu shadow="md" position="bottom-end">
+                                <Menu.Target>
+                                    <Button variant="light" leftIcon={<IconUserPlus size={16} />}>
+                                        {t('common.assignStudentsTo')}
+                                    </Button>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                    <Menu.Item
+                                        icon={<IconUsers size={14} />}
+                                        onClick={() =>
+                                            setAssignModal({
+                                                open: true,
+                                                staffType: 'sf',
+                                                classObj: cls,
+                                                staffList: cls.sf || [],
+                                            })
+                                        }
+                                        disabled={!cls.sf || cls.sf.length === 0}
+                                    >
+                                        {t('common.sf')}
+                                    </Menu.Item>
+                                    <Menu.Item
+                                        icon={<IconUsers size={14} />}
+                                        onClick={() =>
+                                            setAssignModal({
+                                                open: true,
+                                                staffType: 'rsf',
+                                                classObj: cls,
+                                                staffList: cls.rsf || [],
+                                            })
+                                        }
+                                        disabled={!cls.rsf || cls.rsf.length === 0}
+                                    >
+                                        {t('common.rsf')}
+                                    </Menu.Item>
+                                </Menu.Dropdown>
+                            </Menu>
                         </Group>
                     </Group>
 
@@ -366,6 +411,18 @@ const TeacherClasses = () => {
                 onClose={() => setActiveModal({ type: null })}
                 classObj={classes?.find(c => c._id === activeModal.classId)}
                 onAssigned={() => queryClient.invalidateQueries(['teacherClasses', user._id])}
+            />
+            <AssignStudentsToSFOrRSFModal
+                opened={assignModal.open}
+                onClose={() =>
+                    setAssignModal({ open: false, staffType: '', classObj: null, staffList: [] })
+                }
+                classObj={assignModal.classObj}
+                staffType={assignModal.staffType}
+                staffList={assignModal.staffList}
+                onAssigned={() => {
+                    queryClient.invalidateQueries(['teacherClasses', user._id]);
+                }}
             />
         </Box>
     );

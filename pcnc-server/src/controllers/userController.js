@@ -207,4 +207,46 @@ export const assignStudentsToSf = async (req, res) => {
     }
 };
 
+export const assignStudentsToRsf = async (req, res) => {
+    try {
+        const { classId, studentIds } = req.body;
+        const rsfId = req.params.rsfId;
+
+        // Verify RSF exists and belongs to class
+        const classObj = await Class.findOne({
+            _id: classId,
+            rsf: rsfId
+        });
+
+        if (!classObj) return res.status(403).json({ error: 'RSF not in class' });
+
+        // Verify all students belong to the class
+        const invalidStudents = studentIds.filter(id =>
+            !classObj.students.includes(id)
+        );
+
+        if (invalidStudents.length > 0) {
+            return res.status(400).json({
+                error: 'Some students not in class',
+                invalidStudents
+            });
+        }
+
+        // Update RSF's managed students
+        const rsf = await User.findByIdAndUpdate(
+            rsfId,
+            {
+                $addToSet: {
+                    managedStudents: { $each: studentIds },
+                    managedClasses: classId
+                }
+            },
+            { new: true }
+        );
+
+        res.json(rsf);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
 
