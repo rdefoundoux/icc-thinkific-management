@@ -112,7 +112,12 @@ const TeacherClasses = () => {
             header: t('common.sf'),
             size: 150,
             Cell: ({ row }) => {
-                const assignedSf = row.original.classSf?.find(sf => sf._id === row.original.sfId);
+                // Find SF that has this student in managedStudents
+                const assignedSf = row.original.classSf?.find(sf =>
+                        Array.isArray(sf.managedStudents) && sf.managedStudents.some(
+                            sId => sId.toString() === row.original._id.toString()
+                        )
+                );
                 return assignedSf ? (
                     <Badge color="blue" variant="light">
                         {assignedSf.firstName} {assignedSf.lastName}
@@ -151,7 +156,12 @@ const TeacherClasses = () => {
             header: t('common.rsf'),
             size: 150,
             Cell: ({ row }) => {
-                const assignedRsf = row.original.classRsf?.find(rsf => rsf._id === row.original.rsfId);
+                // Find RSF that has this student in managedStudents
+                const assignedRsf = row.original.classRsf?.find(rsf =>
+                        Array.isArray(rsf.managedStudents) && rsf.managedStudents.some(
+                            sId => sId.toString() === row.original._id.toString()
+                        )
+                );
                 return assignedRsf ? (
                     <Badge color="orange" variant="light">
                         {assignedRsf.firstName} {assignedRsf.lastName}

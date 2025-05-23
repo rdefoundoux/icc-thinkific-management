@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo,useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from 'axios';
@@ -45,10 +45,19 @@ const SfDashboard = () => {
             }))
         })) || [],
         enabled: !!user._id && isSfRole,
-        refetchOnMount: true,
+        staleTime: 0, // Make data always stale to ensure refetch
+        cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
+        refetchOnMount: 'always', // Always refetch on mount
         refetchOnWindowFocus: false
     });
-
+// Add this effect to clear the cache when navigating away
+    useEffect(() => {
+        // Cleanup function runs when component unmounts
+        return () => {
+            // Remove this query from cache when navigating away
+            queryClient.removeQueries(['sfClasses', user._id]);
+        };
+    }, [queryClient, user._id]);
     const checkProgression = (student, currentCourse) => {
         const requiredAverage = currentCourse === '201' ? 80 : 70;
         const average = student.results?.average || 0;
@@ -86,7 +95,294 @@ const SfDashboard = () => {
 
     // Rest of your columns definition code remains the same
     const columns = useMemo(() => [
-        // Your existing columns
+        {
+            accessorKey: 'avatar',
+            header: 'ÉTUDIANT',
+            size: 250,
+            Cell: ({ row }) => (
+                <Group spacing="sm">
+                    <Avatar src={row.original.avatarUrl} size={40} radius="xl" />
+                    <div>
+                        <Text fw={500}>{row.original.firstName} {row.original.lastName}</Text>
+                        <Text size="sm" c="dimmed">{row.original.email}</Text>
+                    </div>
+                </Group>
+            ),
+            enableEditing: false,
+        },
+        {
+            accessorKey: 'whatsappNumber',
+            header: 'WHATSAPP',
+            size: 150,
+            Cell: ({ row }) => (
+                <Text>
+                    {row.original.whatsappNumber}
+                </Text>
+            )
+        },
+        {
+            accessorKey: 'city',
+            header: 'VILLE',
+            size: 150,
+            Cell: ({ row }) => <Text>{row.original.city}, {row.original.country}</Text>
+        },
+        {
+            accessorKey: 'gender',
+            header: 'Genre',
+            Cell: ({ row }) => (
+                <Badge variant="outline">
+                    {row.original.gender === 'M' ? 'Masculin' : 'Féminin'}
+                </Badge>
+            )
+        },
+        {
+            accessorKey: 'iccMember',
+            header: 'Membre ICC',
+            Cell: ({ row }) => (
+                <Badge color={row.original.iccMember ? 'green' : 'gray'}>
+                    {row.original.iccMember ? 'Oui' : 'Non'}
+                </Badge>
+            )
+        },
+        {
+            accessorKey: 'attendance',
+            header: 'PRÉSENCE',
+            size: 200,
+            Cell: ({ row }) => (
+                <div>
+                    {(row.original.attendance || []).map((att, i) => {
+                        const percentage = att.totalDays > 0
+                            ? (att.presentDays / att.totalDays) * 100
+                            : 0;
+                        return (
+                            <div key={i}>
+                                <Text size="xs" fw={500}>{att.name}</Text>
+                                <Badge color="blue" size="sm" variant="light">
+                                    {att.presentDays}/{att.totalDays}
+                                </Badge>
+                                <Progress
+                                    value={percentage}
+                                    w={60}
+                                    size="xs"
+                                    color={percentage >= 70 ? 'green' : 'orange'}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            ),
+            Edit: ({ row }) => {
+                const [attendance, setAttendance] = React.useState([...(row.original.attendance || [])]);
+                React.useEffect(() => { row._valuesCache.attendance = attendance; }, [attendance]);
+                return (
+                    <Flex direction="column" gap="sm">
+                        {attendance.map((att, i) => (
+                            <Box key={i}>
+                                <Text size="xs" fw={500} mb={4}>Session {i + 1}</Text>
+                                <Flex direction="column" gap="xs">
+                                    <TextInput
+                                        label="Nom"
+                                        value={att.name}
+                                        onChange={e => {
+                                            const newAttendance = [...attendance];
+                                            newAttendance[i].name = e.target.value;
+                                            setAttendance(newAttendance);
+                                        }}
+                                        w="100%"
+                                    />
+                                    <NumberInput
+                                        label="Présents"
+                                        value={att.presentDays}
+                                        onChange={val => {
+                                            const newAttendance = [...attendance];
+                                            newAttendance[i].presentDays = val;
+                                            setAttendance(newAttendance);
+                                        }}
+                                        min={0}
+                                        w="100%"
+                                    />
+                                    <NumberInput
+                                        label="Total"
+                                        value={att.totalDays}
+                                        onChange={val => {
+                                            const newAttendance = [...attendance];
+                                            newAttendance[i].totalDays = val;
+                                            setAttendance(newAttendance);
+                                        }}
+                                        min={att.presentDays}
+                                        w="100%"
+                                    />
+                                    <ActionIcon
+                                        color="red"
+                                        variant="light"
+                                        onClick={() => setAttendance(attendance.filter((_, idx) => idx !== i))}
+                                        mt={4}
+                                    >
+                                        <IconX size={16} />
+                                    </ActionIcon>
+                                </Flex>
+                            </Box>
+                        ))}
+                        <Button
+                            leftIcon={<IconPlus size={16} />}
+                            variant="light"
+                            color="blue"
+                            size="xs"
+                            onClick={() => setAttendance([...attendance, { name: '', presentDays: 0, totalDays: 0 }])}
+                            mt={6}
+                        >
+                            Ajouter Session
+                        </Button>
+                    </Flex>
+                );
+            }
+        },
+        {
+            accessorKey: 'results',
+            header: 'RÉSULTATS',
+            size: 200,
+            Cell: ({ row }) => (
+                <div>
+                    {(row.original.results?.tests || []).map((test, i) => (
+                        <div key={i}>
+                            <Text size="xs">{test.name}</Text>
+                            <Badge
+                                variant="light"
+                                color={test.score >= 70 ? 'green' : 'orange'}
+                            >
+                                {test.score}%
+                            </Badge>
+                        </div>
+                    ))}
+                </div>
+            ),
+            Edit: ({ row }) => {
+                const [tests, setTests] = React.useState([...(row.original.results?.tests || [])]);
+                React.useEffect(() => { row._valuesCache.results = { tests }; }, [tests]);
+                return (
+                    <Flex direction="column" gap="sm">
+                        {tests.map((test, i) => (
+                            <Box key={i}>
+                                <Text size="xs" fw={500} mb={4}>Test {i + 1}</Text>
+                                <Flex direction="column" gap="xs">
+                                    <TextInput
+                                        label="Nom"
+                                        value={test.name}
+                                        onChange={e => {
+                                            const newTests = [...tests];
+                                            newTests[i].name = e.target.value;
+                                            setTests(newTests);
+                                        }}
+                                        w="100%"
+                                    />
+                                    <NumberInput
+                                        label="Score"
+                                        value={test.score}
+                                        onChange={val => {
+                                            const newTests = [...tests];
+                                            newTests[i].score = val;
+                                            setTests(newTests);
+                                        }}
+                                        min={0}
+                                        max={100}
+                                        w="100%"
+                                    />
+                                    <ActionIcon
+                                        color="red"
+                                        variant="light"
+                                        onClick={() => setTests(tests.filter((_, idx) => idx !== i))}
+                                        mt={4}
+                                    >
+                                        <IconX size={16} />
+                                    </ActionIcon>
+                                </Flex>
+                            </Box>
+                        ))}
+                        <Button
+                            leftIcon={<IconPlus size={16} />}
+                            variant="light"
+                            color="blue"
+                            size="xs"
+                            onClick={() => setTests([...tests, { name: '', score: 0 }])}
+                            mt={6}
+                        >
+                            Ajouter Test
+                        </Button>
+                    </Flex>
+                );
+            }
+        },
+        {
+            accessorKey: 'enrolledCourses',
+            header: 'INSCRIPTION AU COURS',
+            size: 200,
+            Cell: ({ row }) => {
+                const enrolled = row.original.enrolledCourses || [];
+                return (
+                    <div>
+                        {['001', '101', '201'].map(courseCode => (
+                            <div
+                                key={courseCode}
+                                style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                            >
+                                <Checkbox
+                                    checked={enrolled.includes(courseCode)}
+                                    readOnly
+                                />
+                                <div>
+                                    <Text>{courseCode}</Text>
+                                    <Text size="xs">({currentLanguageCode.toUpperCase()})</Text>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            },
+            Edit: ({ row }) => {
+                const initialCourses = row.original.enrolledCourses || [];
+                const [checkedCourses, setCheckedCourses] = React.useState([...initialCourses]);
+
+                return (
+                    <div>
+                        {['001', '101', '201'].map(courseCode => (
+                            <div key={courseCode} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Checkbox
+                                    checked={checkedCourses.includes(courseCode)}
+                                    onChange={(e) => {
+                                        const newCourses = e.currentTarget.checked
+                                            ? [...checkedCourses, courseCode]
+                                            : checkedCourses.filter(c => c !== courseCode);
+                                        setCheckedCourses(newCourses);
+                                        row._valuesCache.enrollmentChanges = {
+                                            added: newCourses.filter(c => !initialCourses.includes(c)),
+                                            removed: initialCourses.filter(c => !newCourses.includes(c))
+                                        };
+                                    }}
+                                />
+                                <div>
+                                    <Text>{courseCode}</Text>
+                                    <Text size="xs">({currentLanguageCode.toUpperCase()})</Text>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            }
+        },
+        {
+            accessorKey: 'progression',
+            header: 'PROGRESSION',
+            size: 180,
+            Cell: ({ row }) => (
+                <Badge
+                    color={row.original.canProgress ? 'green' : 'red'}
+                    variant="filled"
+                >
+                    {row.original.canProgress ? 'Prêt pour la suite' : 'Révision nécessaire'}
+                </Badge>
+            ),
+            enableEditing: false,
+        }
     ], [currentLanguageCode]);
 
     return (

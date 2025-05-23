@@ -100,9 +100,8 @@ const LoginPage = () => {
                     }
 
                     notifications.show({
-                        title: t('loginPage.welcomeBack'),
-                        message: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
-                        color: 'pcncPurple',
+                        title: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
+                        color: 'purple',
                     });
                 } else {
                     const errorData = await response.json();
@@ -161,9 +160,8 @@ const LoginPage = () => {
                 }
 
                 notifications.show({
-                    title: t('loginPage.welcomeBack'),
-                    message: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
-                    color: 'pcncPurple',
+                    title:  `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
+                    color: 'purple',
                 });
             }
         } catch (err) {

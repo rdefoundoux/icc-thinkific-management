@@ -130,11 +130,11 @@ export const getClassesByTeacher = async (req, res) => {
             })
             .populate({
                 path: 'sf',
-                select: 'firstName lastName'
+                select: 'firstName lastName managedStudents' // Added managedStudents
             })
             .populate({
                 path: 'rsf',
-                select: 'firstName lastName'
+                select: 'firstName lastName managedStudents' // Added managedStudents
             })
             .populate('students', 'firstName lastName email whatsappNumber city country gender iccMember avatarUrl');
 

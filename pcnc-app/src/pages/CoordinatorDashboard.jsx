@@ -35,20 +35,36 @@ const CoordinatorDashboard = () => {
     const { data: classes, refetch, isLoading } = useQuery({
         queryKey: ['coordinatorClasses', user._id],
         queryFn: () => getClassesByCoordinator(user._id),
-        select: data => data?.map(cls => ({
-            ...cls,
-            students: cls.students.map(student => ({
-                ...student,
-                enrolledCourses: student.enrolledCourses || [],
-                results: student.results || { tests: [], average: 0 },
-                canProgress: checkProgression(student, cls.courseCode),
-                classId: cls._id
-            }))
-        })) || [],
+        select: data => {
+            return data?.map(cls => {
+                console.log('Class:', cls); // Log cls here
+                return {
+                    ...cls,
+                    sf: cls.sf ? (Array.isArray(cls.sf) ? cls.sf : [cls.sf]) : [],
+                    students: cls.students.map(student => ({
+                        ...student,
+                        enrolledCourses: student.enrolledCourses || [],
+                        results: student.results || { tests: [], average: 0 },
+                        canProgress: checkProgression(student, cls.courseCode),
+                        classId: cls._id
+                    }))
+                };
+            }) || [];
+        },
         enabled: !!user._id && isCoordinatorRole,
-        refetchOnMount: true,
+        staleTime: 0, // Make data always stale to ensure refetch
+        cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
+        refetchOnMount: 'always', // Always refetch on mount
         refetchOnWindowFocus: false
     });
+// Add this effect to clear the cache when navigating away
+    useEffect(() => {
+        // Cleanup function runs when component unmounts
+        return () => {
+            // Remove this query from cache when navigating away
+            queryClient.removeQueries(['coordinatorClasses', user._id]);
+        };
+    }, [queryClient, user._id]);
 
     const checkProgression = (student, currentCourse) => {
         const requiredAverage = currentCourse === '201' ? 80 : 70;
@@ -411,11 +427,20 @@ const CoordinatorDashboard = () => {
                             </Group>
                             <Group spacing="xl">
                                 <Text fw={500}>
-                                    Enseignant: {cls.teacher?.firstName} {cls.teacher?.lastName}
+                                    Enseignant:{
+                                    <Badge key={cls.teacher._id} color="red" variant="outline" ml={4}>
+                                        {cls.teacher.firstName} {cls.teacher.lastName}
+                                    </Badge>
+                                }
                                 </Text>
                                 <Text fw={500}>
-                                    SF: {cls.sf?.map(sf => `${sf.firstName} ${sf.lastName}`).join(', ')}
+                                    SF: {cls.sf?.map(sf => (
+                                    <Badge key={sf._id} color="blue" variant="outline" ml={4}>
+                                        {sf.firstName} {sf.lastName}
+                                    </Badge>
+                                ))}
                                 </Text>
+
                             </Group>
                         </Group>
                         <ScrollArea type="auto" style={{ maxWidth: '100vw', minWidth: isMobile ? 0 : 800 }}>
