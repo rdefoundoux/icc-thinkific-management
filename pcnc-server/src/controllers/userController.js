@@ -166,7 +166,7 @@ export const listCourses = async (req, res) => {
 };
 export const assignStudentsToSf = async (req, res) => {
     try {
-        const { classId, studentIds } = req.body;
+        const { classId, studentIds, action } = req.body;
         const sfId = req.params.sfId;
 
         // Verify SF exists and belongs to class
@@ -189,15 +189,25 @@ export const assignStudentsToSf = async (req, res) => {
             });
         }
 
-        // Update SF's managed students
-        const sf = await User.findByIdAndUpdate(
-            sfId,
-            {
+        // Determine update operation based on action
+        const updateOperation = action === 'remove'
+            ? {
+                $pull: {
+                    managedStudents: { $in: studentIds },
+                    managedClasses: classId
+                }
+            }
+            : {
                 $addToSet: {
                     managedStudents: { $each: studentIds },
                     managedClasses: classId
                 }
-            },
+            };
+
+        // Update SF's managed students
+        const sf = await User.findByIdAndUpdate(
+            sfId,
+            updateOperation,
             { new: true }
         );
 
@@ -209,7 +219,7 @@ export const assignStudentsToSf = async (req, res) => {
 
 export const assignStudentsToRsf = async (req, res) => {
     try {
-        const { classId, studentIds } = req.body;
+        const { classId, studentIds, action } = req.body;
         const rsfId = req.params.rsfId;
 
         // Verify RSF exists and belongs to class
@@ -232,15 +242,25 @@ export const assignStudentsToRsf = async (req, res) => {
             });
         }
 
-        // Update RSF's managed students
-        const rsf = await User.findByIdAndUpdate(
-            rsfId,
-            {
+        // Determine update operation based on action
+        const updateOperation = action === 'remove'
+            ? {
+                $pull: {
+                    managedStudents: { $in: studentIds },
+                    managedClasses: classId
+                }
+            }
+            : {
                 $addToSet: {
                     managedStudents: { $each: studentIds },
                     managedClasses: classId
                 }
-            },
+            };
+
+        // Update RSF's managed students
+        const rsf = await User.findByIdAndUpdate(
+            rsfId,
+            updateOperation,
             { new: true }
         );
 

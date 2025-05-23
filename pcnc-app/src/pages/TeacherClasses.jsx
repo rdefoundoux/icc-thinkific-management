@@ -127,7 +127,33 @@ const TeacherClasses = () => {
                 );
             },
             Edit: ({ row }) => {
-                const [selectedSf, setSelectedSf] = useState(row.original.sfId || '');
+                const currentSf = row.original.classSf?.find(sf =>
+                    sf.managedStudents?.includes(row.original._id)
+                );
+                const [selectedSf, setSelectedSf] = useState(currentSf?._id || '');
+
+                const handleChange = async (value) => {
+                    setSelectedSf(value);
+
+                    // Remove from old SF
+                    if (currentSf) {
+                        await axios.patch(
+                            `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${currentSf._id}/students`,
+                            { classId: row.original.classId, studentIds: [row.original._id], action: 'remove' }
+                        );
+                    }
+
+                    // Add to new SF
+                    if (value) {
+                        await axios.patch(
+                            `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${value}/students`,
+                            { classId: row.original.classId, studentIds: [row.original._id] }
+                        );
+                    }
+
+                    queryClient.invalidateQueries(['teacherClasses', user._id]);
+                };
+
                 return (
                     <Select
                         data={row.original.classSf.map(sf => ({
@@ -135,16 +161,7 @@ const TeacherClasses = () => {
                             label: `${sf.firstName} ${sf.lastName}`
                         }))}
                         value={selectedSf}
-                        onChange={value => {
-                            setSelectedSf(value);
-                            const updatedClass = {
-                                ...row.original.classData,
-                                students: row.original.classData.students.map(s =>
-                                    s._id === row.original._id ? { ...s, sfId: value } : s
-                                )
-                            };
-                            updateClassMutation.mutate(updatedClass);
-                        }}
+                        onChange={handleChange}
                         clearable
                         placeholder={t('common.selectSF')}
                     />
@@ -171,7 +188,33 @@ const TeacherClasses = () => {
                 );
             },
             Edit: ({ row }) => {
-                const [selectedRsf, setSelectedRsf] = useState(row.original.rsfId || '');
+                const currentRsf = row.original.classRsf?.find(rsf =>
+                    rsf.managedStudents?.includes(row.original._id)
+                );
+                const [selectedRsf, setSelectedRsf] = useState(currentRsf?._id || '');
+
+                const handleChange = async (value) => {
+                    setSelectedRsf(value);
+
+                    // Remove from old RSF
+                    if (currentRsf) {
+                        await axios.patch(
+                            `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${currentRsf._id}/students-rsf`,
+                            { classId: row.original.classId, studentIds: [row.original._id], action: 'remove' }
+                        );
+                    }
+
+                    // Add to new RSF
+                    if (value) {
+                        await axios.patch(
+                            `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${value}/students-rsf`,
+                            { classId: row.original.classId, studentIds: [row.original._id] }
+                        );
+                    }
+
+                    queryClient.invalidateQueries(['teacherClasses', user._id]);
+                };
+
                 return (
                     <Select
                         data={row.original.classRsf.map(rsf => ({
@@ -179,16 +222,7 @@ const TeacherClasses = () => {
                             label: `${rsf.firstName} ${rsf.lastName}`
                         }))}
                         value={selectedRsf}
-                        onChange={value => {
-                            setSelectedRsf(value);
-                            const updatedClass = {
-                                ...row.original.classData,
-                                students: row.original.classData.students.map(s =>
-                                    s._id === row.original._id ? { ...s, rsfId: value } : s
-                                )
-                            };
-                            updateClassMutation.mutate(updatedClass);
-                        }}
+                        onChange={handleChange}
                         clearable
                         placeholder={t('common.selectRSF')}
                     />
