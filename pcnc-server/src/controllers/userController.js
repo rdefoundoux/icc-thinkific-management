@@ -3,6 +3,7 @@ import Class from '../models/Class.js';
 import asyncHandler from 'express-async-handler';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import ThinkificService from '../services/ThinkificService.js'; // Verify the correct path
 
 
 export const getUsers = asyncHandler(async (req, res) => {
