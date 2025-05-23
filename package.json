@@ -15,5 +15,9 @@
     "@tanstack/react-table": "^8.21.3",
     "axios-retry": "^4.5.0",
     "lodash.debounce": "^4.0.8"
+  },
+  "devDependencies": {
+    "bcryptjs": "^3.0.2",
+    "uuid": "^11.1.0"
   }
 }

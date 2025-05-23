@@ -1,7 +1,6 @@
 // services/ThinkificService.js
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-
 const API_BASE = 'https://api.thinkific.com/api/public/v1';
 const THINKIFIC_GRAPHQL_ENDPOINT = `https://api.thinkific.com/stable/graphql`;
 const GET_GROUP_USERS = `
@@ -374,16 +373,20 @@ class ThinkificService {
     static async createUser(userData) {
         try {
             const response = await axios.post(`${API_BASE}/users`, {
-                first_name: userData.firstName,
-                last_name: userData.lastName,
-                email: userData.email
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+                email: userData.email,
+                password: userData.password
             }, {
                 headers: this.headers()
             });
 
             return response.data;
         } catch (error) {
-            console.error('Error creating Thinkific user:', error.response?.data || error.message);
+            console.error('Thinkific user creation error:', {
+                config: error.config,
+                response: error.response?.data
+            });
             throw error;
         }
     }

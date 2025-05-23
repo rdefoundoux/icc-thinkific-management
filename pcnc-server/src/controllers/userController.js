@@ -1,6 +1,8 @@
 import User from '../models/User.js';
 import Class from '../models/Class.js';
 import asyncHandler from 'express-async-handler';
+import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 
 
 export const getUsers = asyncHandler(async (req, res) => {
@@ -122,26 +124,119 @@ export const syncUserData = async (req, res) => {
 
 export const createUser = async (req, res) => {
     try {
-        const { roles, ...userData } = req.body;
+        const { email, firstName, lastName, roles = ['student'], password } = req.body;
 
-        // Create local user
-        const user = await User.create({
-            ...userData,
-            roles,
-            isProxyUser: false
+        // Validate required fields
+        if (!email || !firstName || !lastName) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Generate password if not provided
+        const plainPassword = password || uuidv4().slice(0, 12);
+        const hashedPassword = await bcrypt.hash(plainPassword, 12);
+
+        // 1. Create Thinkific user (without roles)
+        const thinkificUser = await ThinkificService.createUser({
+            email,
+            first_name: firstName,
+            last_name: lastName,
+            password: plainPassword
         });
 
-        // Assign proxies for limited roles
-        const proxyService = new ProxyService();
-        await Promise.all(roles.map(async role => {
-            if (ROLE_MAP[role] && LICENSE_LIMITS[ROLE_MAP[role]]) {
-                await proxyService.assignProxy(user.id, ROLE_MAP[role]);
-            }
-        }));
+        // 2. Create local user with Thinkific ID
+        const user = await User.create({
+            email,
+            firstName,
+            lastName,
+            thinkificId: thinkificUser.id,
+            password: hashedPassword,
+            roles,
+            requiresPasswordReset: !password
+        });
 
-        res.status(201).json(user);
+        res.status(201).json({
+            _id: user._id,
+            email: user.email,
+            roles: user.roles,
+            thinkificId: user.thinkificId
+        });
+
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        console.error('User creation error:', error);
+
+        // Handle Thinkific errors
+        const thinkificError = error.response?.data?.errors?.[0];
+        if (thinkificError) {
+            return res.status(400).json({
+                error: `Thinkific: ${thinkificError.message}`,
+                code: thinkificError.code
+            });
+        }
+
+        res.status(400).json({
+            error: error.message || 'User creation failed'
+        });
+    }
+};
+
+export const bulkCreateUsers = async (req, res) => {
+    try {
+        const users = req.body;
+        const results = [];
+
+        for (const userData of users) {
+            try {
+                const { email, firstName, lastName, roles = ['student'], password } = userData;
+
+                // Generate password if not provided
+                const plainPassword = password || uuidv4().slice(0, 12);
+                const hashedPassword = await bcrypt.hash(plainPassword, 12);
+
+                // 1. Create Thinkific user
+                const thinkificUser = await ThinkificService.createUser({
+                    email,
+                    first_name: firstName,
+                    last_name: lastName,
+                    password: plainPassword
+                });
+
+                // 2. Create local user
+                const user = await User.create({
+                    email,
+                    firstName,
+                    lastName,
+                    thinkificId: thinkificUser.id,
+                    password: hashedPassword,
+                    roles,
+                    requiresPasswordReset: !password
+                });
+
+                results.push({
+                    success: true,
+                    email,
+                    userId: user._id,
+                    thinkificId: user.thinkificId
+                });
+
+            } catch (error) {
+                results.push({
+                    success: false,
+                    error: error.response?.data?.errors?.[0]?.message || error.message,
+                    email: userData.email
+                });
+            }
+        }
+
+        res.json({
+            total: users.length,
+            successCount: results.filter(r => r.success).length,
+            results
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            error: 'Bulk operation failed: ' + error.message
+        });
     }
 };
 

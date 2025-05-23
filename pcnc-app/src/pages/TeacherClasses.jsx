@@ -96,6 +96,7 @@ const TeacherClasses = () => {
             accessorKey: 'student',
             header: t('common.student'),
             size: 250,
+            accessorFn: row => `${row.firstName} ${row.lastName}`,
             Cell: ({ row }) => (
                 <Group spacing="sm">
                     <Avatar src={row.original.avatarUrl} size={40} radius="xl" />
@@ -108,15 +109,18 @@ const TeacherClasses = () => {
             enableEditing: false,
         },
         {
-            accessorKey: 'sf',
+            id: 'sf',
             header: t('common.sf'),
             size: 150,
+            accessorFn: row => {
+                const assignedSf = row.classSf?.find(sf =>
+                    sf.managedStudents?.some(sId => sId.toString() === row._id.toString())
+                );
+                return assignedSf ? `${assignedSf.lastName} ${assignedSf.firstName}` : '';
+            },
             Cell: ({ row }) => {
-                // Find SF that has this student in managedStudents
                 const assignedSf = row.original.classSf?.find(sf =>
-                        Array.isArray(sf.managedStudents) && sf.managedStudents.some(
-                            sId => sId.toString() === row.original._id.toString()
-                        )
+                    sf.managedStudents?.some(sId => sId.toString() === row.original._id.toString())
                 );
                 return assignedSf ? (
                     <Badge color="blue" variant="light">
@@ -139,7 +143,11 @@ const TeacherClasses = () => {
                     if (currentSf) {
                         await axios.patch(
                             `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${currentSf._id}/students`,
-                            { classId: row.original.classId, studentIds: [row.original._id], action: 'remove' }
+                            {
+                                classId: row.original.classId,
+                                studentIds: [row.original._id],
+                                action: 'remove'
+                            }
                         );
                     }
 
@@ -147,7 +155,10 @@ const TeacherClasses = () => {
                     if (value) {
                         await axios.patch(
                             `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${value}/students`,
-                            { classId: row.original.classId, studentIds: [row.original._id] }
+                            {
+                                classId: row.original.classId,
+                                studentIds: [row.original._id]
+                            }
                         );
                     }
 
@@ -169,15 +180,18 @@ const TeacherClasses = () => {
             }
         },
         {
-            accessorKey: 'rsf',
+            id: 'rsf',
             header: t('common.rsf'),
             size: 150,
+            accessorFn: row => {
+                const assignedRsf = row.classRsf?.find(rsf =>
+                    rsf.managedStudents?.some(sId => sId.toString() === row._id.toString())
+                );
+                return assignedRsf ? `${assignedRsf.lastName} ${assignedRsf.firstName}` : '';
+            },
             Cell: ({ row }) => {
-                // Find RSF that has this student in managedStudents
                 const assignedRsf = row.original.classRsf?.find(rsf =>
-                        Array.isArray(rsf.managedStudents) && rsf.managedStudents.some(
-                            sId => sId.toString() === row.original._id.toString()
-                        )
+                    rsf.managedStudents?.some(sId => sId.toString() === row.original._id.toString())
                 );
                 return assignedRsf ? (
                     <Badge color="orange" variant="light">
@@ -200,7 +214,11 @@ const TeacherClasses = () => {
                     if (currentRsf) {
                         await axios.patch(
                             `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${currentRsf._id}/students-rsf`,
-                            { classId: row.original.classId, studentIds: [row.original._id], action: 'remove' }
+                            {
+                                classId: row.original.classId,
+                                studentIds: [row.original._id],
+                                action: 'remove'
+                            }
                         );
                     }
 
@@ -208,7 +226,10 @@ const TeacherClasses = () => {
                     if (value) {
                         await axios.patch(
                             `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${value}/students-rsf`,
-                            { classId: row.original.classId, studentIds: [row.original._id] }
+                            {
+                                classId: row.original.classId,
+                                studentIds: [row.original._id]
+                            }
                         );
                     }
 
@@ -230,7 +251,7 @@ const TeacherClasses = () => {
             }
         },
         {
-            accessorKey: 'progress',
+            accessorKey: 'results.average',
             header: t('common.progression'),
             size: 180,
             Cell: ({ row }) => (
@@ -243,7 +264,7 @@ const TeacherClasses = () => {
             ),
             enableEditing: false,
         }
-    ], [t]);
+    ], [t, queryClient, user._id]);
 
     // Helper for role assignment modals
     const handleRoleAssignment = (classId, type, value) => {
