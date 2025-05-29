@@ -1,11 +1,18 @@
 import axios from 'axios';
 import moment from 'moment';
-import ZoomAuth from '../config/ZoomAuth.js';
+import ZoomAuth from '../config/zoom.js';
 
 class AttendanceService {
     constructor() {
         this.zoom = new ZoomAuth();
         this.baseURL = 'https://api.zoom.us/v2';
+
+        // Verify configuration on initialization
+        if (!this.zoom.isConfigured()) {
+            console.warn('⚠️ Zoom API credentials not properly configured. Please check your environment variables.');
+        } else {
+            console.log('✅ Zoom API credentials loaded successfully');
+        }
     }
 
     // Validate meeting ID format
@@ -25,14 +32,41 @@ class AttendanceService {
         return cleanId;
     }
 
+    // Enhanced error handling for API calls
+    async makeZoomAPICall(url, options = {}) {
+        try {
+            const headers = await this.zoom.getOAuthHeaders();
+            const response = await axios({
+                url,
+                headers,
+                ...options
+            });
+            return response;
+        } catch (error) {
+            if (error.response?.status === 401) {
+                // Token might be expired, clear cache and try once more
+                console.log('🔄 Access token expired, refreshing...');
+                this.zoom.clearToken();
+
+                const headers = await this.zoom.getOAuthHeaders();
+                const response = await axios({
+                    url,
+                    headers,
+                    ...options
+                });
+                return response;
+            }
+            throw error;
+        }
+    }
+
     // Get list of meetings for a user
     async getUserMeetings(userId = 'me', type = 'scheduled') {
         try {
-            const headers = await this.zoom.getOAuthHeaders();
-            const response = await axios.get(
+            const response = await this.makeZoomAPICall(
                 `${this.baseURL}/users/${userId}/meetings`,
                 {
-                    headers,
+                    method: 'GET',
                     params: {
                         type,
                         page_size: 300
@@ -49,19 +83,19 @@ class AttendanceService {
     // Get past meetings (completed meetings)
     async getPastMeetings(userId = 'me', from, to) {
         try {
-            const headers = await this.zoom.getOAuthHeaders();
             const params = {
-                page_size: 300
+                page_size: 300,
+                type: 'previous_meetings'
             };
 
             if (from) params.from = from;
             if (to) params.to = to;
 
-            const response = await axios.get(
+            const response = await this.makeZoomAPICall(
                 `${this.baseURL}/users/${userId}/meetings`,
                 {
-                    headers,
-                    params: { ...params, type: 'previous_meetings' }
+                    method: 'GET',
+                    params
                 }
             );
             return response.data.meetings;
@@ -76,11 +110,10 @@ class AttendanceService {
         const validMeetingId = this.validateMeetingId(meetingId);
 
         try {
-            const headers = await this.zoom.getOAuthHeaders();
-            const response = await axios.get(
+            const response = await this.makeZoomAPICall(
                 `${this.baseURL}/meetings/${validMeetingId}/participants`,
                 {
-                    headers,
+                    method: 'GET',
                     params: {
                         page_size: 300
                     }
@@ -98,12 +131,10 @@ class AttendanceService {
         const validMeetingId = this.validateMeetingId(meetingId);
 
         try {
-            const headers = await this.zoom.getOAuthHeaders();
-
             // Get meeting details
-            const meetingResponse = await axios.get(
+            const meetingResponse = await this.makeZoomAPICall(
                 `${this.baseURL}/meetings/${validMeetingId}`,
-                { headers }
+                { method: 'GET' }
             );
 
             // Get participants
@@ -152,10 +183,9 @@ class AttendanceService {
         }
 
         try {
-            const headers = await this.zoom.getOAuthHeaders();
-            const response = await axios.get(
+            const response = await this.makeZoomAPICall(
                 `${this.baseURL}/meetings/${this.defaultMeetingId}`,
-                { headers }
+                { method: 'GET' }
             );
             return response.data;
         } catch (error) {
