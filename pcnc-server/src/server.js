@@ -36,7 +36,7 @@ class AppServer {
             config.THINKIFIC_OAUTH_REDIRECT_URI,
             'https://api.elvanto.com',
             'https://pcnc-admin.erdv.pro',
-            'https://formations.egliseicc.com/'
+            'https://formations.egliseicc.com'
         ];
 
         // Matches both preview and production Vercel deployments
