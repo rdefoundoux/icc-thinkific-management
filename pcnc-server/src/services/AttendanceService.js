@@ -1,6 +1,6 @@
 import axios from 'axios';
 import moment from 'moment';
-import ZoomAuth from '../config/zoom.js';
+import ZoomAuth from '../config/ZoomAuth.js';
 
 class AttendanceService {
     constructor() {
