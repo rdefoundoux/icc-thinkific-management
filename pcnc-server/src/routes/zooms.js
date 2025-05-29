@@ -1,4 +1,3 @@
-import express from 'express';
 import { Router } from 'express';
 import AttendanceService from '../services/AttendanceService.js';
 import ZoomAuth from '../config/ZoomAuth.js';
@@ -16,28 +15,53 @@ router.get('/test-credentials', async (req, res) => {
                 success: false,
                 error: 'Zoom credentials not configured',
                 details: {
-                    hasApiKey: !!process.env.ZOOM_API_KEY,
-                    hasApiSecret: !!process.env.ZOOM_API_SECRET,
+                    hasClientId: !!process.env.ZOOM_API_KEY,
+                    hasClientSecret: !!process.env.ZOOM_API_SECRET,
                     hasAccountId: !!process.env.ZOOM_ACCOUNT_ID
                 }
             });
         }
 
+        console.log('🔍 Testing Zoom credentials from API endpoint...');
         const success = await zoomAuth.testCredentials();
 
         if (success) {
+            const tokenInfo = zoomAuth.getTokenInfo();
             res.json({
                 success: true,
-                message: 'Zoom credentials are valid',
-                configured: true
+                message: 'Zoom Server-to-Server OAuth credentials are valid',
+                configured: true,
+                tokenInfo,
+                curlCommand: zoomAuth.generateCurlCommand()
             });
         } else {
             res.status(401).json({
                 success: false,
                 error: 'Invalid Zoom credentials',
-                configured: true
+                configured: true,
+                curlCommand: zoomAuth.generateCurlCommand()
             });
         }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+// Debug endpoint to show current token info
+router.get('/token-info', async (req, res) => {
+    try {
+        const zoomAuth = new ZoomAuth();
+        const tokenInfo = zoomAuth.getTokenInfo();
+
+        res.json({
+            success: true,
+            tokenInfo,
+            configured: zoomAuth.isConfigured()
+        });
     } catch (error) {
         res.status(500).json({
             success: false,
