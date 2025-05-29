@@ -1,6 +1,6 @@
 import express from 'express';
 import { Router } from 'express';
-import AttendanceService from '../services/attendanceService.js';
+import AttendanceService from '../services/AttendanceService.js';
 
 const router = Router();
 const attendanceService = new AttendanceService();
