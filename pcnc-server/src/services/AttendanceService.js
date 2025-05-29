@@ -33,9 +33,10 @@ class AttendanceService {
     }
 
     // Enhanced error handling for API calls
+    // In AttendanceService.js
     async makeZoomAPICall(url, options = {}) {
         try {
-            const headers = await this.zoom.getOAuthHeaders();
+            const headers = await this.zoom.getAuthHeaders(); // ✅ Corrected
             const response = await axios({
                 url,
                 headers,
@@ -44,11 +45,10 @@ class AttendanceService {
             return response;
         } catch (error) {
             if (error.response?.status === 401) {
-                // Token might be expired, clear cache and try once more
                 console.log('🔄 Access token expired, refreshing...');
                 this.zoom.clearToken();
 
-                const headers = await this.zoom.getOAuthHeaders();
+                const headers = await this.zoom.getAuthHeaders(); // ✅ Corrected
                 const response = await axios({
                     url,
                     headers,
@@ -59,6 +59,7 @@ class AttendanceService {
             throw error;
         }
     }
+
 
     // Get list of meetings for a user
     async getUserMeetings(userId = 'me', type = 'scheduled') {

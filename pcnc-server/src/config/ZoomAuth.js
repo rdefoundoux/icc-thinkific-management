@@ -29,6 +29,17 @@ class ZoomAuth {
         return !!(this.clientId && this.clientSecret && this.accountId);
     }
 
+    getTokenInfo() {
+        return {
+            hasToken: !!this.accessToken,
+            isExpired: this.tokenExpiry ? Date.now() > this.tokenExpiry : true,
+            expiresAt: this.tokenExpiry ? new Date(this.tokenExpiry).toISOString() : null,
+            timeToExpiry: this.tokenExpiry ? Math.max(0, this.tokenExpiry - Date.now()) / 1000 : 0,
+            tokenLength: this.accessToken ? this.accessToken.length : 0
+        };
+    }
+
+
     // Get OAuth token using manual Basic Auth header, params in query string (like your working curl/Postman)
     async getOAuthToken() {
         if (this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry) {
