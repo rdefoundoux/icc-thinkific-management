@@ -15,6 +15,7 @@ import adminRouter from './admins.js';
 import ElvantoController  from '../controllers/elvantoController.js';
 import egliseiccRoutes from './egliseicc.js';
 import countriesRouter from './countries.js';
+import zooms from './zooms.js';
 
 
 const router = Router();
@@ -33,6 +34,7 @@ router.use('/courses', coursesRouter);
 router.use('/admin', adminRouter);
 router.use('/egliseicc', egliseiccRoutes);
 router.use('/countries', countriesRouter);
+router.use('/zooms', zooms);
 router.get('/elvanto/init', ElvantoController.initiateAuth);
 router.get('/elvanto/callback', ElvantoController.handleCallback);
 router.get('/elvanto/check-auth', withElvantoAuth, (req, res) => res.json({ authenticated: true }));
