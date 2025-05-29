@@ -1,9 +1,50 @@
 import express from 'express';
 import { Router } from 'express';
 import AttendanceService from '../services/AttendanceService.js';
+import ZoomAuth from '../config/ZoomAuth.js';
 
 const router = Router();
 const attendanceService = new AttendanceService();
+
+// Test endpoint to verify Zoom credentials
+router.get('/test-credentials', async (req, res) => {
+    try {
+        const zoomAuth = new ZoomAuth();
+
+        if (!zoomAuth.isConfigured()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Zoom credentials not configured',
+                details: {
+                    hasApiKey: !!process.env.ZOOM_API_KEY,
+                    hasApiSecret: !!process.env.ZOOM_API_SECRET,
+                    hasAccountId: !!process.env.ZOOM_ACCOUNT_ID
+                }
+            });
+        }
+
+        const success = await zoomAuth.testCredentials();
+
+        if (success) {
+            res.json({
+                success: true,
+                message: 'Zoom credentials are valid',
+                configured: true
+            });
+        } else {
+            res.status(401).json({
+                success: false,
+                error: 'Invalid Zoom credentials',
+                configured: true
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 
 // Get all meetings for the authenticated user
 router.get('/meetings', async (req, res) => {
