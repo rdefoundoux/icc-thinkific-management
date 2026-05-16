@@ -1,91 +1,81 @@
-// controllers/registrationController.js
-import User from '../models/User.js';
-import asyncHandler from 'express-async-handler';
-import Class from '../models/Class.js';
-import thinkificService from '../services/ThinkificService.js';
+import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
+import { BadRequest, Conflict } from '../lib/errors.js';
+import { asyncHandler } from '../middleware/requestContext.js';
+import ThinkificService from '../services/ThinkificService.js';
 
+/**
+ * Assign a teacher to a class (local + Thinkific).
+ */
+export const assignTeacher = asyncHandler(async (req, res) => {
+    const { teacherId, classId } = req.body;
+    if (!teacherId || !classId) throw BadRequest('teacherId and classId required');
 
-const checkEligibility = async (studentData) => {
-    // Implémentez votre logique de validation ici
-    return true;
-};
+    const updated = await prisma.class.update({
+        where: { id: classId },
+        data: { teacherId },
+    });
 
-const createThinkificUser = async (studentData) => {
-    // Implémentez la création d'utilisateur Thinkific
-    return { id: 'thinkific_user_id' };
-};
-
-// Ajoutez la fonction manquante
-export const assignTeacher = async (req, res) => {
-    try {
-        const { teacherId, classId } = req.body;
-
-        // Logique d'assignation
-        await Class.findByIdAndUpdate(classId, { teacher: teacherId });
-        await thinkificService.assignTeacherToGroup(teacherId, classId);
-
-        res.json({ success: true });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-};
-
-
-export const createClass = async (req, res) => {
-    try {
-        const { courseCode, teacherId, schedule } = req.body;
-
-        // Vérifier la disponibilité du professeur
-        const existingClass = await Class.findOne({ teacher: teacherId });
-        if (existingClass) {
-            return res.status(400).json({
-                error: 'Ce professeur est déjà assigné à une autre classe'
-            });
+    if (typeof ThinkificService.assignTeacherToGroup === 'function') {
+        try {
+            await ThinkificService.assignTeacherToGroup(teacherId, updated.thinkificGroupId);
+        } catch (err) {
+            logger.warn({ err: err.message }, 'thinkific assignTeacherToGroup failed');
         }
-
-        // Créer la classe dans la base de données
-        const newClass = new Class({
-            courseCode,
-            teacher: teacherId,
-            schedule
-        });
-
-        // Intégration Thinkific
-        const thinkificGroup = await thinkificService.createClassGroup(
-            `${courseCode}-${Date.now()}`,
-            courseCode
-        );
-
-        newClass.thinkificGroupId = thinkificGroup.id;
-        await newClass.save();
-
-        // Assigner le professeur dans Thinkific
-        await thinkificService.assignTeacherToGroup(teacherId, thinkificGroup.id);
-
-        // Mettre à jour l'utilisateur
-        await User.findByIdAndUpdate(teacherId, {
-            $addToSet: { assignedClasses: newClass._id }
-        });
-
-        res.status(201).json({
-            success: true,
-            data: newClass
-        });
-
-    } catch (error) {
-        console.error('Erreur création classe:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Échec de la création de la classe',
-            details: error.message
-        });
     }
-};
 
+    res.json({ success: true });
+});
 
-// @desc    Register a new user with GDPR compliance for PCNC
-// @route   POST /api/v1/registrations
-// @access  Public
+/**
+ * Create a class via the registration flow.
+ * NB: This mirrors the original behaviour and is kept for backwards compatibility.
+ */
+export const createClass = asyncHandler(async (req, res) => {
+    const { courseCode, teacherId } = req.body;
+    if (!courseCode) throw BadRequest('courseCode required');
+
+    if (teacherId) {
+        const existing = await prisma.class.findFirst({ where: { teacherId } });
+        if (existing) {
+            throw Conflict('Ce professeur est déjà assigné à une autre classe');
+        }
+    }
+
+    const thinkificGroup =
+        typeof ThinkificService.createClassGroup === 'function'
+            ? await ThinkificService.createClassGroup(`${courseCode}-${Date.now()}`, courseCode)
+            : await ThinkificService.createGroup({
+                  name: `${courseCode}-${Date.now()}`,
+                  description: `Group for ${courseCode}`,
+              }).then((r) => ({ id: r.group?.id || r.id }));
+
+    const created = await prisma.class.create({
+        data: {
+            type: 'online',
+            courseCode,
+            month: '',
+            year: new Date().getFullYear(),
+            thinkificGroupId: String(thinkificGroup.id || thinkificGroup.group?.id),
+            teacherId: teacherId || null,
+        },
+    });
+
+    if (teacherId && typeof ThinkificService.assignTeacherToGroup === 'function') {
+        try {
+            await ThinkificService.assignTeacherToGroup(teacherId, created.thinkificGroupId);
+        } catch (err) {
+            logger.warn({ err: err.message }, 'thinkific assignTeacherToGroup failed');
+        }
+    }
+
+    res.status(201).json({ success: true, data: created });
+});
+
+/**
+ * Public student registration endpoint.
+ *   POST /api/v1/registrations
+ */
 export const validateRegistration = asyncHandler(async (req, res) => {
     const {
         firstName,
@@ -112,77 +102,74 @@ export const validateRegistration = asyncHandler(async (req, res) => {
         preferredSchedule,
         comments,
         gdprConsent,
-        parentalAuth
+        parentalAuth,
     } = req.body;
 
-    // Check required GDPR consent
-    if (!gdprConsent || !gdprConsent.dataProcessing) {
-        return res.status(400).json({
-            success: false,
-            error: 'Le consentement RGPD est requis'
-        });
+    if (!gdprConsent?.dataProcessing) {
+        throw BadRequest('Le consentement RGPD est requis');
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-        console.log('User already exists:', existingUser);
-        return res.status(400).json({
-            success: false,
-            error: 'Un utilisateur avec cet email existe déjà'
-        });
+    if (!email) throw BadRequest('email required');
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+        throw Conflict('Un utilisateur avec cet email existe déjà');
     }
 
-    const dateOfBirth = new Date(birthDate);
-    const age = new Date().getFullYear() - dateOfBirth.getFullYear();
-    if (age < 18 && !parentalAuth) {
-        throw new Error('Parental authorization required for minors');
+    let age = null;
+    if (birthDate) {
+        const dob = new Date(birthDate);
+        age = new Date().getFullYear() - dob.getFullYear();
+    }
+    if (age != null && age < 18 && !parentalAuth) {
+        throw BadRequest('Parental authorization required for minors');
     }
 
-    // Create user with all PCNC fields
-    const user = await User.create({
-        email,
-        firstName,
-        lastName,
-        whatsappNumber,
-        address,
-        city,
-        postalCode,
-        department,
-        country,
-        birthDate: birthDate ? new Date(birthDate) : undefined,
-        gender,
-        localChurch,
-        nonIccChurch,
-        iccMember,
-        memberSince: memberSince ? new Date(memberSince) : undefined,
-        iccCampus,
-        staffMember,
-        convertedDate: convertedDate ? new Date(convertedDate) : undefined,
-        baptized,
-        baptismDate: baptismDate ? new Date(baptismDate) : undefined,
-        previousCourses,
-        preferredSchedule,
-        comments,
-        roles: ['student'],
-        requiresPasswordReset: true,
-        gdprConsent: {
-            dataProcessingAccepted: gdprConsent.dataProcessing,
-            acceptedAt: new Date()
+    const user = await prisma.user.create({
+        data: {
+            email,
+            firstName,
+            lastName,
+            whatsappNumber,
+            address,
+            city,
+            postalCode,
+            department,
+            country,
+            birthDate: birthDate ? new Date(birthDate) : null,
+            gender,
+            localChurch,
+            nonIccChurch,
+            iccMember: !!iccMember,
+            memberSince: memberSince ? new Date(memberSince) : null,
+            iccCampus,
+            staffMember,
+            convertedDate: convertedDate ? new Date(convertedDate) : null,
+            baptized,
+            baptismDate: baptismDate ? new Date(baptismDate) : null,
+            previousCourses: Array.isArray(previousCourses) ? previousCourses : [],
+            preferredSchedule,
+            comments,
+            roles: ['student'],
+            gdprDataAccepted: !!gdprConsent.dataProcessing,
+            gdprAcceptedAt: new Date(),
+            ...(parentalAuth && {
+                parentalAuth: {
+                    create: {
+                        signature: parentalAuth.signature || null,
+                        signedAt: parentalAuth.signedAt ? new Date(parentalAuth.signedAt) : null,
+                        parentName: parentalAuth.parentName || null,
+                        parentEmail: parentalAuth.parentEmail || null,
+                        parentPhone: parentalAuth.parentPhone || null,
+                    },
+                },
+            }),
         },
-        ThinkificId: '',
-        ...(parentalAuth && { parentalAuth })
+        include: { parentalAuth: true },
     });
 
-    // Remove sensitive data from response
-    const userData = user.toObject();
-    delete userData.password;
+    logger.info({ userId: user.id, email: user.email }, 'user registered');
 
-    // Send confirmation email (implementation needed)
-    console.log('user created', userData);
-    res.status(201).json({
-        success: true,
-        data: userData
-    });
+    const { password: _omit, ...userData } = user;
+    res.status(201).json({ success: true, data: userData });
 });
-
