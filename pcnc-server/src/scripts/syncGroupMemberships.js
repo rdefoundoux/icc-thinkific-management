@@ -1,85 +1,71 @@
-import mongoose from 'mongoose';
-import Class from '../models/Class.js'; // Adjust path as needed
-import User from '../models/User.js';
-import ThinkificService from '../services/ThinkificService.js'; // Adjust path as needed
 import 'dotenv/config';
 
+import { prisma, disconnectPrisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
+import ThinkificService from '../services/ThinkificService.js';
 
-// Database connection
-const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('MongoDB connected');
-    } catch (error) {
-        console.error('Database connection error:', error);
-        process.exit(1);
-    }
-};
+async function syncStudentsToThinkificGroups() {
+    const classes = await prisma.class.findMany({
+        where: { thinkificGroupId: { not: '' } },
+        include: {
+            students: {
+                include: { user: { select: { id: true, thinkificId: true } } },
+            },
+        },
+    });
 
-const syncStudentsToThinkificGroups = async () => {
-    try {
-        // Get all classes with students and Thinkific group ID
-        const classes = await Class.find({
-            thinkificGroupId: { $exists: true, $ne: null }
-        }).populate({
-            path: 'students',
-            select: 'thinkificId'
-        });
+    logger.info({ count: classes.length }, 'classes with Thinkific groups');
 
-        console.log(`Found ${classes.length} classes with Thinkific groups`);
+    for (const cls of classes) {
+        logger.info(
+            { classId: cls.id, groupId: cls.thinkificGroupId, name: cls.thinkificGroupName },
+            'processing class',
+        );
 
-        for (const cls of classes) {
-            console.log(`\nProcessing class: ${cls.name} (Group ID: ${cls.thinkificGroupId})`);
+        try {
+            const groupUsers = await ThinkificService.getGroupUsers(cls.thinkificGroupId);
+            const groupUserIds = new Set(groupUsers.map((u) => String(u.id)));
 
-            try {
-                // Get current group members from Thinkific
-                const groupUsers = await ThinkificService.getGroupUsers(cls.thinkificGroupId);
-                const groupUserIds = groupUsers.map(user => user.id);
-                console.log(`Found ${groupUserIds.length} users in Thinkific group`);
+            let addedCount = 0;
+            let errorCount = 0;
 
-                let addedCount = 0;
-                let errorCount = 0;
+            for (const cs of cls.students) {
+                const student = cs.user;
+                if (!student?.thinkificId) continue;
 
-                // Process each student
-                for (const student of cls.students) {
-                    if (!student.thinkificId) {
-                        console.log(`Skipping student ${student._id} - no Thinkific ID`);
-                        continue;
-                    }
-
-                    if (!groupUserIds.includes(student.thinkificId)) {
-                        try {
-                            console.log(`Adding student ${student._id} to Thinkific group...`);
-                            await ThinkificService.addUserToGroup(student.thinkificId, cls.thinkificGroupId);
-                            addedCount++;
-                        } catch (error) {
-                            console.error(`Error adding student ${student._id}:`, error.message);
-                            errorCount++;
-                        }
+                if (!groupUserIds.has(String(student.thinkificId))) {
+                    try {
+                        await ThinkificService.addUserToGroup(
+                            student.thinkificId,
+                            cls.thinkificGroupId,
+                        );
+                        addedCount += 1;
+                    } catch (err) {
+                        logger.warn(
+                            { err: err.message, studentId: student.id },
+                            'add to group failed',
+                        );
+                        errorCount += 1;
                     }
                 }
-
-                console.log(`Class ${cls.name} sync complete:`);
-                console.log(`- Students processed: ${cls.students.length}`);
-                console.log(`- New additions: ${addedCount}`);
-                console.log(`- Errors: ${errorCount}`);
-
-            } catch (error) {
-                console.error(`Error processing class ${cls.name}:`, error.message);
             }
+
+            logger.info({ classId: cls.id, addedCount, errorCount }, 'class sync complete');
+        } catch (err) {
+            logger.error({ err: err.message, classId: cls.id }, 'class sync failed');
         }
+    }
+}
 
-        console.log('\nSync process completed');
+(async () => {
+    try {
+        await syncStudentsToThinkificGroups();
+        logger.info('sync process completed');
+        await disconnectPrisma();
         process.exit(0);
-
-    } catch (error) {
-        console.error('Global error:', error);
+    } catch (err) {
+        logger.fatal({ err }, 'sync process fatal');
+        await disconnectPrisma();
         process.exit(1);
     }
-};
-
-// Run the script
-(async () => {
-    await connectDB();
-    await syncStudentsToThinkificGroups();
 })();
