@@ -460,20 +460,22 @@ const AdminDashboard = () => {
     );
 
     return (
-        <Box p="md" className="admin-dashboard">
-            <Title order={2} mb="xl">{t('sidebar.dashboard')}</Title>
-            <Flex mb="md" gap="md">
+        <Box className="admin-dashboard">
+            <Title order={1} mb="lg">{t('sidebar.dashboard')}</Title>
+            <Flex mb="lg" gap="sm">
                 <Button
-                    leftIcon={<IconChevronUp />}
-                    variant="outline"
+                    leftSection={<IconChevronUp size={14} />}
+                    variant="light"
+                    color="iccBlue"
                     size="xs"
                     onClick={() => setExpandedSections([])}
                 >
                     {t('common.collapseAll')}
                 </Button>
                 <Button
-                    leftIcon={<IconChevronDown />}
-                    variant="outline"
+                    leftSection={<IconChevronDown size={14} />}
+                    variant="light"
+                    color="iccBlue"
                     size="xs"
                     onClick={() => setExpandedSections(ALL_SECTION_KEYS)}
                 >

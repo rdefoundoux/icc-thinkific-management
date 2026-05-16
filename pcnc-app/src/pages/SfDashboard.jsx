@@ -386,14 +386,20 @@ const SfDashboard = () => {
     ], [currentLanguageCode]);
 
     return (
-        <Box p="md">
-            <Flex align="center" justify="space-between" mb="md">
-                <Text size="xl" fw={700}>
+        <Box>
+            <Flex align="center" justify="space-between" mb="lg">
+                <Text
+                    size="32px"
+                    fw={800}
+                    c={theme.colors.iccBlue[8]}
+                    style={{ letterSpacing: '-0.01em' }}
+                >
                     {isSfRole ? 'Mes Classes SF' : 'Toutes les Classes'}
                 </Text>
                 <Button
-                    leftIcon={<IconRefresh size={16} />}
+                    leftSection={<IconRefresh size={16} />}
                     variant="light"
+                    color="iccBlue"
                     onClick={() => refetch()}
                     loading={isLoading}
                 >
