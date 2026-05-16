@@ -224,6 +224,146 @@ class AttendanceService {
         }
         return reports;
     }
+
+
+    // Create a single meeting
+    async createMeeting(userId, meetingParams) {
+        const headers = await this.zoom.getAuthHeaders();
+        try {
+            const response = await axios.post(
+                `${this.baseURL}/users/${userId}/meetings`,
+                meetingParams,
+                { headers }
+            );
+            return {
+                success: true,
+                meetingId: response.data.id,
+                joinUrl: response.data.join_url,
+                userId
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.message || error.message,
+                userId
+            };
+        }
+    }
+// Add to AttendanceService.js
+    async createAutoAssignedMeeting(meetingParams, userIds, concurrencyLimit = 1) {
+        const startMoment = moment(meetingParams.start_time);
+        const endMoment = startMoment.clone().add(meetingParams.duration, 'minutes');
+
+        // Get current meetings for all users
+        const userMeetings = new Map();
+        for (const userId of userIds) {
+            try {
+                const meetings = await this.getUserMeetings(userId, 'scheduled');
+                userMeetings.set(userId, meetings.map(m => ({
+                    start: moment(m.start_time),
+                    end: moment(m.start_time).add(m.duration, 'minutes')
+                })));
+            } catch (error) {
+                console.error(`Failed to get meetings for ${userId}:`, error.message);
+                userMeetings.set(userId, []);
+            }
+        }
+
+        // Find first available user
+        for (const [userId, meetings] of userMeetings) {
+            const concurrentCount = meetings.filter(existing =>
+                startMoment.isBefore(existing.end) &&
+                endMoment.isAfter(existing.start)
+            ).length;
+
+            if (concurrentCount < concurrencyLimit) {
+                const result = await this.createMeeting(userId, meetingParams);
+                return {
+                    ...result,
+                    autoAssigned: true,
+                    userId
+                };
+            }
+        }
+
+        return {
+            success: false,
+            error: "No available users for this time slot"
+        };
+    }
+
+
+    async scheduleMeetings(meetings, userIds, concurrencyLimit = 2) {
+        const scheduled = [];
+        const failed = [];
+        const userSchedules = new Map();
+
+        // Initialize user schedules
+        userIds.forEach(userId => {
+            userSchedules.set(userId, {
+                currentMeetings: [],
+                concurrencyLimit: concurrencyLimit
+            });
+        });
+
+        for (const meeting of meetings) {
+            let assignedUser = null;
+
+            // Calculate end time from duration
+            const startMoment = moment(meeting.start_time);
+            const endMoment = startMoment.clone().add(meeting.duration, 'minutes');
+
+            // Find first available user
+            for (const [userId, schedule] of userSchedules) {
+                const overlappingMeetings = schedule.currentMeetings.filter(existing => {
+                    const existingStart = moment(existing.start_time);
+                    const existingEnd = existingStart.clone().add(existing.duration, 'minutes');
+                    return startMoment.isBefore(existingEnd) && endMoment.isAfter(existingStart);
+                });
+
+                if (overlappingMeetings.length < schedule.concurrencyLimit) {
+                    assignedUser = userId;
+                    break;
+                }
+            }
+
+            if (!assignedUser) {
+                failed.push({
+                    ...meeting,
+                    error: "No available users for this time slot"
+                });
+                continue;
+            }
+
+            try {
+                const result = await this.createMeeting(assignedUser, meeting);
+                if (result.success) {
+                    scheduled.push({
+                        ...meeting,
+                        userId: assignedUser,
+                        meetingId: result.meetingId,
+                        joinUrl: result.joinUrl
+                    });
+                    userSchedules.get(assignedUser).currentMeetings.push(meeting);
+                } else {
+                    failed.push({
+                        ...meeting,
+                        error: result.error
+                    });
+                }
+                // Add delay to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (error) {
+                failed.push({
+                    ...meeting,
+                    error: error.message
+                });
+            }
+        }
+
+        return { scheduled, failed };
+    }
+
 }
 
 export default AttendanceService;

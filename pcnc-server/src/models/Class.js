@@ -40,6 +40,16 @@ const classSchema = new mongoose.Schema({
     registrable: {
         type: Boolean,
         default: true
+    },
+    zoomMeeting: {
+        meetingId: String,
+        joinUrl: String,
+        startUrl: String,
+        password: String,
+        hostUserId: String, // Which zoom account was used
+        hostEmail: String,
+        createdAt: Date,
+        scheduledFor: Date // When the meeting is scheduled
     }
 }, { timestamps: true });
 

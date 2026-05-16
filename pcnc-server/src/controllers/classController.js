@@ -3,6 +3,9 @@ import Class from '../models/Class.js';
 import User from '../models/User.js';
 import CourseService from '../services/CourseService.js';
 import Course from '../models/Course.js';
+import AttendanceService from '../services/AttendanceService.js';
+
+const attendanceService = new AttendanceService();
 
 
 /**
@@ -842,6 +845,68 @@ export const getClassesByCoordinator = async (req, res) => {
     }
 };
 
+
+export const createZoomMeeting = async (req, res) => {
+    try {
+        const classId = req.params.id;
+        const classData = await Class.findById(classId);
+        if (!classData) return res.status(404).json({ success: false, error: 'Class not found' });
+
+        const classStartTime = moment(`${classData.year}-${getMonthNumber(classData.month)}-01 ${classData.hour}:${classData.minutes}`, 'YYYY-MM-DD HH:mm');
+        const meetingStartTime = classStartTime.clone().subtract(15, 'minutes');
+
+        const meetingParams = {
+            topic: formatClassName(classData),
+            type: 2,
+            start_time: meetingStartTime.toISOString(),
+            duration: 150,
+            timezone: 'UTC',
+            settings: {
+                join_before_host: true,
+                waiting_room: false,
+                mute_upon_entry: true
+            }
+        };
+
+        const zoomUserIds = process.env.ZOOM_USER_IDS?.split(',') || ['me'];
+        const result = await attendanceService.createAutoAssignedMeeting(
+            meetingParams,
+            zoomUserIds,
+            2
+        );
+
+        if (result.success) {
+            const updatedClass = await Class.findByIdAndUpdate(
+                classId,
+                {
+                    zoomMeeting: {
+                        meetingId: result.meetingId,
+                        joinUrl: result.joinUrl,
+                        startUrl: result.startUrl,
+                        password: result.password,
+                        hostUserId: result.userId,
+                        hostEmail: result.hostEmail,
+                        createdAt: new Date(),
+                        scheduledFor: meetingStartTime.toDate()
+                    }
+                },
+                { new: true }
+            );
+            res.json({ success: true, meeting: updatedClass.zoomMeeting });
+        } else {
+            res.status(400).json({ success: false, error: result.error });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+function getMonthNumber(monthName) {
+    const months = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ];
+    return months.indexOf(monthName) + 1;
+}
 
 
 

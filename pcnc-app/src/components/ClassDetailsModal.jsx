@@ -226,6 +226,49 @@ export default function ClassDetailsModal({ opened, onClose, classData }) {
                             </Grid.Col>
                         </Grid>
                     </Paper>
+                    {classData.zoomMeeting && (
+                        <Paper p="md" withBorder>
+                            <Title order={4} mb="md">Zoom Meeting Details</Title>
+                            <Grid gutter="md">
+                                <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    <Stack spacing="xs">
+                                        <Text size="sm" c="dimmed">Meeting ID</Text>
+                                        <Text fw={500} size="lg">{classData.zoomMeeting.meetingId}</Text>
+                                    </Stack>
+                                </Grid.Col>
+                                <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    <Stack spacing="xs">
+                                        <Text size="sm" c="dimmed">Host Account</Text>
+                                        <Text fw={500}>{classData.zoomMeeting.hostEmail}</Text>
+                                    </Stack>
+                                </Grid.Col>
+                                <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    <Stack spacing="xs">
+                                        <Text size="sm" c="dimmed">Scheduled Time</Text>
+                                        <Text fw={500}>
+                                            {new Date(classData.zoomMeeting.scheduledFor).toLocaleString()}
+                                        </Text>
+                                    </Stack>
+                                </Grid.Col>
+                                <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    <Stack spacing="xs">
+                                        <Text size="sm" c="dimmed">Join Meeting</Text>
+                                        <Button
+                                            component="a"
+                                            href={classData.zoomMeeting.joinUrl}
+                                            target="_blank"
+                                            leftIcon={<IconVideo />}
+                                            variant="gradient"
+                                            gradient={{ from: 'blue', to: 'cyan' }}
+                                            size="sm"
+                                        >
+                                            Join Zoom Meeting
+                                        </Button>
+                                    </Stack>
+                                </Grid.Col>
+                            </Grid>
+                        </Paper>
+                    )}
 
                     {/* Students Table */}
                     <Paper withBorder shadow="xs">

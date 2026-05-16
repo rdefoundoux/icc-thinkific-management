@@ -210,6 +210,7 @@ const ClassManager = () => {
                                     <th style={columnStyles[10]}>{t('classManager.rsf')}</th>
                                     <th style={columnStyles[7]}>{t('classManager.assignedCourses')}</th>
                                     <th style={columnStyles[8]}>{t('classManager.students')}</th>
+                                    <th style={columnStyles[11]}>{t('classManager.zoomMeeting')}</th>
                                     <th style={columnStyles[9]}>{t('classManager.actions')}</th>
                                 </tr>
                                 </thead>
@@ -341,6 +342,29 @@ const ClassManager = () => {
                                                 <Text size="sm" color="dimmed">
                                                     {cls.studentCount}
                                                 </Text>
+                                            </td>
+                                            <td>
+                                                {cls.zoomMeeting?.meetingId ? (
+                                                    <Group spacing="xs" noWrap>
+                                                        <Badge color="green" variant="light" size="sm">
+                                                            {cls.zoomMeeting.meetingId}
+                                                        </Badge>
+                                                        <Tooltip label={`Host: ${cls.zoomMeeting.hostEmail}`}>
+                                                            <ActionIcon
+                                                                size="sm"
+                                                                color="blue"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    window.open(cls.zoomMeeting.joinUrl, '_blank');
+                                                                }}
+                                                            >
+                                                                <IconVideo size={14} />
+                                                            </ActionIcon>
+                                                        </Tooltip>
+                                                    </Group>
+                                                ) : (
+                                                    <Text size="sm" color="dimmed">N/A</Text>
+                                                )}
                                             </td>
                                             <td>
                                                 <Group spacing={4} noWrap>

@@ -175,4 +175,108 @@ router.post('/meetings/bulk-attendance', async (req, res) => {
     }
 });
 
+// Add to router.js
+
+router.post('/meetings/schedule', async (req, res) => {
+    try {
+        const { meetings, userIds, concurrencyLimit = 1 } = req.body;
+
+        if (!meetings || !Array.isArray(meetings)) {
+            return res.status(400).json({
+                success: false,
+                error: 'meetings array is required'
+            });
+        }
+
+        if (!userIds || !Array.isArray(userIds)) {
+            return res.status(400).json({
+                success: false,
+                error: 'userIds array is required'
+            });
+        }
+
+        // Validate meeting objects
+        const invalidMeetings = meetings.filter(m =>
+            !m.topic || !m.start_time || !m.duration || !m.timezone
+        );
+
+        if (invalidMeetings.length > 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Meetings must contain topic, start_time, duration, and timezone',
+                invalidCount: invalidMeetings.length
+            });
+        }
+
+        const result = await attendanceService.scheduleMeetings(
+            meetings,
+            userIds,
+            concurrencyLimit
+        );
+
+        res.json({
+            success: true,
+            scheduled: result.scheduled,
+            failed: result.failed,
+            scheduledCount: result.scheduled.length,
+            failedCount: result.failed.length
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Add to router.js
+router.post('/meetings/auto-create', async (req, res) => {
+    try {
+        const { meetingParams, userIds, concurrencyLimit = 1 } = req.body;
+
+        if (!meetingParams || !meetingParams.topic || !meetingParams.start_time ||
+            !meetingParams.duration || !meetingParams.timezone) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid meeting parameters'
+            });
+        }
+
+        const result = await attendanceService.createAutoAssignedMeeting(
+            meetingParams,
+            userIds,
+            concurrencyLimit
+        );
+
+        if (result.success) {
+            res.json({
+                success: true,
+                meetingId: result.meetingId,
+                joinUrl: result.joinUrl,
+                userId: result.userId
+            });
+        } else {
+            res.status(409).json({
+                success: false,
+                error: result.error
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Create single meeting
+router.post('/meetings', async (req, res) => {
+    try {
+        const { userId, ...meetingParams } = req.body;
+        const result = await attendanceService.createMeeting(userId, meetingParams);
+        res.status(result.success ? 201 : 400).json(result);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 export default router;

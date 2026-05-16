@@ -1,39 +1,23 @@
+import React, { useEffect, useMemo, useState } from 'react';
 import { useForm } from '@mantine/form';
-import { useEffect, useMemo } from 'react';
 import {
-    Modal, TextInput, Select, Button, Group, NumberInput, Text, Stack
+    Modal, TextInput, Select, Button, Group, NumberInput, Text, Stack,
+    Alert, Badge, Loader, ActionIcon, Tooltip
 } from '@mantine/core';
-import { IconBook } from '@tabler/icons-react';
+import { IconBook, IconVideo, IconRefresh } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-
+import { notifications } from '@mantine/notifications';
 
 const months = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
 ];
-function formatClassName({
-                             type,
-                             region,
-                             version,
-                             className,
-                             courseCode,
-                             month,
-                             year,
-                             dayName,
-                             hour,
-                             minutes,
-                             lang
-                         }) {
-    const time = `${hour}h${minutes}`;
-    if (type === 'onsite') {
-        return `ONSITE - ${region} - ${version} - ${className} - ${courseCode} - ${month} ${year} - ${dayName} - ${time} - ${lang}`;
-    } else {
-        return `Corp - ${version} - ${className} - ${courseCode} - ${month} ${year} - ${dayName} - ${time} - ${lang}`;
-    }
-}
 
 const ClassForm = ({ opened, onClose, onSubmit, existingGroups = [], classToEdit }) => {
     const { t } = useTranslation();
+    const [creatingZoomMeeting, setCreatingZoomMeeting] = useState(false);
+    const [zoomMeetingInfo, setZoomMeetingInfo] = useState(null);
+
     const form = useForm({
         initialValues: {
             type: 'online',
@@ -59,11 +43,14 @@ const ClassForm = ({ opened, onClose, onSubmit, existingGroups = [], classToEdit
             lang: (value) => (value.trim() ? null : 'Language is required'),
         },
     });
-    const groupName = useMemo(
-        () => formatClassName(form.values),
-        [form.values]
-    );
-    // Reset form when editing a class
+
+    const groupName = useMemo(() => {
+        const values = form.values;
+        return values.type === 'onsite'
+            ? `ONSITE - ${values.region} - ${values.version} - ${values.className} - ${values.courseCode} - ${values.month} ${values.year} - ${values.dayName} - ${values.hour}h${values.minutes} - ${values.lang}`
+            : `Corp - ${values.version} - ${values.className} - ${values.courseCode} - ${values.month} ${values.year} - ${values.dayName} - ${values.hour}h${values.minutes} - ${values.lang}`;
+    }, [form.values]);
+
     useEffect(() => {
         if (classToEdit) {
             form.setValues({
@@ -79,25 +66,88 @@ const ClassForm = ({ opened, onClose, onSubmit, existingGroups = [], classToEdit
                 minutes: classToEdit.minutes || '',
                 lang: classToEdit.lang || ''
             });
+            setZoomMeetingInfo(classToEdit.zoomMeeting || null);
         } else {
             form.reset();
+            setZoomMeetingInfo(null);
         }
     }, [classToEdit, opened]);
+
+    const handleSubmit = async (values) => {
+        await onSubmit(values);
+    };
+
+    const createZoomMeeting = async () => {
+        if (!classToEdit?._id) {
+            notifications.show({
+                title: t('error'),
+                message: t('classForm.saveFirst'),
+                color: 'red'
+            });
+            return;
+        }
+
+        setCreatingZoomMeeting(true);
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/classes/${classToEdit._id}/create-zoom-meeting`, {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setZoomMeetingInfo(data.meeting);
+                notifications.show({
+                    title: t('success'),
+                    message: t('classForm.zoomCreated'),
+                    color: 'green'
+                });
+            } else {
+                notifications.show({
+                    title: t('error'),
+                    message: data.error,
+                    color: 'red'
+                });
+            }
+        } catch (error) {
+            notifications.show({
+                title: t('error'),
+                message: t('classForm.zoomFailed'),
+                color: 'red'
+            });
+        } finally {
+            setCreatingZoomMeeting(false);
+        }
+    };
+
     return (
         <Modal
             opened={opened}
             onClose={onClose}
             title={classToEdit ? t('classForm.editClass') : t('classForm.createNewClass')}
-            size={{ base: '100%', sm: 600 }}
-            centered
+            size="xl"
         >
-            <form onSubmit={form.onSubmit(onSubmit)}>
-                <Text size="lg" weight={700} mb="md" color="blue" style={{ wordBreak: 'break-all' }}>
+            <Stack>
+                <Text size="lg" weight={700} color="blue">
                     {groupName}
                 </Text>
 
+                {zoomMeetingInfo && (
+                    <Alert icon={<IconVideo size={16} />} title={t('classForm.zoomMeeting')} color="green">
+                        <Stack spacing="xs">
+                            <Text size="sm"><strong>{t('classForm.meetingId')}:</strong> {zoomMeetingInfo.meetingId}</Text>
+                            <Text size="sm"><strong>{t('classForm.hostAccount')}:</strong> {zoomMeetingInfo.hostEmail}</Text>
+                            <Text size="sm">
+                                <strong>{t('classForm.joinUrl')}:</strong>
+                                <a href={zoomMeetingInfo.joinUrl} target="_blank" rel="noopener noreferrer">
+                                    {t('classForm.joinMeeting')}
+                                </a>
+                            </Text>
+                        </Stack>
+                    </Alert>
+                )}
 
-                <Stack>
+                <form onSubmit={form.onSubmit(handleSubmit)}>
                     <Select
                         label={t('classForm.classType')}
                         data={[
@@ -105,54 +155,45 @@ const ClassForm = ({ opened, onClose, onSubmit, existingGroups = [], classToEdit
                             { value: 'onsite', label: t('classForm.onsite') },
                         ]}
                         {...form.getInputProps('type')}
-                        fullWidth
                     />
 
-                    {(form.values.type === 'onsite') && (
+                    {form.values.type === 'onsite' && (
                         <TextInput
                             label={t('classManager.region')}
                             required
                             {...form.getInputProps('region')}
-                            fullWidth
                         />
                     )}
 
-                    <TextInput label="Version" required {...form.getInputProps('version')} fullWidth />
-                    <TextInput label="Class Name" required {...form.getInputProps('className')} fullWidth />
-                    <TextInput label={t('classManager.courseCode')} placeholder="101" required {...form.getInputProps('courseCode')} fullWidth />
-                    <Select label={t('classManager.month')} data={months} required {...form.getInputProps('month')} fullWidth />
-                    <NumberInput label={t('classManager.year')} min={2025} required {...form.getInputProps('year')} fullWidth />
-                    <TextInput label="Day Name" required {...form.getInputProps('dayName')} fullWidth />
-                    <TextInput label="Hour" required {...form.getInputProps('hour')} fullWidth />
-                    <TextInput label="Minutes" required {...form.getInputProps('minutes')} fullWidth />
-                    <TextInput label="Language" required {...form.getInputProps('lang')} fullWidth />
+                    <TextInput label="Version" required {...form.getInputProps('version')} />
+                    <TextInput label="Class Name" required {...form.getInputProps('className')} />
+                    <TextInput label={t('classManager.courseCode')} placeholder="101" required {...form.getInputProps('courseCode')} />
+                    <Select label={t('classManager.month')} data={months} required {...form.getInputProps('month')} />
+                    <NumberInput label={t('classManager.year')} min={2025} required {...form.getInputProps('year')} />
+                    <TextInput label="Day Name" required {...form.getInputProps('dayName')} />
+                    <TextInput label="Hour" required {...form.getInputProps('hour')} />
+                    <TextInput label="Minutes" required {...form.getInputProps('minutes')} />
+                    <TextInput label="Language" required {...form.getInputProps('lang')} />
 
-                    <Group position="right" mt="md" grow>
-                        <Button type="submit" leftIcon={<IconBook />} fullWidth>
+                    <Group position="apart" mt="md">
+                        <Button type="submit" leftIcon={<IconBook />}>
                             {classToEdit ? t('classForm.btnUpdate') : t('classForm.btnCreate')}
                         </Button>
-                    </Group>
-                </Stack>
-            </form>
 
-            <div className="mt-4">
-                <Text size="sm" fw={500}>
-                    {t('classForm.existingGroups')}
-                </Text>
-                {Array.isArray(existingGroups) && existingGroups.length > 0 ? (
-                    <div style={{ maxHeight: 160, overflowY: 'auto' }}>
-                        {existingGroups.map((group) => (
-                            <Text key={group.id} size="sm" color="dimmed">
-                                {group.name}
-                            </Text>
-                        ))}
-                    </div>
-                ) : (
-                    <Text size="sm" color="dimmed">
-                        {t('classForm.noGroups')}
-                    </Text>
-                )}
-            </div>
+                        {classToEdit && (
+                            <Button
+                                leftIcon={<IconVideo />}
+                                onClick={createZoomMeeting}
+                                loading={creatingZoomMeeting}
+                                variant="outline"
+                                disabled={!!zoomMeetingInfo}
+                            >
+                                {zoomMeetingInfo ? t('classForm.meetingCreated') : t('classForm.createZoomMeeting')}
+                            </Button>
+                        )}
+                    </Group>
+                </form>
+            </Stack>
         </Modal>
     );
 };

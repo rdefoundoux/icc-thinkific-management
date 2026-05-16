@@ -14,7 +14,8 @@ import {
     updateStudentResults,
     syncEnrollment,
     getClassesByCoordinator,
-    getClassesForRegistration
+    getClassesForRegistration,
+    createZoomMeeting,
 } from '../controllers/classController.js';
 import { assignStudents ,getClassesByTeacher} from '../controllers/classController.js';
 import { isAdmin } from '../middleware/auth.js';
@@ -88,6 +89,8 @@ router.post('/:classId/courses', assignCourse);
  */
 router.post('/:classId/students',  assignStudents);
 
+// Add these to your existing class routes
+router.post('/:id/create-zoom-meeting', createZoomMeeting);
 
 router.post('/sync-enrollment', syncEnrollment);
 

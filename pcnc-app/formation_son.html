@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formation Ingénierie Son - Église</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+
+        .presentation-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide {
+            display: none;
+            padding: 60px;
+            height: calc(100vh - 80px);
+            color: white;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        .slide h1 {
+            font-size: 3.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #fff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .slide h2 {
+            font-size: 2.5em;
+            margin-bottom: 25px;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .slide h3 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #87CEEB;
+        }
+
+        .slide p, .slide li {
+            font-size: 1.3em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .slide ul {
+            text-align: left;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .slide li {
+            margin-bottom: 12px;
+            padding-left: 10px;
+        }
+
+        .controls {
+            height: 80px;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .nav-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .slide-counter {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 30px auto;
+        }
+
+        .equipment-item {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            max-width: 1000px;
+            margin: 30px auto;
+            flex-wrap: wrap;
+        }
+
+        .timeline-item {
+            background: rgba(255,255,255,0.15);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 5px;
+            flex: 1;
+            min-width: 150px;
+            backdrop-filter: blur(5px);
+        }
+
+        .highlight {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px auto;
+            max-width: 800px;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide.active {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            position: relative;
+            margin: 0 20px;
+            flex: 1;
+            border-radius: 2px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+<div class="presentation-container">
+    <!-- Slide 1: Titre -->
+    <div class="slide active">
+        <div class="icon">🎵</div>
+        <h1>Formation Ingénierie Son</h1>
+        <h2>Bénévoles d'Église</h2>
+        <p style="font-size: 1.5em; margin-top: 30px;">Servir par l'excellence technique</p>
+        <div class="highlight">
+            <p><strong>6h15 de formation complète</strong></p>
+            <p>Console Allen & Heath Avantis • Microphones Sennheiser • Monitoring professionnel</p>
+        </div>
+    </div>
+
+    <!-- Slide 2: Objectifs -->
+    <div class="slide">
+        <h2>🎯 Objectifs de la Formation</h2>
+        <ul>
+            <li><strong>Maîtriser</strong> la console Allen & Heath Avantis</li>
+            <li><strong>Gérer</strong> tous les microphones sans fil Sennheiser</li>
+            <li><strong>Optimiser</strong> le système de monitoring complet</li>
+            <li><strong>Assurer</strong> un service technique de qualité</li>
+            <li><strong>Développer</strong> l'esprit de service et d'équipe</li>
+            <li><strong>Acquérir</strong> l'autonomie en dépannage</li>
+        </ul>
+        <div class="highlight">
+            <p>💡 <strong>Formation pratique :</strong> 70% d'exercices hands-on</p>
+        </div>
+    </div>
+
+    <!-- Slide 3: Équipement -->
+    <div class="slide">
+        <h2>🎛️ Équipement Disponible</h2>
+        <div class="equipment-grid">
+            <div class="equipment-item">
+                <h3>Console</h3>
+                <p><strong>Allen & Heath Avantis</strong><br>Console numérique professionnelle</p>
+            </div>
+            <div class="equipment-item">
+                <h3>Instruments</h3>
+                <p><strong>Batterie complète</strong><br>Guitare basse<br>Guitare électrique</p>
+            </div>
+            <div class="equipment-item">
+                <h3>Microphones</h3>
+                <p><strong>3x SKM 6000</strong> (Lead, Modérateur, Pasteur)<br><strong>6x EW-D</strong> (Chantres + Speaker)<br><strong>1x Lavalier</strong></p>
+            </div>
+            <div class="equipment-item">
+                <h3>Monitoring</h3>
+                <p><strong>6 In-Ear</strong><br><strong>ME-1 Musicians</strong><br><strong>6 Retours</strong> (Chorale + Chantres)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 4: Programme -->
+    <div class="slide">
+        <h2>📋 Programme de Formation</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <h3>Module 1</h3>
+                <p><strong>Introduction</strong><br>30 min</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Module 2</h3>
+                <p><strong>Console Avantis</strong><br>60 min</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Module 3</h3>
+                <p><strong>Microphones</strong><br>45 min</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Module 4</h3>
+                <p><strong>Instruments</strong><br>60 min</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Module 5</h3>
+                <p><strong>Monitoring</strong><br>45 min</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Module 6</h3>
+                <p><strong>Service Type</strong><br>60 min</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Module 7</h3>
+                <p><strong>Dépannage</strong><br>30 min</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Module 8</h3>
+                <p><strong>Communication</strong><br>20 min</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 5: Module 1 -->
+    <div class="slide">
+        <h2>🚀 Module 1 : Introduction et Sécurité</h2>
+        <div class="two-column">
+            <div>
+                <h3>🎯 Objectifs</h3>
+                <ul>
+                    <li>Comprendre le rôle du technicien son</li>
+                    <li>Connaître les règles de sécurité</li>
+                    <li>Se familiariser avec l'équipement</li>
+                </ul>
+            </div>
+            <div>
+                <h3>⚠️ Sécurité Prioritaire</h3>
+                <ul>
+                    <li>Manipulation électrique sécurisée</li>
+                    <li>Protection auditive</li>
+                    <li>Procédures d'urgence</li>
+                </ul>
+            </div>
+        </div>
+        <div class="highlight">
+            <p><strong>🙏 Esprit de service :</strong> Servir la communauté dans l'adoration</p>
+        </div>
+    </div>
+
+    <!-- Slide 6: Module 2 -->
+    <div class="slide">
+        <h2>🎛️ Module 2 : Console Allen & Heath Avantis</h2>
+        <div class="two-column">
+            <div>
+                <h3>📱 Interface</h3>
+                <ul>
+                    <li>Écran tactile et navigation</li>
+                    <li>Faders et encodeurs</li>
+                    <li>Scènes et snapshots</li>
+                </ul>
+            </div>
+            <div>
+                <h3>🎚️ Fonctions Clés</h3>
+                <ul>
+                    <li>Routage audio</li>
+                    <li>EQ et effets</li>
+                    <li>Mix et monitoring</li>
+                </ul>
+            </div>
+        </div>
+        <div class="highlight">
+            <p><strong>⏱️ 40 minutes d'exercices pratiques</strong> sur console</p>
+        </div>
+    </div>
+
+    <!-- Slide 7: Module 3 -->
+    <div class="slide">
+        <h2>🎤 Module 3 : Microphones Sennheiser</h2>
+        <div class="equipment-grid">
+            <div class="equipment-item">
+                <h3>SKM 6000</h3>
+                <p><strong>Haute qualité</strong><br>Lead, Modérateur, Pasteur<br>Longue portée</p>
+            </div>
+            <div class="equipment-item">
+                <h3>EW-D Series</h3>
+                <p><strong>Gestion multiple</strong><br>5 Chantres + 1 Speaker<br>Setup automatique</p>
+            </div>
+            <div class="equipment-item">
+                <h3>Lavalier</h3>
+                <p><strong>Discret</strong><br>Pasteur mobile<br>Liberté de mouvement</p>
+            </div>
+        </div>
+        <div class="highlight">
+            <p><strong>🔧 Techniques :</strong> Placement optimal • Prévention larsen • Gestion fréquences</p>
+        </div>
+    </div>
+
+    <!-- Slide 8: Module 4 -->
+    <div class="slide">
+        <h2>🥁 Module 4 : Instruments</h2>
+        <div class="two-column">
+            <div>
+                <h3>🥁 Batterie Acoustique</h3>
+                <ul>
+                    <li><strong>Kick :</strong> Micro dynamique proche</li>
+                    <li><strong>Snare :</strong> Angle 45°</li>
+                    <li><strong>3 Toms :</strong> Micros individuels</li>
+                    <li><strong>Hi-hat :</strong> Distance contrôlée</li>
+                    <li><strong>2 Cymbales :</strong> Overhead/spots</li>
+                </ul>
+            </div>
+            <div>
+                <h3>🎸 Guitares</h3>
+                <ul>
+                    <li><strong>Électrique :</strong> Direct/ampli</li>
+                    <li><strong>Basse :</strong> Signal mixte</li>
+                    <li><strong>EQ :</strong> Fréquences adaptées</li>
+                    <li><strong>Mix :</strong> Équilibrage section</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 9: Module 5 -->
+    <div class="slide">
+        <h2>🎧 Module 5 : Système de Monitoring</h2>
+        <div class="equipment-grid">
+            <div class="equipment-item">
+                <h3>6 In-Ear</h3>
+                <p><strong>Avantages :</strong><br>• Isolation acoustique<br>• Mobilité totale<br>• Protection auditive</p>
+            </div>
+            <div class="equipment-item">
+                <h3>ME-1 Musicians</h3>
+                <p><strong>Fonctionnalités :</strong><br>• Contrôle individuel<br>• 16 sources<br>• Autonomie musicien</p>
+            </div>
+            <div class="equipment-item">
+                <h3>6 Retours</h3>
+                <p><strong>Distribution :</strong><br>• 2 Chorale<br>• 4 Chantres<br>• Mix adapté</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 10: Module 6 -->
+    <div class="slide">
+        <h2>⛪ Module 6 : Gestion Service Type</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <h3>Préparation</h3>
+                <p><strong>30 min avant</strong><br>Check-list complète</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Louange</h3>
+                <p><strong>20 min</strong><br>5 chantres + instruments</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Annonces</h3>
+                <p><strong>10 min</strong><br>Modérateur + Speaker</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Prédication</h3>
+                <p><strong>30 min</strong><br>Pasteur (SKM/Lavalier)</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Fin</h3>
+                <p><strong>10 min</strong><br>Retour musique</p>
+            </div>
+        </div>
+        <div class="highlight">
+            <p><strong>🎯 Simulation complète</strong> avec gestion des transitions et imprévus</p>
+        </div>
+    </div>
+
+    <!-- Slide 11: Module 7 -->
+    <div class="slide">
+        <h2>🔧 Module 7 : Dépannage et Maintenance</h2>
+        <div class="two-column">
+            <div>
+                <h3>⚠️ Problèmes Courants</h3>
+                <ul>
+                    <li><strong>Micros :</strong> Batterie, signal, qualité</li>
+                    <li><strong>Console :</strong> Mute, routing, larsen</li>
+                    <li><strong>Instruments :</strong> Câbles, réglages</li>
+                </ul>
+            </div>
+            <div>
+                <h3>🛠️ Solutions Rapides</h3>
+                <ul>
+                    <li><strong>Diagnostic :</strong> Méthode systématique</li>
+                    <li><strong>Backup :</strong> Solutions de secours</li>
+                    <li><strong>Prévention :</strong> Maintenance régulière</li>
+                </ul>
+            </div>
+        </div>
+        <div class="highlight">
+            <p><strong>💡 Réflexes à développer :</strong> Rapidité • Discrétion • Efficacité</p>
+        </div>
+    </div>
+
+    <!-- Slide 12: Module 8 -->
+    <div class="slide">
+        <h2>🤝 Module 8 : Communication et Équipe</h2>
+        <div class="two-column">
+            <div>
+                <h3>💬 Communication</h3>
+                <ul>
+                    <li><strong>Musiciens :</strong> Signaux discrets</li>
+                    <li><strong>Pasteurs :</strong> Anticipation besoins</li>
+                    <li><strong>Techniciens :</strong> Passation consignes</li>
+                </ul>
+            </div>
+            <div>
+                <h3>🙏 Attitude de Service</h3>
+                <ul>
+                    <li><strong>Humilité :</strong> Effacement pendant service</li>
+                    <li><strong>Disponibilité :</strong> Réactivité constante</li>
+                    <li><strong>Excellence :</strong> Atmosphère de recueillement</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 13: Évaluation -->
+    <div class="slide">
+        <h2>📝 Évaluation Pratique Finale</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <h3>Setup</h3>
+                <p><strong>15 minutes</strong><br>Console + Micros + Monitoring</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Service Simulé</h3>
+                <p><strong>20 minutes</strong><br>Transitions + Dépannage</p>
+            </div>
+            <div class="timeline-item">
+                <h3>Questions</h3>
+                <p><strong>10 minutes</strong><br>Théorie + Sécurité</p>
+            </div>
+        </div>
+        <div class="highlight">
+            <p><strong>🏆 Critères :</strong> Maîtrise technique • Réactivité • Communication • Sécurité</p>
+        </div>
+    </div>
+
+    <!-- Slide 14: Ressources -->
+    <div class="slide">
+        <h2>📚 Ressources et Suivi</h2>
+        <div class="two-column">
+            <div>
+                <h3>📖 Documentation</h3>
+                <ul>
+                    <li>Manuel Avantis</li>
+                    <li>Guide Sennheiser</li>
+                    <li>Check-lists services</li>
+                    <li>Contacts urgence</li>
+                </ul>
+            </div>
+            <div>
+                <h3>🔄 Formation Continue</h3>
+                <ul>
+                    <li>Sessions trimestrielles</li>
+                    <li>Partage d'expériences</li>
+                    <li>Nouveaux équipements</li>
+                    <li>Accompagnement novices</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 15: Check-list -->
+    <div class="slide">
+        <h2>✅ Check-list Pré-Service</h2>
+        <div class="two-column">
+            <div>
+                <h3>🎛️ Console & Audio</h3>
+                <ul>
+                    <li>Console allumée et scène chargée</li>
+                    <li>Test tous micros sans fil (>50%)</li>
+                    <li>Vérification niveaux instruments</li>
+                    <li>Sauvegarde scène de travail</li>
+                </ul>
+            </div>
+            <div>
+                <h3>🎧 Monitoring & Équipe</h3>
+                <ul>
+                    <li>Test monitoring in-ear (6 unités)</li>
+                    <li>Positionnement retours</li>
+                    <li>Communication équipe musicale</li>
+                    <li>Matériel secours disponible</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 16: Schéma Technique -->
+    <div class="slide">
+        <h2>🔌 Schéma de Connexion</h2>
+        <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; max-width: 900px; margin: 0 auto; font-family: monospace; text-align: left;">
+            <h3 style="text-align: center; margin-bottom: 20px;">Allen & Heath Avantis</h3>
+            <div class="two-column" style="gap: 20px;">
+                <div>
+                    <h4 style="color: #87CEEB;">🎵 ENTRÉES</h4>
+                    <p>Ch 1-8 : Batterie complète</p>
+                    <p>Ch 9 : Guitare Basse</p>
+                    <p>Ch 10 : Guitare Électrique</p>
+                    <p>Ch 11-15 : Chantres (EW-D)</p>
+                    <p>Ch 16 : Speaker (EW-D)</p>
+                    <p>Ch 17 : Lead (SKM 6000)</p>
+                    <p>Ch 18 : Modérateur (SKM 6000)</p>
+                    <p>Ch 19 : Pasteur (SKM 6000)</p>
+                    <p>Ch 20 : Lavalier Pasteur</p>
+                </div>
+                <div>
+                    <h4 style="color: #FFD700;">🔊 SORTIES</h4>
+                    <p>Main L/R : Diffusion principale</p>
+                    <p>Mix 1-6 : In-Ear individuels</p>
+                    <p>Mix 7-8 : Retours Chorale</p>
+                    <p>Mix 9-12 : Retours Chantres</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 17: Conclusion -->
+    <div class="slide">
+        <div class="icon">🎯</div>
+        <h2>Formation Complète</h2>
+        <div class="highlight" style="font-size: 1.4em;">
+            <p><strong>6h15 de formation intensive</strong></p>
+            <p>8 modules • Exercices pratiques • Évaluation certifiante</p>
+        </div>
+        <div class="two-column" style="margin-top: 40px;">
+            <div>
+                <h3>🏆 Vous serez capables de :</h3>
+                <ul>
+                    <li>Gérer la console Avantis en autonomie</li>
+                    <li>Maîtriser tous les microphones</li>
+                    <li>Optimiser le monitoring</li>
+                    <li>Dépanner efficacement</li>
+                </ul>
+            </div>
+            <div>
+                <h3>🙏 Dans l'esprit de :</h3>
+                <ul>
+                    <li>Service à la communauté</li>
+                    <li>Excellence technique</li>
+                    <li>Travail d'équipe</li>
+                    <li>Formation continue</li>
+                </ul>
+            </div>
+        </div>
+        <p style="margin-top: 40px; font-size: 1.8em; color: #FFD700;"><strong>Prêts à servir par l'excellence technique ! 🎵</strong></p>
+    </div>
+
+    <!-- Contrôles -->
+    <div class="controls">
+        <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">⬅️ Précédent</button>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="slide-counter">
+            <span id="currentSlide">1</span> / <span id="totalSlides">17</span>
+        </div>
+        <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">Suivant ➡️</button>
+    </div>
+</div>
+
+<script>
+    let currentSlideIndex = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+
+    document.getElementById('totalSlides').textContent = totalSlides;
+
+    function showSlide(index) {
+        slides.forEach(slide => slide.classList.remove('active'));
+        slides[index].classList.add('active');
+
+        document.getElementById('currentSlide').textContent = index + 1;
+        document.getElementById('progressFill').style.width = ((index + 1) / totalSlides) * 100 + '%';
+
+        // Update navigation buttons
+        document.getElementById('prevBtn').disabled = index === 0;
+        document.getElementById('nextBtn').disabled = index === totalSlides - 1;
+    }
+
+    function changeSlide(direction) {
+        const newIndex = currentSlideIndex + direction;
+        if (newIndex >= 0 && newIndex < totalSlides) {
+            currentSlideIndex = newIndex;
+            showSlide(currentSlideIndex);
+        }
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'ArrowLeft') {
+            changeSlide(-1);
+        } else if (event.key === 'ArrowRight') {
+            changeSlide(1);
+        }
+    });
+
+    // Initialize
+    showSlide(0);
+
+    // Auto-advance option (commented out for manual control)
+    /*
+    setInterval(() => {
+        if (currentSlideIndex < totalSlides - 1) {
+            changeSlide(1);
+        } else {
+            currentSlideIndex = -1;
+            changeSlide(1);
+        }
+    }, 10000); // 10 seconds per slide
+    */
+</script>
+</body>
+</html>
