@@ -1,368 +1,309 @@
-import User from '../models/User.js';
-import Class from '../models/Class.js';
-import asyncHandler from 'express-async-handler';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import ThinkificService from '../services/ThinkificService.js'; // Verify the correct path
 
+import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
+import { BadRequest, NotFound, Forbidden } from '../lib/errors.js';
+import { asyncHandler } from '../middleware/requestContext.js';
+import ThinkificService from '../services/ThinkificService.js';
+
+const USER_PUBLIC_SELECT = {
+    id: true,
+    thinkificId: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    roles: true,
+    whatsappNumber: true,
+    city: true,
+    country: true,
+    gender: true,
+    iccMember: true,
+    lastLogin: true,
+    createdAt: true,
+    updatedAt: true,
+};
 
 export const getUsers = asyncHandler(async (req, res) => {
     const { role } = req.query;
-    const filter = role ? { role } : {};
+    const where = role ? { roles: { has: role } } : {};
 
-    const users = await User.find(filter)
-        .select('-password')
-        .populate('assignedClass', 'name courseCode');
+    const users = await prisma.user.findMany({
+        where,
+        select: USER_PUBLIC_SELECT,
+        orderBy: { createdAt: 'desc' },
+    });
 
     res.json({ success: true, count: users.length, data: users });
 });
 
-
 export const getUser = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.params.id)
-        .select('-password')
-        .populate('assignedClass', 'name courseCode');
+    const user = await prisma.user.findUnique({
+        where: { id: req.params.id },
+        select: {
+            ...USER_PUBLIC_SELECT,
+            enrolledClasses: { include: { class: { select: { id: true, className: true, courseCode: true } } } },
+        },
+    });
+    if (!user) throw NotFound('User not found');
 
-    if (!user) {
-        return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    // Check authorization
-    if (req.user.role !== 'admin' && req.user.id !== user.id) {
-        console.log('Not authorized: ', req.user.role, ' vs. ', user.role, ' vs. ', req.user.id, ' vs. ', user.id, ' vs.')
-        return res.status(401).json({ success: false, error: 'Not authorized' });
+    if (req.user && !req.user.roles?.includes('admin') && req.user.id !== user.id) {
+        throw Forbidden('Not authorized');
     }
 
     res.json({ success: true, data: user });
 });
-
 
 export const updateUser = asyncHandler(async (req, res) => {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
-        new: true,
-        runValidators: true
-    }).select('-password');
+    const { id } = req.params;
+    const {
+        assignedClass: _ignored,
+        password: _ignored2,
+        thinkificEnrollments: _ignored3,
+        managedStudents: _ignored4,
+        managedClasses: _ignored5,
+        proxyMappings: _ignored6,
+        ...data
+    } = req.body;
 
-    if (!user) {
-        return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    // Handle class assignment
-    if (req.body.assignedClass) {
-        await Class.findByIdAndUpdate(req.body.assignedClass, {
-            $addToSet: { teachers: user._id }
-        });
-    }
+    const user = await prisma.user.update({
+        where: { id },
+        data,
+        select: USER_PUBLIC_SELECT,
+    });
 
     res.json({ success: true, data: user });
 });
 
-
 export const deleteUser = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.params.id);
-
-    if (!user) {
-        return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    // Remove user from assigned class
-    if (user.assignedClass) {
-        await Class.findByIdAndUpdate(user.assignedClass, {
-            $pull: { teachers: user._id }
-        });
-    }
-
-    await user.remove();
+    await prisma.user.delete({ where: { id: req.params.id } });
     res.json({ success: true, data: {} });
 });
 
-
 export const changeUserRole = asyncHandler(async (req, res) => {
-    const { role } = req.body;
-    const user = await User.findById(req.params.id);
+    const { role, roles } = req.body;
+    const newRoles = Array.isArray(roles) ? roles : (role ? [role] : null);
+    if (!newRoles) throw BadRequest('role or roles required');
 
-    if (!user) {
-        return res.status(404).json({ success: false, error: 'User not found' });
-    }
+    const user = await prisma.user.update({
+        where: { id: req.params.id },
+        data: { roles: newRoles },
+        select: USER_PUBLIC_SELECT,
+    });
 
-    user.role = role;
-    await user.save();
-
-    res.json({ success: true, data: user.toProfile() });
+    res.json({ success: true, data: user });
 });
 
-export const syncUserData = async (req, res) => {
-    try {
-        const thinkificUser = req.body;
+export const syncUserData = asyncHandler(async (req, res) => {
+    const thinkificUser = req.body;
+    if (!thinkificUser?.id) throw BadRequest('Thinkific user id required');
 
-        // Map Thinkific data to custom schema
-        const userData = {
+    const user = await prisma.user.upsert({
+        where: { thinkificId: String(thinkificUser.id) },
+        update: {
             email: thinkificUser.email,
-            thinkificId: thinkificUser.id,
-            profile: {
-                firstName: thinkificUser.first_name,
-                lastName: thinkificUser.last_name,
-                customFields: thinkificUser.custom_profile_fields
-            },
-            courses: thinkificUser.enrollments.map(e => ({
-                courseId: e.course_id,
-                status: e.activated_at ? 'active' : 'pending'
-            }))
-        };
+            firstName: thinkificUser.first_name,
+            lastName: thinkificUser.last_name,
+            lastSyncAt: new Date(),
+        },
+        create: {
+            thinkificId: String(thinkificUser.id),
+            email: thinkificUser.email,
+            firstName: thinkificUser.first_name,
+            lastName: thinkificUser.last_name,
+            lastSyncAt: new Date(),
+        },
+    });
 
-        // Upsert user in database
-        const user = await User.findOneAndUpdate(
-            { thinkificId: thinkificUser.id },
-            userData,
-            { new: true, upsert: true }
-        );
-
-        res.json(user);
-    } catch (error) {
-        res.status(400).json({ error: 'Data sync failed' });
-    }
-};
-
-export const createUser = async (req, res) => {
-    try {
-        const { email, firstName, lastName, roles = ['student'], password } = req.body;
-
-        // Validate required fields
-        if (!email || !firstName || !lastName) {
-            return res.status(400).json({ error: 'Missing required fields' });
+    if (Array.isArray(thinkificUser.enrollments)) {
+        for (const e of thinkificUser.enrollments) {
+            if (!e?.course_id) continue;
+            const status = e.activated_at ? 'active' : 'expired';
+            await prisma.thinkificEnrollment.upsert({
+                where: {
+                    userId_courseId: {
+                        userId: user.id,
+                        courseId: String(e.course_id),
+                    },
+                },
+                update: { status },
+                create: {
+                    userId: user.id,
+                    courseId: String(e.course_id),
+                    status,
+                },
+            });
         }
+    }
 
-        // Generate password if not provided
-        const plainPassword = password || uuidv4().slice(0, 12);
-        const hashedPassword = await bcrypt.hash(plainPassword, 12);
+    res.json(user);
+});
 
-        // 1. Create Thinkific user (without roles)
-        const thinkificUser = await ThinkificService.createUser({
+export const createUser = asyncHandler(async (req, res) => {
+    const { email, firstName, lastName, roles = ['student'], password } = req.body;
+    if (!email || !firstName || !lastName) throw BadRequest('Missing required fields');
+
+    const plainPassword = password || uuidv4().slice(0, 12);
+    const hashedPassword = await bcrypt.hash(plainPassword, 12);
+
+    let thinkificUser;
+    try {
+        thinkificUser = await ThinkificService.createUser({
             email,
             first_name: firstName,
             last_name: lastName,
-            password: plainPassword
+            password: plainPassword,
         });
+    } catch (err) {
+        const thinkificError = err.response?.data?.errors?.[0];
+        if (thinkificError) {
+            throw BadRequest(`Thinkific: ${thinkificError.message}`, { code: thinkificError.code });
+        }
+        throw err;
+    }
 
-        // 2. Create local user with Thinkific ID
-        const user = await User.create({
+    const user = await prisma.user.create({
+        data: {
             email,
             firstName,
             lastName,
-            thinkificId: thinkificUser.id,
+            thinkificId: String(thinkificUser.id),
             password: hashedPassword,
             roles,
-            requiresPasswordReset: !password
-        });
+        },
+        select: USER_PUBLIC_SELECT,
+    });
 
-        res.status(201).json({
-            _id: user._id,
-            email: user.email,
-            roles: user.roles,
-            thinkificId: user.thinkificId
-        });
+    res.status(201).json(user);
+});
 
-    } catch (error) {
-        console.error('User creation error:', error);
+export const bulkCreateUsers = asyncHandler(async (req, res) => {
+    const users = req.body;
+    if (!Array.isArray(users)) throw BadRequest('Body must be an array of users');
 
-        // Handle Thinkific errors
-        const thinkificError = error.response?.data?.errors?.[0];
-        if (thinkificError) {
-            return res.status(400).json({
-                error: `Thinkific: ${thinkificError.message}`,
-                code: thinkificError.code
+    const results = [];
+    for (const userData of users) {
+        try {
+            const { email, firstName, lastName, roles = ['student'], password } = userData;
+            const plainPassword = password || uuidv4().slice(0, 12);
+            const hashedPassword = await bcrypt.hash(plainPassword, 12);
+
+            const thinkificUser = await ThinkificService.createUser({
+                email,
+                first_name: firstName,
+                last_name: lastName,
+                password: plainPassword,
             });
-        }
 
-        res.status(400).json({
-            error: error.message || 'User creation failed'
-        });
-    }
-};
-
-export const bulkCreateUsers = async (req, res) => {
-    try {
-        const users = req.body;
-        const results = [];
-
-        for (const userData of users) {
-            try {
-                const { email, firstName, lastName, roles = ['student'], password } = userData;
-
-                // Generate password if not provided
-                const plainPassword = password || uuidv4().slice(0, 12);
-                const hashedPassword = await bcrypt.hash(plainPassword, 12);
-
-                // 1. Create Thinkific user
-                const thinkificUser = await ThinkificService.createUser({
-                    email,
-                    first_name: firstName,
-                    last_name: lastName,
-                    password: plainPassword
-                });
-
-                // 2. Create local user
-                const user = await User.create({
+            const user = await prisma.user.create({
+                data: {
                     email,
                     firstName,
                     lastName,
-                    thinkificId: thinkificUser.id,
+                    thinkificId: String(thinkificUser.id),
                     password: hashedPassword,
                     roles,
-                    requiresPasswordReset: !password
-                });
+                },
+            });
 
-                results.push({
-                    success: true,
-                    email,
-                    userId: user._id,
-                    thinkificId: user.thinkificId
-                });
-
-            } catch (error) {
-                results.push({
-                    success: false,
-                    error: error.response?.data?.errors?.[0]?.message || error.message,
-                    email: userData.email
-                });
-            }
-        }
-
-        res.json({
-            total: users.length,
-            successCount: results.filter(r => r.success).length,
-            results
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            error: 'Bulk operation failed: ' + error.message
-        });
-    }
-};
-
-export const listCourses = async (req, res) => {
-    try {
-        const response = await axios.get(
-            `${THINKIFIC_API}/courses`,
-            { headers: req.thinkificHeaders }
-        );
-
-        // Audit logging
-        await AuditLog.create({
-            userId: req.user.id,
-            proxyId: req.proxy._id,
-            action: 'LIST_COURSES'
-        });
-
-        res.json(response.data);
-    } catch (error) {
-        res.status(502).json({ error: 'Upstream error' });
-    }
-};
-export const assignStudentsToSf = async (req, res) => {
-    try {
-        const { classId, studentIds, action } = req.body;
-        const sfId = req.params.sfId;
-
-        // Verify SF exists and belongs to class
-        const classObj = await Class.findOne({
-            _id: classId,
-            sf: sfId
-        });
-
-        if (!classObj) return res.status(403).json({ error: 'SF not in class' });
-
-        // Verify all students belong to the class
-        const invalidStudents = studentIds.filter(id =>
-            !classObj.students.includes(id)
-        );
-
-        if (invalidStudents.length > 0) {
-            return res.status(400).json({
-                error: 'Some students not in class',
-                invalidStudents
+            results.push({ success: true, email, userId: user.id, thinkificId: user.thinkificId });
+        } catch (err) {
+            results.push({
+                success: false,
+                error: err.response?.data?.errors?.[0]?.message || err.message,
+                email: userData.email,
             });
         }
-
-        // Determine update operation based on action
-        const updateOperation = action === 'remove'
-            ? {
-                $pull: {
-                    managedStudents: { $in: studentIds },
-                    managedClasses: classId
-                }
-            }
-            : {
-                $addToSet: {
-                    managedStudents: { $each: studentIds },
-                    managedClasses: classId
-                }
-            };
-
-        // Update SF's managed students
-        const sf = await User.findByIdAndUpdate(
-            sfId,
-            updateOperation,
-            { new: true }
-        );
-
-        res.json(sf);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
     }
-};
 
-export const assignStudentsToRsf = async (req, res) => {
-    try {
-        const { classId, studentIds, action } = req.body;
-        const rsfId = req.params.rsfId;
+    res.json({
+        total: users.length,
+        successCount: results.filter((r) => r.success).length,
+        results,
+    });
+});
 
-        // Verify RSF exists and belongs to class
-        const classObj = await Class.findOne({
-            _id: classId,
-            rsf: rsfId
+/**
+ * Assign / unassign students to an SF user.
+ * Updates the UserManagedStudent join table.
+ */
+export const assignStudentsToSf = asyncHandler(async (req, res) => {
+    const { classId, studentIds, action } = req.body;
+    const sfId = req.params.sfId;
+    if (!Array.isArray(studentIds) || !classId) throw BadRequest('classId and studentIds required');
+
+    const classObj = await prisma.class.findFirst({
+        where: { id: classId, sf: { some: { userId: sfId } } },
+        include: { students: { select: { userId: true } } },
+    });
+    if (!classObj) throw Forbidden('SF not in class');
+
+    const classStudentIds = new Set(classObj.students.map((s) => s.userId));
+    const invalidStudents = studentIds.filter((id) => !classStudentIds.has(id));
+    if (invalidStudents.length) {
+        throw BadRequest('Some students not in class', { invalidStudents });
+    }
+
+    if (action === 'remove') {
+        await prisma.userManagedStudent.deleteMany({
+            where: { managerId: sfId, studentId: { in: studentIds } },
         });
-
-        if (!classObj) return res.status(403).json({ error: 'RSF not in class' });
-
-        // Verify all students belong to the class
-        const invalidStudents = studentIds.filter(id =>
-            !classObj.students.includes(id)
-        );
-
-        if (invalidStudents.length > 0) {
-            return res.status(400).json({
-                error: 'Some students not in class',
-                invalidStudents
+    } else {
+        for (const studentId of studentIds) {
+            await prisma.userManagedStudent.upsert({
+                where: { managerId_studentId: { managerId: sfId, studentId } },
+                update: {},
+                create: { managerId: sfId, studentId },
             });
         }
-
-        // Determine update operation based on action
-        const updateOperation = action === 'remove'
-            ? {
-                $pull: {
-                    managedStudents: { $in: studentIds },
-                    managedClasses: classId
-                }
-            }
-            : {
-                $addToSet: {
-                    managedStudents: { $each: studentIds },
-                    managedClasses: classId
-                }
-            };
-
-        // Update RSF's managed students
-        const rsf = await User.findByIdAndUpdate(
-            rsfId,
-            updateOperation,
-            { new: true }
-        );
-
-        res.json(rsf);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
     }
-};
 
+    const sf = await prisma.user.findUnique({
+        where: { id: sfId },
+        include: { managedStudents: true, managedClasses: true },
+    });
+    res.json(sf);
+});
+
+export const assignStudentsToRsf = asyncHandler(async (req, res) => {
+    const { classId, studentIds, action } = req.body;
+    const rsfId = req.params.rsfId;
+    if (!Array.isArray(studentIds) || !classId) throw BadRequest('classId and studentIds required');
+
+    const classObj = await prisma.class.findFirst({
+        where: { id: classId, rsf: { some: { userId: rsfId } } },
+        include: { students: { select: { userId: true } } },
+    });
+    if (!classObj) throw Forbidden('RSF not in class');
+
+    const classStudentIds = new Set(classObj.students.map((s) => s.userId));
+    const invalidStudents = studentIds.filter((id) => !classStudentIds.has(id));
+    if (invalidStudents.length) {
+        throw BadRequest('Some students not in class', { invalidStudents });
+    }
+
+    if (action === 'remove') {
+        await prisma.userManagedStudent.deleteMany({
+            where: { managerId: rsfId, studentId: { in: studentIds } },
+        });
+    } else {
+        for (const studentId of studentIds) {
+            await prisma.userManagedStudent.upsert({
+                where: { managerId_studentId: { managerId: rsfId, studentId } },
+                update: {},
+                create: { managerId: rsfId, studentId },
+            });
+        }
+    }
+
+    const rsf = await prisma.user.findUnique({
+        where: { id: rsfId },
+        include: { managedStudents: true },
+    });
+    res.json(rsf);
+});
+
+export const listCourses = asyncHandler(async (_req, res) => {
+    const courses = await prisma.course.findMany({ orderBy: { code: 'asc' } });
+    res.json(courses);
+});

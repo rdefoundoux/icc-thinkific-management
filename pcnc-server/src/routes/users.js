@@ -1,125 +1,94 @@
 import express from 'express';
-import multer from 'multer';
-import csvParser from 'csv-parser';
-import User from '../models/User.js';
-import { ProxyService } from '../services/ProxyService.js';
 import axios from 'axios';
 import retryAfter from 'axios-retry-after';
 import PQueue from 'p-queue';
-import { isAuthenticated, isAdmin, isCoordinator } from '../middleware/auth.js';
+
+import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
+import { asyncHandler } from '../middleware/requestContext.js';
 import {
     createUser,
     updateUser,
     assignStudentsToSf,
-    assignStudentsToRsf
+    assignStudentsToRsf,
 } from '../controllers/userController.js';
+import config from '../config/env.js';
 
 const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
-const CACHE_TTL = 3 * 3600 * 1000; // 3 hours
+const CACHE_TTL = 3 * 3600 * 1000;
+const VALID_ROLES = ['admin', 'teacher', 'rsf', 'sf', 'coordinator', 'student'];
 
-const VALID_ROLES = ['admin', 'teacher', 'rsf', 'sf', 'coordinator', 'traineeTeacher', 'student'];
-
-function validateRoles(roles) {
-    return roles.every(r => VALID_ROLES.includes(r));
-}
-
-// Configure axios-retry-after
 const client = axios.create();
-client.interceptors.response.use(null, retryAfter(client, {
-    isRetryable: error =>
-        error.response?.status === 429 &&
-        error.config?.method?.toLowerCase() === 'get'
-}));
+client.interceptors.response.use(
+    null,
+    retryAfter(client, {
+        isRetryable: (error) =>
+            error.response?.status === 429 &&
+            error.config?.method?.toLowerCase() === 'get',
+    }),
+);
 
 const API_URL = 'https://api.thinkific.com/api/public/v1';
 
-// Enhanced cache with TTL and database fallback
 const thinkificCache = {
     timestamp: 0,
     users: [],
     isRefreshing: false,
-    queue: []
+    queue: [],
 };
 
-async function getThinkificUsers() {
-    const now = Date.now();
-
-    // Return cached users if still valid
-    if (now - thinkificCache.timestamp < CACHE_TTL) {
-        return thinkificCache.users;
-    }
-
-    // Handle concurrent requests
-    if (thinkificCache.isRefreshing) {
-        return new Promise(resolve => thinkificCache.queue.push(resolve));
-    }
-
-    try {
-        thinkificCache.isRefreshing = true;
-        const apiUsers = await fetchPaginatedUsersParallel();
-        const dbUsers = await User.find({ thinkificId: { $exists: true } });
-
-        // Merge API users with database entries
-        const mergedUsers = mergeUsers(apiUsers, dbUsers);
-
-        // Update cache and database
-        thinkificCache.users = mergedUsers;
-        thinkificCache.timestamp = Date.now();
-        await bulkUpsertUsers(mergedUsers);
-
-        // Resolve queued requests
-        thinkificCache.queue.forEach(resolve => resolve(mergedUsers));
-        thinkificCache.queue = [];
-
-        return mergedUsers;
-    } finally {
-        thinkificCache.isRefreshing = false;
-    }
+function mapThinkificUser(tUser) {
+    const roles = tUser.role
+        ? tUser.role.split(',').map((r) => r.trim()).filter((r) => VALID_ROLES.includes(r))
+        : ['student'];
+    return {
+        email: tUser.email,
+        thinkificId: tUser.id ? String(tUser.id) : null,
+        firstName: tUser.first_name,
+        lastName: tUser.last_name,
+        roles: roles.length ? roles : ['student'],
+    };
 }
 
-// Parallel paginated fetching using p-queue
 async function fetchPaginatedUsersParallel() {
-    const perPage = 200; // Max allowed by Thinkific API
-    // First, get the first page to determine how many pages
+    const perPage = 200;
     const firstPageResp = await client.get(`${API_URL}/users`, {
         params: { page: 1, limit: perPage },
         headers: {
             'X-Auth-API-Key': process.env.THINKIFIC_API_TOKEN,
-            'X-Auth-Subdomain': process.env.THINKIFIC_SUBDOMAIN
-        }
+            'X-Auth-Subdomain': config.THINKIFIC.SUBDOMAIN,
+        },
     });
-    const total = firstPageResp.data.meta?.total || (firstPageResp.data.items.length);
+    const total = firstPageResp.data.meta?.total || firstPageResp.data.items.length;
     const totalPages = Math.ceil(total / perPage);
-
     const allUsers = [...firstPageResp.data.items];
-
     if (totalPages <= 1) return allUsers;
 
-    // Use PQueue to limit concurrency (avoid rate limits)
     const queue = new PQueue({ concurrency: 5 });
     const promises = [];
     for (let page = 2; page <= totalPages; page++) {
-        promises.push(queue.add(async () => {
-            try {
-                const resp = await client.get(`${API_URL}/users`, {
-                    params: { page, limit: perPage },
-                    headers: {
-                        'X-Auth-API-Key': process.env.THINKIFIC_API_TOKEN,
-                        'X-Auth-Subdomain': process.env.THINKIFIC_SUBDOMAIN
+        promises.push(
+            queue.add(async () => {
+                try {
+                    const resp = await client.get(`${API_URL}/users`, {
+                        params: { page, limit: perPage },
+                        headers: {
+                            'X-Auth-API-Key': process.env.THINKIFIC_API_TOKEN,
+                            'X-Auth-Subdomain': config.THINKIFIC.SUBDOMAIN,
+                        },
+                    });
+                    return resp.data.items;
+                } catch (err) {
+                    if (err.response?.status === 429) {
+                        const retryDelay = parseInt(err.response.headers['retry-after']) || 5;
+                        logger.warn({ retryDelay }, 'Thinkific rate limited');
+                        await new Promise((resolve) => setTimeout(resolve, retryDelay * 1000));
+                        return [];
                     }
-                });
-                return resp.data.items;
-            } catch (err) {
-                if (err.response?.status === 429) {
-                    const retryAfter = parseInt(err.response.headers['retry-after']) || 5;
-                    console.log(`Rate limited. Waiting ${retryAfter}s...`);
-                    await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                    return [];
+                    throw err;
                 }
-                throw err;
-            }
-        }));
+            }),
+        );
     }
     const results = await Promise.all(promises);
     for (const items of results) {
@@ -128,96 +97,124 @@ async function fetchPaginatedUsersParallel() {
     return allUsers;
 }
 
-function mergeUsers(apiUsers, dbUsers) {
-    const dbMap = new Map(dbUsers.map(u => [u.thinkificId, u]));
-    return apiUsers.map(apiUser => {
-        const dbUser = dbMap.get(apiUser.id?.toString());
-        return dbUser ? dbUser.toObject() : mapThinkificUser(apiUser);
-    });
-}
-
-async function bulkUpsertUsers(users) {
-    const bulkOps = [];
-    for (const user of users) {
-        bulkOps.push({
-            updateOne: {
-                filter: { thinkificId: user.thinkificId },
-                update: { $set: user },
-                upsert: true
-            }
-        });
-        if (bulkOps.length % 500 === 0) {
-            await User.bulkWrite(bulkOps, { ordered: false });
-            bulkOps.length = 0;
+async function bulkUpsertUsers(apiUsers) {
+    for (const apiUser of apiUsers) {
+        if (!apiUser.id || !apiUser.email) continue;
+        const mapped = mapThinkificUser(apiUser);
+        try {
+            await prisma.user.upsert({
+                where: { thinkificId: mapped.thinkificId },
+                update: {
+                    email: mapped.email,
+                    firstName: mapped.firstName,
+                    lastName: mapped.lastName,
+                    lastSyncAt: new Date(),
+                },
+                create: {
+                    thinkificId: mapped.thinkificId,
+                    email: mapped.email,
+                    firstName: mapped.firstName,
+                    lastName: mapped.lastName,
+                    roles: mapped.roles,
+                    lastSyncAt: new Date(),
+                },
+            });
+        } catch (err) {
+            logger.warn({ err: err.message, email: mapped.email }, 'bulk upsert user failed');
         }
     }
-    if (bulkOps.length > 0) {
-        await User.bulkWrite(bulkOps, { ordered: false });
+}
+
+async function getThinkificUsers() {
+    const now = Date.now();
+    if (now - thinkificCache.timestamp < CACHE_TTL) return thinkificCache.users;
+
+    if (thinkificCache.isRefreshing) {
+        return new Promise((resolve) => thinkificCache.queue.push(resolve));
+    }
+
+    try {
+        thinkificCache.isRefreshing = true;
+        const apiUsers = await fetchPaginatedUsersParallel();
+
+        thinkificCache.users = apiUsers;
+        thinkificCache.timestamp = Date.now();
+        await bulkUpsertUsers(apiUsers);
+
+        thinkificCache.queue.forEach((resolve) => resolve(apiUsers));
+        thinkificCache.queue = [];
+
+        return apiUsers;
+    } finally {
+        thinkificCache.isRefreshing = false;
     }
 }
 
-function mapThinkificUser(tUser) {
-    const roles = tUser.role ? tUser.role.split(',').map(r => r.trim()) : ['student'];
-    return {
-        email: tUser.email,
-        thinkificId: tUser.id?.toString() || null,
-        firstName: tUser.first_name,
-        lastName: tUser.last_name,
-        roles,
-        password: '',
-        requiresPasswordReset: true
-    };
-}
-
-// Background cache refresh (proactive)
 setInterval(async () => {
-    if (!thinkificCache.isRefreshing && Date.now() - thinkificCache.timestamp > CACHE_TTL * 0.9) {
+    if (
+        !thinkificCache.isRefreshing &&
+        Date.now() - thinkificCache.timestamp > CACHE_TTL * 0.9
+    ) {
         try {
             await getThinkificUsers();
-        } catch (e) {
-            console.error('Background Thinkific sync failed:', e);
+        } catch (err) {
+            logger.error({ err }, 'background Thinkific sync failed');
         }
     }
-}, 5 * 60 * 1000); // Every 5 minutes
+}, 5 * 60 * 1000);
 
-// --- PUBLIC ROUTES ---
-
-// Create a new user (PUBLIC)
 router.post('/', createUser);
-
-// Update an existing user (PUBLIC)
 router.put('/:id', updateUser);
 
-// GET /api/v1/users?roles=admin,teacher
-router.get('/', async (req, res) => {
-    try {
+router.get(
+    '/',
+    asyncHandler(async (req, res) => {
         const { roles, page = 1, limit = 25, search = '' } = req.query;
-        const filter = {};
-        // Sync with Thinkific first (now fast!)
-        await getThinkificUsers();
+        try {
+            await getThinkificUsers();
+        } catch (err) {
+            logger.warn({ err: err.message }, 'thinkific pre-sync failed, continuing with DB only');
+        }
 
-        // Build filter
-        if (roles) filter.roles = { $in: roles.split(',') };
+        const where = {};
+        if (roles) {
+            const list = roles.split(',').map((r) => r.trim()).filter((r) => VALID_ROLES.includes(r));
+            if (list.length) where.roles = { hasSome: list };
+        }
         if (search) {
-            filter.$or = [
-                { email: { $regex: search, $options: 'i' } },
-                { firstName: { $regex: search, $options: 'i' } },
-                { lastName: { $regex: search, $options: 'i' } }
+            where.OR = [
+                { email: { contains: search, mode: 'insensitive' } },
+                { firstName: { contains: search, mode: 'insensitive' } },
+                { lastName: { contains: search, mode: 'insensitive' } },
             ];
         }
 
-        // Pagination
-        const pageNum = Math.max(1, parseInt(page)) || 1;
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit))) || 25;
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 25));
         const skip = (pageNum - 1) * limitNum;
 
         const [users, total] = await Promise.all([
-            User.find(filter)
-                .select('-password')
-                .skip(skip)
-                .limit(limitNum)
-                .lean(),
-            User.countDocuments(filter)
+            prisma.user.findMany({
+                where,
+                skip,
+                take: limitNum,
+                select: {
+                    id: true,
+                    thinkificId: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    roles: true,
+                    whatsappNumber: true,
+                    city: true,
+                    country: true,
+                    iccMember: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+                orderBy: { createdAt: 'desc' },
+            }),
+            prisma.user.count({ where }),
         ]);
 
         res.json({
@@ -225,18 +222,12 @@ router.get('/', async (req, res) => {
             data: users,
             total,
             page: pageNum,
-            pageSize: limitNum
+            pageSize: limitNum,
         });
-    } catch (err) {
-        console.error('Fetch users error:', err);
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
+    }),
+);
 
-// Assign students to SF
 router.patch('/:sfId/students', assignStudentsToSf);
 router.patch('/:rsfId/studentsRsf', assignStudentsToRsf);
-
-
 
 export default router;
