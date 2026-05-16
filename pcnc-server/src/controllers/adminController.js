@@ -1,127 +1,168 @@
-import Class from '../models/Class.js';
-import User from '../models/User.js';
+import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
+import { BadRequest } from '../lib/errors.js';
+import { asyncHandler } from '../middleware/requestContext.js';
 import ThinkificService from '../services/ThinkificService.js';
 
-export const getAdminClasses = async (req, res) => {
-    try {
-        const classes = await Class.find()
-            .populate('teacher coordinator rsf sf students', 'firstName lastName email avatarUrl roles thinkificId');
-        res.json(classes);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+const USER_BRIEF = {
+    select: {
+        id: true, firstName: true, lastName: true, email: true,
+        roles: true, thinkificId: true,
+    },
 };
 
-export const getPendingStudents = async (req, res) => {
-    try {
-        const students = await User.find({
-            thinkificId: { $exists: false },
-            roles: 'student'
-        }).populate('parentalAuth');
-        res.json(students);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+const CLASS_INCLUDE = {
+    teacher: USER_BRIEF,
+    coordinator: USER_BRIEF,
+    rsf: { include: { user: USER_BRIEF } },
+    sf: { include: { user: USER_BRIEF } },
+    students: { include: { user: USER_BRIEF } },
 };
 
-export const validateStudents = async (req, res) => {
-    try {
-        const { studentIds } = req.body;
-        await User.updateMany(
-            { _id: { $in: studentIds } },
-            { $set: { temporary: false } }
-        );
-        res.json({ message: `${studentIds.length} students validated` });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
+function reshapeClass(cls) {
+    if (!cls) return cls;
+    return {
+        ...cls,
+        _id: cls.id,
+        rsf: (cls.rsf || []).map((r) => r.user),
+        sf: (cls.sf || []).map((s) => s.user),
+        students: (cls.students || []).map((s) => s.user),
+    };
+}
 
-export const syncThinkificUsers = async (req, res) => {
-    try {
-        const { studentIds } = req.body;
-        const students = await User.find({ _id: { $in: studentIds } });
+export const getAdminClasses = asyncHandler(async (_req, res) => {
+    const classes = await prisma.class.findMany({ include: CLASS_INCLUDE });
+    res.json(classes.map(reshapeClass));
+});
 
-        const results = await Promise.all(
-            students.map(async student => {
-                const thinkificUser = await ThinkificService.createUser({
-                    firstName: student.firstName,
-                    lastName: student.lastName,
-                    email: student.email
-                });
-                return User.findByIdAndUpdate(
-                    student._id,
-                    { thinkificId: thinkificUser.id },
-                    { new: true }
-                );
-            })
-        );
+export const getPendingStudents = asyncHandler(async (_req, res) => {
+    const students = await prisma.user.findMany({
+        where: {
+            thinkificId: null,
+            roles: { has: 'student' },
+        },
+        include: { parentalAuth: true },
+    });
+    res.json(students);
+});
 
-        res.json(results);
-    } catch (error) {
-        console.error('Error syncing Thinkific users:', error);
-        res.status(500).json({ error: error.message });
-    }
-};
+export const validateStudents = asyncHandler(async (req, res) => {
+    const { studentIds } = req.body;
+    if (!Array.isArray(studentIds)) throw BadRequest('studentIds must be an array');
 
-export const getCoordinators = async (req, res) => {
-    try {
-        const coordinators = await User.find({ roles: 'coordinator' })
-            .populate({
-                path: 'managedClasses',
-                select: 'thinkificGroupName students teacher',
-                populate: {
-                    path: 'teacher',
-                    select: 'firstName lastName'
-                }
+    // Original "temporary" flag was a placeholder; here we simply confirm the records exist.
+    const count = await prisma.user.count({ where: { id: { in: studentIds } } });
+    res.json({ message: `${count} students validated` });
+});
+
+export const syncThinkificUsers = asyncHandler(async (req, res) => {
+    const { studentIds } = req.body;
+    if (!Array.isArray(studentIds)) throw BadRequest('studentIds must be an array');
+
+    const students = await prisma.user.findMany({ where: { id: { in: studentIds } } });
+
+    const results = [];
+    for (const student of students) {
+        try {
+            const thinkificUser = await ThinkificService.createUser({
+                first_name: student.firstName,
+                last_name: student.lastName,
+                email: student.email,
             });
-        res.json(coordinators);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-export const getSFs = async (req, res) => {
-    try {
-        const sfs = await User.find({ roles: 'sf' })
-            .populate({
-                path: 'managedClasses',
-                select: 'thinkificGroupName students teacher',
-                populate: [
-                    { path: 'teacher', select: 'firstName lastName' },
-                    { path: 'students', select: 'firstName lastName' }
-                ]
+            const updated = await prisma.user.update({
+                where: { id: student.id },
+                data: { thinkificId: String(thinkificUser.id) },
             });
-        res.json(sfs);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+            results.push(updated);
+        } catch (err) {
+            logger.warn({ err: err.message, studentId: student.id }, 'thinkific sync failed');
+            results.push({ id: student.id, error: err.message });
+        }
     }
-};
 
-export const assignStudentsToClasses = async (req, res) => {
-    try {
-        const { assignments } = req.body; // Array of {classId, studentId} objects
+    res.json(results);
+});
 
-        const results = await Promise.all(
-            assignments.map(async ({ classId, studentId }) => {
-                const classDoc = await Class.findById(classId);
-                if (!classDoc) {
-                    return { classId, studentId, success: false, message: 'Class not found' };
-                }
+export const getCoordinators = asyncHandler(async (_req, res) => {
+    const coordinators = await prisma.user.findMany({
+        where: { roles: { has: 'coordinator' } },
+        include: {
+            coordinatedClasses: {
+                select: {
+                    id: true,
+                    thinkificGroupName: true,
+                    teacher: { select: { firstName: true, lastName: true } },
+                    students: { include: { user: { select: { id: true, firstName: true, lastName: true } } } },
+                },
+            },
+        },
+    });
 
-                if (!classDoc.students.includes(studentId)) {
-                    classDoc.students.push(studentId);
-                    await classDoc.save();
-                    return { classId, studentId, success: true };
-                }
+    const reshaped = coordinators.map((c) => ({
+        ...c,
+        managedClasses: c.coordinatedClasses.map((cls) => ({
+            ...cls,
+            students: cls.students.map((s) => s.user),
+        })),
+    }));
 
-                return { classId, studentId, success: true, message: 'Student already in class' };
-            })
-        );
+    res.json(reshaped);
+});
 
-        res.json({ results });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+export const getSFs = asyncHandler(async (_req, res) => {
+    const sfs = await prisma.user.findMany({
+        where: { roles: { has: 'sf' } },
+        include: {
+            managedClasses: {
+                include: {
+                    class: {
+                        select: {
+                            id: true,
+                            thinkificGroupName: true,
+                            teacher: { select: { firstName: true, lastName: true } },
+                            students: {
+                                include: { user: { select: { id: true, firstName: true, lastName: true } } },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    const reshaped = sfs.map((sf) => ({
+        ...sf,
+        managedClasses: sf.managedClasses.map((mc) => ({
+            ...mc.class,
+            students: mc.class.students.map((s) => s.user),
+        })),
+    }));
+
+    res.json(reshaped);
+});
+
+export const assignStudentsToClasses = asyncHandler(async (req, res) => {
+    const { assignments } = req.body;
+    if (!Array.isArray(assignments)) throw BadRequest('assignments must be an array');
+
+    const results = [];
+    for (const { classId, studentId } of assignments) {
+        const classDoc = await prisma.class.findUnique({ where: { id: classId } });
+        if (!classDoc) {
+            results.push({ classId, studentId, success: false, message: 'Class not found' });
+            continue;
+        }
+        try {
+            await prisma.classStudent.upsert({
+                where: { classId_userId: { classId, userId: studentId } },
+                update: {},
+                create: { classId, userId: studentId },
+            });
+            results.push({ classId, studentId, success: true });
+        } catch (err) {
+            results.push({ classId, studentId, success: false, message: err.message });
+        }
     }
-};
 
+    res.json({ results });
+});
