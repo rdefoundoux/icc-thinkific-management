@@ -1,29 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
+import {
+    Box,
+    Button,
+    Title,
+    Text,
+    Alert,
+    Card,
+    Stack,
+    Group,
+    List,
+    ThemeIcon,
+    useMantineTheme,
+} from '@mantine/core';
+import { IconAlertTriangle, IconRefresh, IconUsers, IconBuildingChurch } from '@tabler/icons-react';
 
 const ElvantoIntegration = () => {
     const [people, setPeople] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [authChecked, setAuthChecked] = useState(false);
+    const theme = useMantineTheme();
 
-    // Base API URL from environment variables
-    const API_BASE = import.meta.env.VITE_API_BASE_URL+'/api/v1' || 'https://pcnc.tail30380e.ts.net/api/v1';
+    const API_BASE =
+        import.meta.env.VITE_API_BASE_URL + '/api/v1' ||
+        'https://pcnc.tail30380e.ts.net/api/v1';
 
-    // Main function to fetch Elvanto people
     const fetchElvantoPeople = async () => {
         try {
             setLoading(true);
             setError('');
 
             const response = await axios.get(`${API_BASE}/elvanto/init`, {
-                withCredentials: true // Required for session cookies
+                withCredentials: true,
             });
 
             setPeople(response.data.people);
+            setAuthChecked(true);
         } catch (err) {
             if (err.response?.status === 401) {
-                // Redirect to Elvanto auth if unauthenticated
                 window.location.href = err.response.data.authUrl;
             } else {
                 setError(err.response?.data?.error || 'Failed to fetch Elvanto data');
@@ -33,65 +48,82 @@ const ElvantoIntegration = () => {
         }
     };
 
-    // Check authentication status on mount
-    // useEffect(() => {
-    //     const checkAuth = async () => {
-    //         try {
-    //             await axios.get(`${API_BASE}/elvanto/check-auth`, {
-    //                 withCredentials: true
-    //             });
-    //             setAuthChecked(true);
-    //         } catch (err) {
-    //             setAuthChecked(true);
-    //             if (err.response?.status === 401) {
-    //                 fetchElvantoPeople(); // Trigger auth flow
-    //             }
-    //         }
-    //     };
-    //
-    //     // Handle OAuth callback success
-    //     const urlParams = new URLSearchParams(window.location.search);
-    //     if (urlParams.get('authSuccess')) {
-    //         window.history.replaceState({}, document.title, window.location.pathname);
-    //         fetchElvantoPeople();
-    //     } else {
-    //         checkAuth();
-    //     }
-    // }, []);
-
     return (
-        <div className="elvanto-integration">
-            <h2>Elvanto People Management</h2>
+        <Box>
+            <Group mb="lg" align="center" gap="md">
+                <ThemeIcon size={44} radius="md" variant="light" color="iccPurple">
+                    <IconBuildingChurch size={24} />
+                </ThemeIcon>
+                <Box>
+                    <Title order={1}>Intégration Elvanto</Title>
+                    <Text c="dimmed" size="sm">
+                        Synchronisation des contacts depuis Elvanto
+                    </Text>
+                </Box>
+            </Group>
 
-            <button
-                onClick={fetchElvantoPeople}
-                disabled={loading}
-            >
-                {loading ? 'Loading...' : 'Get Elvanto People'}
-            </button>
+            <Card padding="xl">
+                <Stack gap="md">
+                    <Button
+                        onClick={fetchElvantoPeople}
+                        loading={loading}
+                        leftSection={<IconRefresh size={16} />}
+                        color="iccBlue"
+                        size="md"
+                        style={{ alignSelf: 'flex-start' }}
+                    >
+                        {loading ? 'Chargement…' : 'Récupérer les contacts Elvanto'}
+                    </Button>
 
-            {error && (
-                <div className="error">
-                    Error: {error}
-                    <button onClick={() => window.location.reload()}>Retry</button>
-                </div>
-            )}
+                    {error && (
+                        <Alert
+                            color="red"
+                            icon={<IconAlertTriangle size={18} />}
+                            title="Erreur"
+                            withCloseButton
+                            onClose={() => setError('')}
+                        >
+                            {error}
+                            <Group mt="xs">
+                                <Button
+                                    size="xs"
+                                    variant="light"
+                                    color="red"
+                                    onClick={() => window.location.reload()}
+                                >
+                                    Réessayer
+                                </Button>
+                            </Group>
+                        </Alert>
+                    )}
 
-            {people.length > 0 ? (
-                <div className="people-list">
-                    <h3>People ({people.length})</h3>
-                    <ul>
-                        {people.map(person => (
-                            <li key={person.id}>
-                                {person.firstname} {person.lastname} - {person.email}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            ) : authChecked && !loading && !error && (
-                <p>No people data available. Click the button to load.</p>
-            )}
-        </div>
+                    {people.length > 0 ? (
+                        <Box>
+                            <Group gap="xs" mb="sm">
+                                <IconUsers size={18} color={theme.colors.iccBlue[6]} />
+                                <Text fw={600}>{people.length} contact(s)</Text>
+                            </Group>
+                            <List spacing="xs" size="sm">
+                                {people.map((person) => (
+                                    <List.Item key={person.id}>
+                                        <Text component="span" fw={500}>
+                                            {person.firstname} {person.lastname}
+                                        </Text>{' '}
+                                        — <Text component="span" c="dimmed">{person.email}</Text>
+                                    </List.Item>
+                                ))}
+                            </List>
+                        </Box>
+                    ) : (
+                        authChecked && !loading && !error && (
+                            <Text c="dimmed" size="sm">
+                                Aucune donnée. Cliquez sur le bouton pour charger.
+                            </Text>
+                        )
+                    )}
+                </Stack>
+            </Card>
+        </Box>
     );
 };
 

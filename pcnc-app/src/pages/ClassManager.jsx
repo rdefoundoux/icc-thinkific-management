@@ -149,16 +149,19 @@ const ClassManager = () => {
     return (
         <>
             <Box>
-                <Group position="apart" mb="xl">
-                    <Text size="xl" fw={700} variant="gradient" gradient={{ from: '#662D91', to: '#00B0CA' }}>
+                <Group justify="space-between" mb="xl">
+                    <Text
+                        size="32px"
+                        fw={800}
+                        c={theme.colors.iccBlue[8]}
+                        style={{ letterSpacing: '-0.01em' }}
+                    >
                         {t('classManager.classManagement')}
                     </Text>
                     <Button
-                        leftIcon={<IconPlus />}
+                        leftSection={<IconPlus size={16} />}
                         onClick={() => setShowForm(true)}
-                        radius="xl"
-                        variant="gradient"
-                        gradient={{ from: '#662D91', to: '#00B0CA' }}
+                        color="iccBlue"
                     >
                         {t('classManager.newClass')}
                     </Button>

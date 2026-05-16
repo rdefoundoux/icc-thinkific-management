@@ -239,12 +239,21 @@ export default function UserManagement() {
 
     return (
         <div className="classter-container">
+            <Text
+                size="32px"
+                fw={800}
+                mb="lg"
+                style={{ letterSpacing: '-0.01em' }}
+                c="iccBlue.8"
+            >
+                {t('common.userManagement') || 'Gestion des utilisateurs'}
+            </Text>
             {/* Control Bar */}
-            <Group position="apart" mb="md" wrap="wrap">
+            <Group justify="space-between" mb="md" wrap="wrap">
                 <Group wrap="wrap">
                     <TextInput
                         placeholder={t('common.searchUsers')}
-                        icon={<IconSearch size={18} />}
+                        leftSection={<IconSearch size={18} />}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         style={{ width: 220 }}
@@ -269,16 +278,18 @@ export default function UserManagement() {
                         style={{ width: 140 }}
                     />
                     <Button
-                        leftIcon={<IconPlus />}
+                        leftSection={<IconPlus size={16} />}
                         onClick={() => setShowAdd(true)}
+                        color="iccBlue"
                         disabled={!currentUser?.roles?.includes('admin')}
                     >
                         {t('common.addUser')}
                     </Button>
                     <Button
-                        leftIcon={<IconUpload />}
+                        leftSection={<IconUpload size={16} />}
                         onClick={() => setShowBulk(true)}
                         variant="outline"
+                        color="iccBlue"
                         disabled={!currentUser?.roles?.includes('admin')}
                     >
                         {t('common.bulkUpload')}
