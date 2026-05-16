@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import {
-    Box, Button, Container, Group, Paper, Stack, Text, Title, Alert, Divider, LoadingOverlay, TextInput
+    Box, Button, Container, Group, Paper, Stack, Text, Title, Alert, Divider, LoadingOverlay, TextInput, useMantineTheme
 } from '@mantine/core';
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -17,6 +17,7 @@ votre enfant à suivre la formation.
 export default function ParentAuthorizationPage() {
     const { state } = useLocation();
     const navigate = useNavigate();
+    const theme = useMantineTheme();
     const sigCanvas = useRef(null);
     const [loading, setLoading] = useState(false);
     const [signed, setSigned] = useState(false);
@@ -70,16 +71,25 @@ export default function ParentAuthorizationPage() {
     return (
         <Box style={{
             minHeight: "100vh",
-            background: "linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%)",
+            background: `linear-gradient(135deg, ${theme.colors.iccBlue[0]} 0%, ${theme.colors.iccPurple[0]} 100%)`,
             display: "flex",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
+            padding: 16,
         }}>
             <Container size={520}>
                 <Paper shadow="xl" radius="lg" p="xl" withBorder style={{ position: "relative" }}>
                     <LoadingOverlay visible={loading} />
                     <Stack align="center" spacing="md">
-                        <Title order={2} align="center" gradient="linear-gradient(90deg,#662D91,#00B0CA)" sx={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                        <Title
+                            order={2}
+                            ta="center"
+                            sx={{
+                                background: `linear-gradient(90deg, ${theme.colors.iccBlue[6]}, ${theme.colors.iccPurple[6]})`,
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                            }}
+                        >
                             Autorisation Parentale
                         </Title>
                         <Alert icon={<IconAlertCircle size={20} />} color="blue" radius="md">
@@ -96,9 +106,9 @@ export default function ParentAuthorizationPage() {
                         </Group>
                         <Divider label="Signature numérique" labelPosition="center" w="100%" />
                         <Box sx={{
-                            border: "2px dashed #00B0CA",
+                            border: `2px dashed ${theme.colors.iccBlue[4]}`,
                             borderRadius: "12px",
-                            background: "#f8fafc",
+                            background: theme.colors.gray[0],
                             padding: "1rem",
                             width: "100%",
                             minHeight: 180,
@@ -108,7 +118,7 @@ export default function ParentAuthorizationPage() {
                         }}>
                             <SignatureCanvas
                                 ref={sigCanvas}
-                                penColor="#662D91"
+                                penColor={theme.colors.iccPurple[7]}
                                 backgroundColor="transparent"
                                 canvasProps={{
                                     width: 400,
@@ -123,12 +133,16 @@ export default function ParentAuthorizationPage() {
                                 onEnd={handleEnd}
                             />
                         </Box>
-                        <Group position="center" w="100%" mt="md">
+                        <Group justify="center" w="100%" mt="md">
                             <Button variant="outline" color="gray" onClick={handleClear} disabled={loading}>
                                 Effacer la signature
                             </Button>
-                            <Button color="indigo" onClick={handleSubmit} leftIcon={<IconCheck />} disabled={!signed || loading}
-                                    style={{ background: "linear-gradient(90deg,#662D91,#00B0CA)", color: "#fff" }}>
+                            <Button
+                                color="iccBlue"
+                                onClick={handleSubmit}
+                                leftSection={<IconCheck size={16} />}
+                                disabled={!signed || loading}
+                            >
                                 Valider l'autorisation
                             </Button>
                         </Group>

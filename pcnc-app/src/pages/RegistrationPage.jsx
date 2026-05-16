@@ -526,10 +526,7 @@ const RegistrationPage = () => {
                             type="submit"
                             fullWidth
                             size="lg"
-                            style={{
-                                background: 'linear-gradient(135deg, #662D91, #00B0CA)',
-                                color: '#ffffff',
-                            }}
+                            color="iccBlue"
                             component={motion.button}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
