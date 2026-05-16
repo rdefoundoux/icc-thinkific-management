@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────
+#  Local development stack — Postgres + pcnc-server
+#  Usage:
+#    docker compose up -d postgres        # start DB only (for `npm run dev`)
+#    docker compose --profile full up     # full stack
+# ─────────────────────────────────────────────────────────────
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pcnc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pcnc
+      POSTGRES_PASSWORD: pcnc
+      POSTGRES_DB: pcnc
+    ports:
+      - "5432:5432"
+    volumes:
+      - pcnc-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pcnc -d pcnc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pcnc-server:
+    profiles: ["full"]
+    build:
+      context: ./pcnc-server
+    container_name: pcnc-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: ./pcnc-server/.env
+    environment:
+      DATABASE_URL: postgresql://pcnc:pcnc@postgres:5432/pcnc?schema=public
+    ports:
+      - "3000:3000"
+
+volumes:
+  pcnc-pg-data:

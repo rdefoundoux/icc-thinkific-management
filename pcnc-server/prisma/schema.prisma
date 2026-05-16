@@ -1,0 +1,447 @@
+// ===================================================================
+//  ICC Thinkific Manager — Prisma schema
+//  Migration target: PostgreSQL (replaces MongoDB / Mongoose)
+//  Author: refactor/postgres-icc-rebrand
+// ===================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  ENUMS
+// ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  admin
+  teacher
+  rsf
+  sf
+  coordinator
+  student
+}
+
+enum ProxyRole {
+  site_admin
+  course_admin
+  group_analyst
+}
+
+enum ClassType {
+  online
+  onsite
+}
+
+enum CourseCode {
+  C001 @map("001")
+  C101 @map("101")
+  C201 @map("201")
+}
+
+enum CourseLanguage {
+  english
+  french
+  german
+}
+
+enum CourseStatus {
+  active
+  archived
+}
+
+enum EnrollmentStatus {
+  active
+  completed
+  expired
+  cancelled
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  USER & RELATED
+// ────────────────────────────────────────────────────────────────────
+
+/// Main user record. Replaces the Mongoose `User` model.
+/// Sub-documents (proxyMappings, enrollments, attendance, results,
+/// parentalAuth, gdprConsent) are split into dedicated tables.
+model User {
+  id               String    @id @default(cuid())
+  thinkificId      String?   @unique
+  email            String?   @unique
+  firstName        String?
+  lastName         String?
+  password         String?   // bcrypt-hashed; null for OAuth users
+  isOAuthUser      Boolean   @default(false)
+  oauthProvider    String?
+  accessToken      String?
+  lastLogin        DateTime?
+
+  // Roles (multi-role) — stored as a Postgres enum array
+  roles            UserRole[] @default([student])
+
+  // Contact / address
+  whatsappNumber   String?
+  address          String?
+  city             String?
+  postalCode       String?
+  department       String?
+  country          String?
+
+  // Personal
+  birthDate        DateTime?
+  gender           String?
+
+  // Church
+  localChurch      String?
+  nonIccChurch     String?
+  iccMember        Boolean   @default(false)
+  memberSince      DateTime?
+  iccCampus        String?
+  staffMember      String?
+  convertedDate    DateTime?
+  baptized         String?
+  baptismDate      DateTime?
+
+  // Course history & prefs
+  previousCourses    String[] @default([])
+  preferredSchedule  String?
+  comments           String?
+
+  // GDPR
+  gdprDataAccepted Boolean   @default(false)
+  gdprAcceptedAt   DateTime?
+
+  // Sync & multi-tenant
+  lastSyncAt       DateTime?
+  subdomain        String?
+  gid              String?
+
+  // Test results aggregate
+  testsAverage     Float?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // ── Relations ──
+  proxyMappings        ProxyMapping[]     @relation("UserProxyMappings")
+  thinkificEnrollments ThinkificEnrollment[]
+  managedStudents      UserManagedStudent[] @relation("Manager")
+  managedBy            UserManagedStudent[] @relation("Student")
+  managedClasses       ClassSF[]          @relation("ClassSFUser")
+  taughtClasses        Class[]            @relation("ClassTeacher")
+  coordinatedClasses   Class[]            @relation("ClassCoordinator")
+  rsfOfClasses         ClassRSF[]
+  enrolledClasses      ClassStudent[]
+  attendanceLogs       Attendance[]
+  attendanceSummaries  AttendanceSummary[]
+  testScores           TestScore[]
+  parentalAuth         ParentalAuth?
+
+  @@index([email])
+  @@index([thinkificId])
+  @@map("users")
+}
+
+/// "Real" identity behind a Thinkific proxy account (for impersonation flows).
+model RealUser {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  firstName     String?
+  lastName      String?
+  roles         UserRole[]     @default([])
+  proxyMappings ProxyMapping[] @relation("RealUserProxyMappings")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("real_users")
+}
+
+/// Thinkific proxy account credentials (used to call Thinkific API on
+/// behalf of a real user / role).
+model ProxyUser {
+  id          String     @id @default(cuid())
+  thinkificId String
+  email       String     @unique
+  apiToken    String
+  role        ProxyRole
+  usageCount  Int        @default(0)
+  lastUsed    DateTime?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  mappings    ProxyMapping[]
+
+  @@index([role, isActive])
+  @@map("proxy_users")
+}
+
+/// Link table: which proxy account a User / RealUser uses for which role.
+model ProxyMapping {
+  id          String     @id @default(cuid())
+  role        UserRole
+  proxyUserId String
+  userId      String?
+  realUserId  String?
+
+  proxyUser   ProxyUser  @relation(fields: [proxyUserId], references: [id], onDelete: Cascade)
+  user        User?      @relation("UserProxyMappings",     fields: [userId],     references: [id], onDelete: Cascade)
+  realUser    RealUser?  @relation("RealUserProxyMappings", fields: [realUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@unique([realUserId, role])
+  @@map("proxy_mappings")
+}
+
+/// Tracks a user's enrollment in a Thinkific course.
+model ThinkificEnrollment {
+  id          String           @id @default(cuid())
+  userId      String
+  courseId    String
+  status      EnrollmentStatus @default(active)
+  completedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+  @@map("thinkific_enrollments")
+}
+
+/// SF/RSF → Student management graph.
+model UserManagedStudent {
+  managerId String
+  studentId String
+  createdAt DateTime @default(now())
+
+  manager   User     @relation("Manager", fields: [managerId], references: [id], onDelete: Cascade)
+  student   User     @relation("Student", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([managerId, studentId])
+  @@map("user_managed_students")
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  CLASS & COURSE
+// ────────────────────────────────────────────────────────────────────
+
+model Class {
+  id                  String       @id @default(cuid())
+  type                ClassType
+  region              String?
+  version             String?
+  className           String?
+  courseCode          String
+  month               String
+  year                Int
+  dayName             String?
+  hour                String?
+  minutes             String?
+  lang                String?
+  thinkificGroupId    String
+  thinkificGroupName  String?
+  registrable         Boolean      @default(true)
+
+  // Zoom meeting (flattened)
+  zoomMeetingId       String?
+  zoomJoinUrl         String?
+  zoomStartUrl        String?
+  zoomPassword        String?
+  zoomHostUserId      String?
+  zoomHostEmail       String?
+  zoomCreatedAt       DateTime?
+  zoomScheduledFor    DateTime?
+
+  teacherId           String?
+  coordinatorId       String?
+
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  teacher             User?        @relation("ClassTeacher",     fields: [teacherId],     references: [id])
+  coordinator         User?        @relation("ClassCoordinator", fields: [coordinatorId], references: [id])
+  rsf                 ClassRSF[]
+  sf                  ClassSF[]
+  students            ClassStudent[]
+  courses             ClassCourse[]
+
+  @@index([teacherId])
+  @@index([thinkificGroupId])
+  @@index([courseCode, year])
+  @@map("classes")
+}
+
+/// Many-to-many: classes ↔ courses (with assignedAt).
+model ClassCourse {
+  classId           String
+  thinkificCourseId String
+  name              String?
+  assignedAt        DateTime @default(now())
+
+  class             Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([classId, thinkificCourseId])
+  @@map("class_courses")
+}
+
+model ClassRSF {
+  classId String
+  userId  String
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId],  references: [id], onDelete: Cascade)
+
+  @@id([classId, userId])
+  @@map("class_rsf")
+}
+
+model ClassSF {
+  classId String
+  userId  String
+
+  class   Class @relation(fields: [classId],         references: [id], onDelete: Cascade)
+  user    User  @relation("ClassSFUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([classId, userId])
+  @@map("class_sf")
+}
+
+model ClassStudent {
+  classId String
+  userId  String
+  joinedAt DateTime @default(now())
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId],  references: [id], onDelete: Cascade)
+
+  @@id([classId, userId])
+  @@map("class_students")
+}
+
+model Course {
+  id          String         @id @default(cuid())
+  code        CourseCode
+  title       String
+  thinkificId String
+  language    CourseLanguage @default(english)
+  status      CourseStatus   @default(active)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([code, language])
+  @@map("courses")
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  ATTENDANCE & TEST RESULTS
+// ────────────────────────────────────────────────────────────────────
+
+/// One row per (user, date) — present/absent flag.
+model Attendance {
+  id      String  @id @default(cuid())
+  userId  String
+  date    String  // kept as ISO-date string to match existing data
+  present Boolean
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([date])
+  @@map("attendance")
+}
+
+/// Aggregated attendance per "course session group" (e.g. "Module 1").
+model AttendanceSummary {
+  id          String @id @default(cuid())
+  userId      String
+  name        String
+  presentDays Int    @default(0)
+  totalDays   Int    @default(0)
+
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@map("attendance_summaries")
+}
+
+model TestScore {
+  id     String   @id @default(cuid())
+  userId String
+  name   String
+  score  Float
+  date   DateTime @default(now())
+
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("test_scores")
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  PARENTAL AUTHORIZATION (minors)
+// ────────────────────────────────────────────────────────────────────
+
+model ParentalAuth {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  signature   String?  // Base64 PNG
+  signedAt    DateTime?
+  parentName  String?
+  parentEmail String?
+  parentPhone String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("parental_auths")
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  REFERENCE DATA
+// ────────────────────────────────────────────────────────────────────
+
+model EgliseICC {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("eglises_icc")
+}
+
+/// Country reference with multilingual names.
+model Country {
+  id      String @id @default(cuid())
+  code    String @unique // e.g. "FR"
+  nameEn  String
+  nameFr  String
+  nameEs  String
+  nameIt  String
+  nameDe  String
+  nameLn  String // Lingala
+
+  @@map("countries")
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  SESSION STORE (replaces connect-mongo)
+// ────────────────────────────────────────────────────────────────────
+
+/// Express-session store backed by Postgres (via connect-pg-simple
+/// or @quixo3/prisma-session-store). Kept in the schema so migrations
+/// own the table.
+model Session {
+  sid       String   @id
+  sess      Json
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@map("sessions")
+}
