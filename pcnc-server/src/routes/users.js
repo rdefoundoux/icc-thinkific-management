@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import retryAfter from 'axios-retry-after';
+import axiosRetry from 'axios-retry';
 import PQueue from 'p-queue';
 
 import { prisma } from '../lib/prisma.js';
@@ -19,14 +19,13 @@ const CACHE_TTL = 3 * 3600 * 1000;
 const VALID_ROLES = ['admin', 'teacher', 'rsf', 'sf', 'coordinator', 'student'];
 
 const client = axios.create();
-client.interceptors.response.use(
-    null,
-    retryAfter(client, {
-        isRetryable: (error) =>
-            error.response?.status === 429 &&
-            error.config?.method?.toLowerCase() === 'get',
-    }),
-);
+axiosRetry(client, {
+    retries: 3,
+    retryDelay: (retryCount) => retryCount * 1000,
+    retryCondition: (error) =>
+        error.response?.status === 429 &&
+        error.config?.method?.toLowerCase() === 'get',
+});
 
 const API_URL = 'https://api.thinkific.com/api/public/v1';
 
