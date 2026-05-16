@@ -1,60 +1,35 @@
-/* General typography */
+/* App.css — legacy ICC theming */
+
 body {
-  font-family: 'Google Sans', Roboto, sans-serif;
-  background-color: #f8f9fa;
-  color: #3c4043;
-}
-
-/* --- Button --- */
-.mantine-Button-root {
-  border-radius: 24px; /* Rounded corners */
-  font-weight: 500; /* Semi-bold text */
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-
-  &:hover {
-    background-color: #e8f0fe;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-}
-
-/* --- Card --- */
-.mantine-Card-root {
-  border-radius: 12px; /* Rounded cards */
-  transition: transform 0.2s, box-shadow 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  }
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  background-color: #F8FAFC;
+  color: #1E2440;
 }
 
 /* --- Avatar --- */
 .mantine-Avatar-root {
-  box-shadow: 0 4px 6px rgba(32, 33, 36, 0.1);
+  box-shadow: 0 4px 6px rgba(18, 24, 51, 0.1);
 }
 
 /* --- Progress Bar --- */
 .mantine-Progress-root {
-  border-radius: 8px;
+  border-radius: 999px;
 }
 
 /* ---------------------------------------------------
- * Classter-like Styles
+ * Classter-like Styles (legacy markup)
  * --------------------------------------------------- */
 
-/* Container */
 .classter-container {
-  max-width: 900px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 32px 0;
+  padding: 0;
 }
 
-/* Table */
 .classter-table {
-  --header-bg: #f8f9fa;
-  --row-hover: #f1f3f4;
-  --border-color: #e0e0e0;
+  --header-bg: #E6F0FF;
+  --row-hover: #F1F4F8;
+  --border-color: #E5EAF1;
 }
 table th, table td {
   vertical-align: middle;
@@ -62,9 +37,14 @@ table th, table td {
 }
 .classter-table th {
   background: var(--header-bg);
-  font-weight: 600;
+  color: #0E2B8E;
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.95em;
+  font-size: 0.78em;
+  letter-spacing: 0.04em;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .classter-table tr:hover {
@@ -75,35 +55,6 @@ table th, table td {
   border-bottom: 1px solid var(--border-color);
 }
 
-/* Role pill styling */
-.role-pill[data-role="admin"] {
-  background: #e8f0fe;
-  color: #1a73e8;
-}
-.role-pill[data-role="teacher"] {
-  background: #fcefe3;
-  color: #f47b20;
-}
-.role-pill[data-role="coordinator"] {
-  background: #e0f7fa;
-  color: #00838f;
-}
-.role-pill[data-role="rsf"] {
-  background: #ede7f6;
-  color: #5e35b1;
-}
-.role-pill[data-role="sf"] {
-  background: #f3e5f5;
-  color: #8e24aa;
-}
-.role-pill[data-role="traineeTeacher"] {
-  background: #fffde7;
-  color: #fbc02d;
-}
-.role-pill[data-role="student"] {
-  background: #e8f5e9;
-  color: #388e3c;
-}
 .classter-table-wrapper {
   width: 100vw;
   max-width: 100%;
@@ -126,14 +77,7 @@ table th, table td {
   caption-side: top;
   padding: 12px 0;
   font-size: 1.2em;
-  font-weight: 600;
-  color: #161E3F;
+  font-weight: 700;
+  color: #0E2B8E;
   background: transparent;
-}
-
-.classter-table th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: #f1f3f6;
 }

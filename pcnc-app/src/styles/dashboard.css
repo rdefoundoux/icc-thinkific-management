@@ -5,11 +5,11 @@
 }
 
 .dashboard-title {
-    color: #2c3e50;
+    color: #0E2B8E;
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
-    border-bottom: 3px solid #00B0CA;
+    border-bottom: 3px solid #3460F2;
 }
 
 .class-card {
@@ -69,8 +69,8 @@
 }
 
 .course-checkbox.enrolled {
-    background-color: #e3f9e5;
-    border-left: 3px solid #00B0CA;
+    background-color: #E4FAEC;
+    border-left: 3px solid #3460F2;
 }
 
 .course-label {
@@ -168,11 +168,11 @@
 /* Coordinator Dashboard Specific */
 .coordinator-dashboard .class-name {
     font-size: 1.2rem;
-    color: #2b6cb0;
+    color: #1538B3;
 }
 
 .coordinator-dashboard .class-card {
-    border-left: 4px solid #2b6cb0;
+    border-left: 4px solid #1538B3;
 }
 
 .coordinator-dashboard .mantine-Badge-root {
