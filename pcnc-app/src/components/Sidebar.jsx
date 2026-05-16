@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Box,
     Stack,
@@ -9,9 +8,10 @@ import {
     Text,
     UnstyledButton,
     useMantineTheme,
-    ScrollArea
+    ScrollArea,
+    Divider,
 } from '@mantine/core';
-import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
+import { NavLink as RouterNavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     IconHome,
     IconBooks,
@@ -20,13 +20,15 @@ import {
     IconLogout,
     IconUsersGroup,
     IconUser,
-    IconChevronDown,
+    IconChevronRight,
+    IconBuildingChurch,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { t } = useTranslation();
     const { user, logout } = useAuth();
     const theme = useMantineTheme();
@@ -34,105 +36,88 @@ const Sidebar = () => {
     const navItems = [
         ...(user?.roles?.includes('admin')
             ? [
-                {
-                    label: t('sidebar.dashboard'),
-                    to: '/admin-dashboard',
-                    icon: IconHome,
-                },
-                {
-                    label: t('sidebar.classes'),
-                    to: '/classes',
-                    icon: IconBooks,
-                },
-                {
-                    label: t('sidebar.users'),
-                    to: '/users',
-                    icon: IconUsers,
-                },
-                {
-                    label: "Elvanto",
-                    to: '/elvanto',
-                    icon: IconUsers,
-                },
-            ]
+                  { label: t('sidebar.dashboard'), to: '/admin-dashboard', icon: IconHome },
+                  { label: t('sidebar.classes'), to: '/classes', icon: IconBooks },
+                  { label: t('sidebar.users'), to: '/users', icon: IconUsers },
+                  { label: 'Elvanto', to: '/elvanto', icon: IconBuildingChurch },
+              ]
             : []),
         ...(user?.roles?.includes('teacher')
-            ? [
-                {
-                    label: t('sidebar.myClasses'),
-                    to: '/teacher-classes',
-                    icon: IconUsersGroup,
-                },
-            ]
+            ? [{ label: t('sidebar.myClasses'), to: '/teacher-classes', icon: IconUsersGroup }]
             : []),
         ...(user?.roles?.includes('sf')
-            ? [
-                {
-                    label: t('sidebar.myStudents_sf'),
-                    to: '/sf-dashboard',
-                    icon: IconUsersGroup,
-                },
-            ]
+            ? [{ label: t('sidebar.myStudents_sf'), to: '/sf-dashboard', icon: IconUsersGroup }]
             : []),
         ...(user?.roles?.includes('coordinator')
-            ? [
-                {
-                    label: t('sidebar.myStudents_coo'),
-                    to: '/co-dashboard',
-                    icon: IconUsersGroup,
-                },
-            ]
+            ? [{ label: t('sidebar.myStudents_coo'), to: '/co-dashboard', icon: IconUsersGroup }]
             : []),
         { label: t('sidebar.settings'), to: '/profile', icon: IconSettings },
     ];
 
     return (
         <Box
-            w={{ base: '100vw', sm: 256 }}
-            p="sm"
+            w={{ base: '100vw', sm: 260 }}
             sx={{
-                borderRight: '1px solid #dadce0',
-                backgroundColor: 'white',
+                backgroundColor: theme.colors.iccDark[9],
+                color: '#fff',
                 height: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
                 position: 'fixed',
                 zIndex: 99,
                 top: 0,
                 left: 0,
                 maxWidth: '100vw',
+                boxShadow: '4px 0 24px rgba(8, 32, 107, 0.12)',
             }}
         >
+            {/* Logo / Brand */}
+            <Box px="lg" py="xl" sx={{ borderBottom: `1px solid ${theme.colors.iccDark[7]}` }}>
+                <Flex align="center" gap="sm">
+                    <Box
+                        sx={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 10,
+                            background: `linear-gradient(135deg, ${theme.colors.iccBlue[5]} 0%, ${theme.colors.iccPurple[5]} 50%, ${theme.colors.iccGold[4]} 100%)`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontWeight: 800,
+                            fontSize: 18,
+                            boxShadow: '0 4px 12px rgba(132, 50, 232, 0.35)',
+                        }}
+                    >
+                        ICC
+                    </Box>
+                    <Box>
+                        <Text fw={800} c="#fff" size="md" lh={1.1}>
+                            ICC
+                        </Text>
+                        <Text fw={500} c={theme.colors.gray[3]} size="xs" lh={1.1}>
+                            École en Ligne
+                        </Text>
+                    </Box>
+                </Flex>
+            </Box>
+
             {/* Top Section: Navigation */}
-            <ScrollArea h="70vh">
-                <Stack spacing={2}>
-                    {navItems.map(({ label, to, icon: Icon },index) => (
+            <ScrollArea sx={{ flex: 1 }} px="sm" py="md">
+                <Stack gap={4}>
+                    {navItems.map(({ label, to, icon: Icon }, index) => (
                         <NavLink
                             key={index}
                             component={RouterNavLink}
                             to={to}
                             label={label}
-                            icon={<Icon size={20} />}
-                            pl="xl"
-                            sx={{
-                                "&[data-active]": {
-                                    borderRadius: theme.radius.md,
-                                    backgroundColor:
-                                        location.pathname === to ? theme.colors.blue[0] : 'transparent',
-                                    color:
-                                        location.pathname === to
-                                            ? theme.colors.blue[6]
-                                            : theme.colors.gray[7],
-                                    '&:hover': {backgroundColor: theme.colors.blue[0]},
-                                }
-                            }}
-                            onClick={e => {
-                                // If already on this route, force a remount by navigating away and back
+                            leftSection={<Icon size={18} stroke={1.8} />}
+                            active={location.pathname === to}
+                            onClick={(e) => {
                                 if (location.pathname === to) {
                                     navigate(to, { replace: true });
                                     setTimeout(() => navigate(to, { replace: true }), 0);
-                                    e.preventDefault(); // Prevent default link behavior
+                                    e.preventDefault();
                                 }
                             }}
                         />
@@ -140,48 +125,63 @@ const Sidebar = () => {
                 </Stack>
             </ScrollArea>
 
+            <Divider color={theme.colors.iccDark[7]} />
+
             {/* Bottom Section: User Profile Menu */}
-            <Menu shadow="md" width={200} position="right-end">
-                <Menu.Target>
-                    <UnstyledButton
-                        p="sm"
-                        sx={{
-                            borderRadius: theme.radius.md,
-                            '&:hover': { backgroundColor: theme.colors.gray[1] },
-                            width: '100%',
-                        }}
-                    >
-                        <Flex align="center" gap="sm">
-                            <Avatar
-                                src={user?.avatarUrl}
-                                size={40}
-                                radius="xl"
-                                color={theme.colors.blue[6]}
-                            >
-                                {user?.firstName?.[0]}
-                                {user?.lastName?.[0]}
-                            </Avatar>
-                            <Flex direction="column" sx={{ flex: 1 }}>
-                                <Text fw={500}>
-                                    {user?.firstName} {user?.lastName}
-                                </Text>
-                                <Text size="sm" color="dimmed">
-                                    {user?.roles?.join(', ')}
-                                </Text>
+            <Box p="sm">
+                <Menu shadow="md" width={220} position="right-end" radius="md">
+                    <Menu.Target>
+                        <UnstyledButton
+                            p="sm"
+                            sx={{
+                                borderRadius: theme.radius.md,
+                                width: '100%',
+                                color: '#fff',
+                                transition: 'background-color 120ms ease',
+                                '&:hover': { backgroundColor: theme.colors.iccDark[7] },
+                            }}
+                        >
+                            <Flex align="center" gap="sm">
+                                <Avatar
+                                    src={user?.avatarUrl}
+                                    size={38}
+                                    radius="xl"
+                                    color="iccBlue"
+                                >
+                                    {user?.firstName?.[0]}
+                                    {user?.lastName?.[0]}
+                                </Avatar>
+                                <Flex direction="column" sx={{ flex: 1, minWidth: 0 }}>
+                                    <Text fw={600} size="sm" c="#fff" truncate>
+                                        {user?.firstName} {user?.lastName}
+                                    </Text>
+                                    <Text size="xs" c={theme.colors.gray[4]} truncate>
+                                        {user?.roles?.join(', ')}
+                                    </Text>
+                                </Flex>
+                                <IconChevronRight size={16} color={theme.colors.gray[4]} />
                             </Flex>
-                            <IconChevronDown size={18} />
-                        </Flex>
-                    </UnstyledButton>
-                </Menu.Target>
-                <Menu.Dropdown>
-                    <Menu.Item icon={<IconUser size={16} />} component={RouterNavLink} to="/profile">
-                        Profile
-                    </Menu.Item>
-                    <Menu.Item icon={<IconLogout size={16} />} color="red" onClick={logout}>
-                        Logout
-                    </Menu.Item>
-                </Menu.Dropdown>
-            </Menu>
+                        </UnstyledButton>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                        <Menu.Item
+                            leftSection={<IconUser size={16} />}
+                            component={RouterNavLink}
+                            to="/profile"
+                        >
+                            Profile
+                        </Menu.Item>
+                        <Menu.Divider />
+                        <Menu.Item
+                            leftSection={<IconLogout size={16} />}
+                            color="red"
+                            onClick={logout}
+                        >
+                            Logout
+                        </Menu.Item>
+                    </Menu.Dropdown>
+                </Menu>
+            </Box>
         </Box>
     );
 };

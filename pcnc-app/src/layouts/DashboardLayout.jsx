@@ -1,26 +1,49 @@
-import { Box, Flex } from '@mantine/core';
+import { Box, Flex, useMantineTheme } from '@mantine/core';
 import { Outlet } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import TopNav from '../components/TopNav';
 import { useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 
-const DashboardLayout = ({ user }) => {
-    const isMobile = useMediaQuery('(max-width: 768px)');
-    const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+import Sidebar from '../components/Sidebar';
+import TopNav from '../components/TopNav';
 
-    // Optionally, you can add a burger menu to TopNav and toggle sidebarOpen on mobile
+const SIDEBAR_WIDTH = 260;
+
+const DashboardLayout = ({ user }) => {
+    const theme = useMantineTheme();
+    const isMobile = useMediaQuery('(max-width: 768px)');
+    const [sidebarOpen] = useState(!isMobile);
 
     return (
-        <Flex h="100vh" direction="column">
-            <TopNav showUserMenu user={user} />
-            <Flex flex={1} style={{ overflow: 'hidden' }}>
-                {!isMobile && <Sidebar />}
-                <Box p="md" bg="gray.1" style={{ flex: 1, overflowY: 'auto' }}>
+        <Box
+            sx={{
+                minHeight: '100vh',
+                backgroundColor: theme.colors.gray[0],
+            }}
+        >
+            {!isMobile && sidebarOpen && <Sidebar />}
+
+            <Box
+                sx={{
+                    marginLeft: !isMobile && sidebarOpen ? SIDEBAR_WIDTH : 0,
+                    minHeight: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}
+            >
+                <TopNav user={user} />
+                <Box
+                    component="main"
+                    sx={{
+                        flex: 1,
+                        padding: isMobile ? 16 : 32,
+                        backgroundColor: theme.colors.gray[0],
+                        overflowY: 'auto',
+                    }}
+                >
                     <Outlet />
                 </Box>
-            </Flex>
-        </Flex>
+            </Box>
+        </Box>
     );
 };
 
