@@ -1,42 +1,37 @@
 import { createTheme, rem } from '@mantine/core';
 
 // ────────────────────────────────────────────────────────────────────
-//  ICC (Impact Centre Chrétien) brand palette — 10 shades each
-//  Inspired by the ICC logo gradient (blue → purple → red → gold → green).
+//  PCNC Corporate brand palette
+//  PCNC Corporate is the training program inside ICC (Impact Centre Chrétien).
 // ────────────────────────────────────────────────────────────────────
 
-const iccBlue = [
-    '#E6F0FF', '#C7DBFF', '#A2C0FF', '#7AA1FF', '#5680FF',
-    '#3460F2', '#1E47D9', '#1538B3', '#0E2B8E', '#08206B',
-];
-const iccPurple = [
-    '#F5EBFF', '#E3CCFF', '#CDA6FF', '#B57DFF', '#9C53FF',
-    '#8132E8', '#6B22C7', '#561AA2', '#42137F', '#310E60',
-];
-const iccRed = [
-    '#FFE9EC', '#FFC4CB', '#FF98A4', '#FF6877', '#FF3D52',
-    '#E51E35', '#C7142A', '#A30E22', '#7F0A1B', '#5E0613',
-];
-const iccGold = [
-    '#FFF7DB', '#FFEAA8', '#FFDB6E', '#FFCB3C', '#F5B91A',
-    '#D9A20A', '#B68603', '#8E6700', '#6B4D00', '#4D3700',
-];
-const iccGreen = [
-    '#E4FAEC', '#BEF1D0', '#90E5AE', '#5FD78B', '#34C56C',
-    '#1AAA53', '#0C8C42', '#066D33', '#054F26', '#03361A',
-];
-const iccDark = [
-    '#F1F3F8', '#DCE2EC', '#B6C0CF', '#8E99AE', '#6C7791',
-    '#525B73', '#3E4660', '#2D3450', '#1E2440', '#121833',
-];
+// Each palette gets 10 shades, all set to the same base hex.
+// Mantine's colorScheme expects an array of length 10.
+const createShades = (baseColor) => Array(10).fill(baseColor);
+
+const pcncNavy = createShades('#161E3F');        // primaire foncé — sidebar, headers
+const pcncBlue = createShades('#83CEE0');        // bleu clair — accents, hover
+const pcncPurple = createShades('#662D91');      // violet — accents
+const pcncOrange = createShades('#F9A061');      // orange — accents chauds
+const pcncTeal = createShades('#00B0CA');        // teal — primary accent
+const pcncYellow = createShades('#FFE069');      // jaune — warning
+const pcncGreen = createShades('#86C8A1');       // vert — success
+const pcncLightPurple = createShades('#A67FB5'); // violet clair
+
 const gray = [
     '#F8FAFC', '#F1F4F8', '#E5EAF1', '#D2DAE5', '#B6C0CF',
     '#94A0B3', '#6C7791', '#525B73', '#3E4660', '#2D3450',
 ];
 
+// Keep a reasonable red for "danger" usages (Mantine's default red, slightly muted).
+const fallbackRed = [
+    '#FFF0F0', '#FFD9D9', '#FFB3B3', '#FF8585', '#FF5C5C',
+    '#F03E3E', '#E03131', '#C92A2A', '#A61E1E', '#7C1414',
+];
+
 const theme = createTheme({
-    primaryColor: 'iccBlue',
-    primaryShade: { light: 6, dark: 5 },
+    primaryColor: 'pcncTeal',
+    primaryShade: { light: 0, dark: 0 },
 
     fontFamily: '"Plus Jakarta Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     headings: {
@@ -54,37 +49,40 @@ const theme = createTheme({
     },
 
     colors: {
-        iccBlue,
-        iccPurple,
-        iccRed,
-        iccGold,
-        iccGreen,
-        iccDark,
+        pcncNavy,
+        pcncBlue,
+        pcncPurple,
+        pcncOrange,
+        pcncTeal,
+        pcncYellow,
+        pcncGreen,
+        pcncLightPurple,
         gray,
-        // Aliases so generic <Badge color="blue" /> etc. pick up ICC tones.
-        blue: iccBlue,
-        indigo: iccBlue,
-        violet: iccPurple,
-        grape: iccPurple,
-        red: iccRed,
-        pink: iccRed,
-        orange: iccGold,
-        yellow: iccGold,
-        green: iccGreen,
-        teal: iccGreen,
-        lime: iccGreen,
-        dark: iccDark,
+        // Aliases so existing <Badge color="blue" /> etc. pick up PCNC tones.
+        blue: pcncTeal,
+        indigo: pcncNavy,
+        cyan: pcncBlue,
+        violet: pcncPurple,
+        grape: pcncPurple,
+        red: fallbackRed,
+        pink: pcncOrange,
+        orange: pcncOrange,
+        yellow: pcncYellow,
+        green: pcncGreen,
+        teal: pcncTeal,
+        lime: pcncGreen,
+        dark: pcncNavy,
     },
 
     other: {
-        sidebarBg: iccDark[9],
-        sidebarHover: iccDark[7],
-        sidebarActiveBg: iccBlue[6],
-        sidebarAccent: iccGold[4],
+        sidebarBg: pcncNavy[0],
+        sidebarHover: 'rgba(255,255,255,0.05)',
+        sidebarActiveBg: pcncTeal[0],
+        sidebarAccent: pcncOrange[0],
         contentBg: gray[0],
         cardBorder: gray[2],
-        cardShadow: '0 1px 3px rgba(18, 24, 51, 0.04), 0 1px 2px rgba(18, 24, 51, 0.06)',
-        cardShadowHover: '0 8px 24px rgba(18, 24, 51, 0.08), 0 2px 6px rgba(18, 24, 51, 0.06)',
+        cardShadow: '0 1px 3px rgba(22, 30, 63, 0.05), 0 1px 2px rgba(22, 30, 63, 0.06)',
+        cardShadowHover: '0 8px 24px rgba(22, 30, 63, 0.10), 0 2px 6px rgba(22, 30, 63, 0.06)',
     },
 
     components: {
@@ -132,7 +130,7 @@ const theme = createTheme({
                 },
                 title: {
                     fontWeight: 700,
-                    color: t.colors.iccBlue[8],
+                    color: t.colors.pcncNavy[0],
                 },
             }),
         },
@@ -140,7 +138,7 @@ const theme = createTheme({
         Title: {
             styles: (t) => ({
                 root: {
-                    color: t.colors.iccBlue[8],
+                    color: t.colors.pcncNavy[0],
                     letterSpacing: '-0.01em',
                 },
             }),
@@ -149,9 +147,9 @@ const theme = createTheme({
         Anchor: {
             styles: (t) => ({
                 root: {
-                    color: t.colors.iccBlue[6],
+                    color: t.colors.pcncTeal[0],
                     fontWeight: 500,
-                    '&:hover': { color: t.colors.iccBlue[7] },
+                    '&:hover': { color: t.colors.pcncPurple[0] },
                 },
             }),
         },
@@ -163,16 +161,16 @@ const theme = createTheme({
                     borderSpacing: 0,
                 },
                 thead: {
-                    backgroundColor: t.colors.iccBlue[0],
+                    backgroundColor: t.colors.gray[1],
                 },
                 th: {
-                    color: t.colors.iccBlue[8],
+                    color: t.colors.pcncNavy[0],
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     fontSize: rem(12),
                     letterSpacing: '0.04em',
                     padding: '12px 16px',
-                    borderBottom: `1px solid ${t.colors.iccBlue[1]}`,
+                    borderBottom: `1px solid ${t.colors.gray[2]}`,
                 },
                 td: {
                     padding: '12px 16px',
@@ -189,44 +187,44 @@ const theme = createTheme({
             variants: {
                 admin: () => ({
                     root: {
-                        backgroundColor: iccBlue[6],
-                        color: '#ffffff',
+                        backgroundColor: pcncBlue[0],
+                        color: pcncNavy[0],
                     },
                 }),
                 teacher: () => ({
                     root: {
-                        backgroundColor: iccGold[1],
-                        color: iccGold[8],
+                        backgroundColor: pcncOrange[0],
+                        color: pcncNavy[0],
                     },
                 }),
                 coordinator: () => ({
                     root: {
-                        backgroundColor: iccPurple[1],
-                        color: iccPurple[8],
+                        backgroundColor: pcncTeal[0],
+                        color: pcncNavy[0],
                     },
                 }),
                 rsf: () => ({
                     root: {
-                        backgroundColor: iccRed[0],
-                        color: iccRed[7],
+                        backgroundColor: pcncLightPurple[0],
+                        color: pcncNavy[0],
                     },
                 }),
                 sf: () => ({
                     root: {
-                        backgroundColor: iccPurple[0],
-                        color: iccPurple[7],
+                        backgroundColor: pcncPurple[0],
+                        color: '#fff',
                     },
                 }),
                 traineeTeacher: () => ({
                     root: {
-                        backgroundColor: iccGold[0],
-                        color: iccGold[7],
+                        backgroundColor: pcncYellow[0],
+                        color: pcncNavy[0],
                     },
                 }),
                 student: () => ({
                     root: {
-                        backgroundColor: iccGreen[0],
-                        color: iccGreen[8],
+                        backgroundColor: pcncGreen[0],
+                        color: pcncNavy[0],
                     },
                 }),
             },
@@ -238,8 +236,8 @@ const theme = createTheme({
                 root: {
                     color: t.colors.gray[7],
                     '&:hover': {
-                        backgroundColor: t.colors.iccBlue[0],
-                        color: t.colors.iccBlue[7],
+                        backgroundColor: t.colors.gray[1],
+                        color: t.colors.pcncTeal[0],
                     },
                 },
             }),
@@ -253,16 +251,16 @@ const theme = createTheme({
                     fontWeight: 500,
                     color: t.colors.gray[2],
                     '&[data-active]': {
-                        backgroundColor: t.colors.iccBlue[6],
+                        backgroundColor: t.colors.pcncTeal[0],
                         color: '#ffffff',
-                        boxShadow: `inset 3px 0 0 ${t.colors.iccGold[4]}`,
+                        boxShadow: `inset 3px 0 0 ${t.colors.pcncOrange[0]}`,
                         fontWeight: 600,
                     },
                     '&[data-active] .mantine-NavLink-icon': {
                         color: '#ffffff',
                     },
                     '&:hover': {
-                        backgroundColor: t.colors.iccDark[7],
+                        backgroundColor: 'rgba(255,255,255,0.05)',
                         color: '#ffffff',
                     },
                 },
@@ -290,7 +288,7 @@ const theme = createTheme({
                 input: {
                     borderColor: t.colors.gray[3],
                     '&:focus': {
-                        borderColor: t.colors.iccBlue[5],
+                        borderColor: t.colors.pcncTeal[0],
                     },
                 },
                 label: {
@@ -307,7 +305,7 @@ const theme = createTheme({
                 input: {
                     borderColor: t.colors.gray[3],
                     '&:focus': {
-                        borderColor: t.colors.iccBlue[5],
+                        borderColor: t.colors.pcncTeal[0],
                     },
                 },
                 label: {
@@ -340,7 +338,7 @@ const theme = createTheme({
                 tab: {
                     fontWeight: 600,
                     '&[data-active]': {
-                        color: t.colors.iccBlue[7],
+                        color: t.colors.pcncTeal[0],
                     },
                 },
             }),
