@@ -391,7 +391,7 @@ const SfDashboard = () => {
                 <Text
                     size="32px"
                     fw={800}
-                    c={theme.colors.iccBlue[8]}
+                    c={theme.colors.pcncTeal[8]}
                     style={{ letterSpacing: '-0.01em' }}
                 >
                     {isSfRole ? 'Mes Classes SF' : 'Toutes les Classes'}
@@ -399,7 +399,7 @@ const SfDashboard = () => {
                 <Button
                     leftSection={<IconRefresh size={16} />}
                     variant="light"
-                    color="iccBlue"
+                    color="pcncTeal"
                     onClick={() => refetch()}
                     loading={isLoading}
                 >

@@ -51,7 +51,7 @@ const ElvantoIntegration = () => {
     return (
         <Box>
             <Group mb="lg" align="center" gap="md">
-                <ThemeIcon size={44} radius="md" variant="light" color="iccPurple">
+                <ThemeIcon size={44} radius="md" variant="light" color="pcncPurple">
                     <IconBuildingChurch size={24} />
                 </ThemeIcon>
                 <Box>
@@ -68,7 +68,7 @@ const ElvantoIntegration = () => {
                         onClick={fetchElvantoPeople}
                         loading={loading}
                         leftSection={<IconRefresh size={16} />}
-                        color="iccBlue"
+                        color="pcncTeal"
                         size="md"
                         style={{ alignSelf: 'flex-start' }}
                     >
@@ -100,7 +100,7 @@ const ElvantoIntegration = () => {
                     {people.length > 0 ? (
                         <Box>
                             <Group gap="xs" mb="sm">
-                                <IconUsers size={18} color={theme.colors.iccBlue[6]} />
+                                <IconUsers size={18} color={theme.colors.pcncTeal[6]} />
                                 <Text fw={600}>{people.length} contact(s)</Text>
                             </Group>
                             <List spacing="xs" size="sm">

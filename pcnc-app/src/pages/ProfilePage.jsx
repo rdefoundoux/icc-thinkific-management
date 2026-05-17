@@ -58,9 +58,9 @@ const ProfilePage = () => {
                         <Avatar
                             size={120}
                             radius="xl"
-                            color="iccBlue"
+                            color="pcncTeal"
                             style={{
-                                background: `linear-gradient(135deg, ${theme.colors.iccBlue[5]} 0%, ${theme.colors.iccPurple[5]} 100%)`,
+                                background: `linear-gradient(135deg, ${theme.colors.pcncTeal[5]} 0%, ${theme.colors.pcncPurple[5]} 100%)`,
                                 color: "#fff",
                                 fontWeight: 700,
                                 fontSize: 36,
@@ -73,7 +73,7 @@ const ProfilePage = () => {
                             <IconMail size={16} />
                             <Text size="sm">{user.email}</Text>
                         </Group>
-                        <Button fullWidth color="iccBlue" leftSection={<IconEdit size={18} />} my="md">
+                        <Button fullWidth color="pcncTeal" leftSection={<IconEdit size={18} />} my="md">
                             Gérer mon compte
                         </Button>
                     </Stack>
@@ -83,37 +83,37 @@ const ProfilePage = () => {
                     <Title order={4} mb="lg">Progression d'apprentissage</Title>
                     {loading ? (
                         <Group justify="center" p="xl">
-                            <Loader color="iccBlue" size="lg" />
+                            <Loader color="pcncTeal" size="lg" />
                         </Group>
                     ) : (
                         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xl">
                             <StatCard
                                 label="Avancement"
                                 value={`${userData?.completionPercentage}%`}
-                                color={theme.colors.iccBlue[7]}
+                                color={theme.colors.pcncTeal[7]}
                             >
                                 <Progress
                                     value={userData?.completionPercentage}
                                     mt="xs"
-                                    color="iccBlue"
+                                    color="pcncTeal"
                                 />
                             </StatCard>
                             <StatCard
                                 label="Cours actifs"
                                 value={userData?.enrollments || 0}
-                                color={theme.colors.iccGreen[7]}
+                                color={theme.colors.pcncGreen[7]}
                             />
                             <StatCard
                                 label="Série d'apprentissage"
                                 value={`${userData?.learningStreak || 0} jours`}
-                                color={theme.colors.iccGold[7]}
+                                color={theme.colors.pcncOrange[7]}
                             />
                         </SimpleGrid>
                     )}
                     <Button
                         fullWidth
                         variant="light"
-                        color="iccBlue"
+                        color="pcncTeal"
                         mt="lg"
                         leftSection={<IconRefresh size={16} />}
                         onClick={fetchUserData}

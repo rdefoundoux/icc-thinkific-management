@@ -244,7 +244,7 @@ export default function UserManagement() {
                 fw={800}
                 mb="lg"
                 style={{ letterSpacing: '-0.01em' }}
-                c="iccBlue.8"
+                c="pcncTeal.8"
             >
                 {t('common.userManagement') || 'Gestion des utilisateurs'}
             </Text>
@@ -280,7 +280,7 @@ export default function UserManagement() {
                     <Button
                         leftSection={<IconPlus size={16} />}
                         onClick={() => setShowAdd(true)}
-                        color="iccBlue"
+                        color="pcncTeal"
                         disabled={!currentUser?.roles?.includes('admin')}
                     >
                         {t('common.addUser')}
@@ -289,7 +289,7 @@ export default function UserManagement() {
                         leftSection={<IconUpload size={16} />}
                         onClick={() => setShowBulk(true)}
                         variant="outline"
-                        color="iccBlue"
+                        color="pcncTeal"
                         disabled={!currentUser?.roles?.includes('admin')}
                     >
                         {t('common.bulkUpload')}

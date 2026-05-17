@@ -153,7 +153,7 @@ const ClassManager = () => {
                     <Text
                         size="32px"
                         fw={800}
-                        c={theme.colors.iccBlue[8]}
+                        c={theme.colors.pcncTeal[8]}
                         style={{ letterSpacing: '-0.01em' }}
                     >
                         {t('classManager.classManagement')}
@@ -161,7 +161,7 @@ const ClassManager = () => {
                     <Button
                         leftSection={<IconPlus size={16} />}
                         onClick={() => setShowForm(true)}
-                        color="iccBlue"
+                        color="pcncTeal"
                     >
                         {t('classManager.newClass')}
                     </Button>

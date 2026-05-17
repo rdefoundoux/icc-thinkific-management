@@ -466,7 +466,7 @@ const AdminDashboard = () => {
                 <Button
                     leftSection={<IconChevronUp size={14} />}
                     variant="light"
-                    color="iccBlue"
+                    color="pcncTeal"
                     size="xs"
                     onClick={() => setExpandedSections([])}
                 >
@@ -475,7 +475,7 @@ const AdminDashboard = () => {
                 <Button
                     leftSection={<IconChevronDown size={14} />}
                     variant="light"
-                    color="iccBlue"
+                    color="pcncTeal"
                     size="xs"
                     onClick={() => setExpandedSections(ALL_SECTION_KEYS)}
                 >

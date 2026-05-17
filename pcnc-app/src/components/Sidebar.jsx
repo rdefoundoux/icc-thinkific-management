@@ -58,7 +58,7 @@ const Sidebar = () => {
         <Box
             w={{ base: '100vw', sm: 260 }}
             sx={{
-                backgroundColor: theme.colors.iccDark[9],
+                backgroundColor: theme.colors.pcncNavy[9],
                 color: '#fff',
                 height: '100vh',
                 display: 'flex',
@@ -72,14 +72,14 @@ const Sidebar = () => {
             }}
         >
             {/* Logo / Brand */}
-            <Box px="lg" py="xl" sx={{ borderBottom: `1px solid ${theme.colors.iccDark[7]}` }}>
+            <Box px="lg" py="xl" sx={{ borderBottom: `1px solid ${theme.colors.pcncNavy[7]}` }}>
                 <Flex align="center" gap="sm">
                     <Box
                         sx={{
                             width: 38,
                             height: 38,
                             borderRadius: 10,
-                            background: `linear-gradient(135deg, ${theme.colors.iccBlue[5]} 0%, ${theme.colors.iccPurple[5]} 50%, ${theme.colors.iccGold[4]} 100%)`,
+                            background: `linear-gradient(135deg, ${theme.colors.pcncTeal[5]} 0%, ${theme.colors.pcncPurple[5]} 50%, ${theme.colors.pcncOrange[4]} 100%)`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -92,11 +92,11 @@ const Sidebar = () => {
                         ICC
                     </Box>
                     <Box>
-                        <Text fw={800} c="#fff" size="md" lh={1.1}>
+                        <Text fw={500} c={theme.colors.gray[3]} size="xs" lh={1.1} tt="uppercase" style={{ letterSpacing: '0.1em' }}>
                             ICC
                         </Text>
-                        <Text fw={500} c={theme.colors.gray[3]} size="xs" lh={1.1}>
-                            École en Ligne
+                        <Text fw={800} c="#fff" size="md" lh={1.1}>
+                            PCNC Corporate
                         </Text>
                     </Box>
                 </Flex>
@@ -125,7 +125,7 @@ const Sidebar = () => {
                 </Stack>
             </ScrollArea>
 
-            <Divider color={theme.colors.iccDark[7]} />
+            <Divider color={theme.colors.pcncNavy[7]} />
 
             {/* Bottom Section: User Profile Menu */}
             <Box p="sm">
@@ -138,7 +138,7 @@ const Sidebar = () => {
                                 width: '100%',
                                 color: '#fff',
                                 transition: 'background-color 120ms ease',
-                                '&:hover': { backgroundColor: theme.colors.iccDark[7] },
+                                '&:hover': { backgroundColor: theme.colors.pcncNavy[7] },
                             }}
                         >
                             <Flex align="center" gap="sm">
@@ -146,7 +146,7 @@ const Sidebar = () => {
                                     src={user?.avatarUrl}
                                     size={38}
                                     radius="xl"
-                                    color="iccBlue"
+                                    color="pcncTeal"
                                 >
                                     {user?.firstName?.[0]}
                                     {user?.lastName?.[0]}

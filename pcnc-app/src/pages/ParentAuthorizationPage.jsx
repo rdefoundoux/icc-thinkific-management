@@ -71,7 +71,7 @@ export default function ParentAuthorizationPage() {
     return (
         <Box style={{
             minHeight: "100vh",
-            background: `linear-gradient(135deg, ${theme.colors.iccBlue[0]} 0%, ${theme.colors.iccPurple[0]} 100%)`,
+            background: `linear-gradient(135deg, ${theme.colors.pcncTeal[0]} 0%, ${theme.colors.pcncPurple[0]} 100%)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -85,7 +85,7 @@ export default function ParentAuthorizationPage() {
                             order={2}
                             ta="center"
                             sx={{
-                                background: `linear-gradient(90deg, ${theme.colors.iccBlue[6]}, ${theme.colors.iccPurple[6]})`,
+                                background: `linear-gradient(90deg, ${theme.colors.pcncTeal[6]}, ${theme.colors.pcncPurple[6]})`,
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                             }}
@@ -106,7 +106,7 @@ export default function ParentAuthorizationPage() {
                         </Group>
                         <Divider label="Signature numérique" labelPosition="center" w="100%" />
                         <Box sx={{
-                            border: `2px dashed ${theme.colors.iccBlue[4]}`,
+                            border: `2px dashed ${theme.colors.pcncTeal[4]}`,
                             borderRadius: "12px",
                             background: theme.colors.gray[0],
                             padding: "1rem",
@@ -118,7 +118,7 @@ export default function ParentAuthorizationPage() {
                         }}>
                             <SignatureCanvas
                                 ref={sigCanvas}
-                                penColor={theme.colors.iccPurple[7]}
+                                penColor={theme.colors.pcncPurple[7]}
                                 backgroundColor="transparent"
                                 canvasProps={{
                                     width: 400,
@@ -138,7 +138,7 @@ export default function ParentAuthorizationPage() {
                                 Effacer la signature
                             </Button>
                             <Button
-                                color="iccBlue"
+                                color="pcncTeal"
                                 onClick={handleSubmit}
                                 leftSection={<IconCheck size={16} />}
                                 disabled={!signed || loading}

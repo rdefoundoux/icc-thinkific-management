@@ -45,7 +45,7 @@ const TopNav = ({ onLanguageChange, showLoginButton }) => {
                             width: 34,
                             height: 34,
                             borderRadius: 10,
-                            background: `linear-gradient(135deg, ${theme.colors.iccBlue[5]} 0%, ${theme.colors.iccPurple[5]} 50%, ${theme.colors.iccGold[4]} 100%)`,
+                            background: `linear-gradient(135deg, ${theme.colors.pcncTeal[5]} 0%, ${theme.colors.pcncPurple[5]} 50%, ${theme.colors.pcncOrange[4]} 100%)`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -56,9 +56,14 @@ const TopNav = ({ onLanguageChange, showLoginButton }) => {
                     >
                         ICC
                     </Box>
-                    <Text fw={700} size="md" c={theme.colors.iccBlue[8]} visibleFrom="sm">
-                        ICC École en Ligne
-                    </Text>
+                    <Flex direction="column" lh={1.1} visibleFrom="sm">
+                        <Text fw={500} size="xs" c={theme.colors.gray[6]} tt="uppercase" style={{ letterSpacing: '0.1em' }}>
+                            ICC
+                        </Text>
+                        <Text fw={700} size="md" c={theme.colors.pcncNavy[0]}>
+                            PCNC Corporate
+                        </Text>
+                    </Flex>
                 </Flex>
 
                 <Group gap="sm">
@@ -85,7 +90,7 @@ const TopNav = ({ onLanguageChange, showLoginButton }) => {
                         <Button
                             onClick={() => navigate('/login')}
                             size="sm"
-                            color="iccBlue"
+                            color="pcncTeal"
                         >
                             {t('topNav.loginButton') || 'Connexion'}
                         </Button>

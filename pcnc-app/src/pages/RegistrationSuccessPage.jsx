@@ -12,7 +12,7 @@ const RegistrationSuccessPage = () => {
         <Box
             sx={{
                 minHeight: '100vh',
-                background: `linear-gradient(135deg, ${theme.colors.iccBlue[0]} 0%, ${theme.colors.iccPurple[0]} 100%)`,
+                background: `linear-gradient(135deg, ${theme.colors.pcncTeal[0]} 0%, ${theme.colors.pcncPurple[0]} 100%)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -30,7 +30,7 @@ const RegistrationSuccessPage = () => {
                     }}
                 >
                     <Stack align="center" gap="md">
-                        <ThemeIcon size={80} radius="xl" color="iccGreen" variant="light">
+                        <ThemeIcon size={80} radius="xl" color="pcncGreen" variant="light">
                             <IconCheck size={44} />
                         </ThemeIcon>
                         <Title order={2}>
@@ -41,7 +41,7 @@ const RegistrationSuccessPage = () => {
                                 'Thank you for registering. We have received your information.'}
                         </Text>
                         <Group justify="center" mt="md">
-                            <Button size="md" color="iccBlue" onClick={() => navigate('/')}>
+                            <Button size="md" color="pcncTeal" onClick={() => navigate('/')}>
                                 {t('registration.backToHome') || 'Back to Home'}
                             </Button>
                         </Group>

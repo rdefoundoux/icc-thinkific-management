@@ -90,7 +90,7 @@ const LoginPage = () => {
                     notifications.show({
                         title: t('loginPage.otpSentTitle'),
                         message: t('loginPage.otpSentMessage'),
-                        color: 'iccPurple',
+                        color: 'pcncPurple',
                     });
                 } else if (response.ok) {
                     const data = await response.json();
@@ -98,7 +98,7 @@ const LoginPage = () => {
                     buildNavItemsAndRedirect(data.user);
                     notifications.show({
                         title: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
-                        color: 'iccBlue',
+                        color: 'pcncTeal',
                     });
                 } else {
                     const errorData = await response.json();
@@ -130,7 +130,7 @@ const LoginPage = () => {
                 buildNavItemsAndRedirect(data.user);
                 notifications.show({
                     title: `${t('loginPage.welcomeBack')} ${data.user.firstName}!`,
-                    color: 'iccBlue',
+                    color: 'pcncTeal',
                 });
             }
         } catch (err) {
@@ -164,7 +164,7 @@ const LoginPage = () => {
                     message:
                         t('loginPage.otpSentMessage') ||
                         'A new verification code has been sent.',
-                    color: 'iccPurple',
+                    color: 'pcncPurple',
                 });
             } else {
                 const errorData = await response.json();
@@ -188,7 +188,7 @@ const LoginPage = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: `linear-gradient(135deg, ${theme.colors.iccDark[9]} 0%, ${theme.colors.iccBlue[8]} 35%, ${theme.colors.iccPurple[7]} 100%)`,
+                background: `linear-gradient(135deg, ${theme.colors.pcncNavy[9]} 0%, ${theme.colors.pcncTeal[8]} 35%, ${theme.colors.pcncPurple[7]} 100%)`,
                 padding: isMobile ? 16 : 32,
                 position: 'relative',
                 overflow: 'hidden',
@@ -203,7 +203,7 @@ const LoginPage = () => {
                     width: 400,
                     height: 400,
                     borderRadius: '50%',
-                    background: `radial-gradient(circle, ${theme.colors.iccGold[4]}55 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, ${theme.colors.pcncOrange[4]}55 0%, transparent 70%)`,
                     pointerEvents: 'none',
                 }}
             />
@@ -215,7 +215,7 @@ const LoginPage = () => {
                     width: 480,
                     height: 480,
                     borderRadius: '50%',
-                    background: `radial-gradient(circle, ${theme.colors.iccRed[5]}40 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, ${theme.colors.pcncOrange[5]}40 0%, transparent 70%)`,
                     pointerEvents: 'none',
                 }}
             />
@@ -252,7 +252,7 @@ const LoginPage = () => {
                                     width: 88,
                                     height: 88,
                                     borderRadius: 22,
-                                    background: `linear-gradient(135deg, ${theme.colors.iccBlue[5]} 0%, ${theme.colors.iccPurple[5]} 50%, ${theme.colors.iccGold[4]} 100%)`,
+                                    background: `linear-gradient(135deg, ${theme.colors.pcncTeal[5]} 0%, ${theme.colors.pcncPurple[5]} 50%, ${theme.colors.pcncOrange[4]} 100%)`,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -265,6 +265,18 @@ const LoginPage = () => {
                             >
                                 ICC
                             </Box>
+                            <Text
+                                size="sm"
+                                fw={500}
+                                tt="uppercase"
+                                style={{
+                                    color: 'rgba(255,255,255,0.7)',
+                                    letterSpacing: '0.2em',
+                                    marginBottom: 8,
+                                }}
+                            >
+                                ICC
+                            </Text>
                             <Title
                                 order={1}
                                 style={{
@@ -275,7 +287,7 @@ const LoginPage = () => {
                                     marginBottom: 16,
                                 }}
                             >
-                                ICC École en Ligne
+                                PCNC Corporate
                             </Title>
                             <Text size="lg" style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>
                                 {t('loginPage.adminPortal') || 'Portail de gestion — Impact Centre Chrétien'}
@@ -289,7 +301,7 @@ const LoginPage = () => {
                                                     width: 6,
                                                     height: 6,
                                                     borderRadius: 999,
-                                                    backgroundColor: theme.colors.iccGold[4],
+                                                    backgroundColor: theme.colors.pcncOrange[4],
                                                 }}
                                             />
                                             <Text size="sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
@@ -344,7 +356,7 @@ const LoginPage = () => {
                             <LoadingOverlay
                                 visible={loading}
                                 overlayProps={{ blur: 2, color: '#fff', backgroundOpacity: 0.6 }}
-                                loaderProps={{ color: 'iccBlue' }}
+                                loaderProps={{ color: 'pcncTeal' }}
                             />
 
                             <form onSubmit={handleSubmit}>
@@ -425,7 +437,7 @@ const LoginPage = () => {
                                         type="submit"
                                         fullWidth
                                         size="lg"
-                                        color="iccBlue"
+                                        color="pcncTeal"
                                         mt="sm"
                                     >
                                         {step === 'login'

@@ -403,7 +403,7 @@ const CoordinatorDashboard = () => {
                 <Text
                     size="32px"
                     fw={800}
-                    c={theme.colors.iccBlue[8]}
+                    c={theme.colors.pcncTeal[8]}
                     style={{ letterSpacing: '-0.01em' }}
                 >
                     {isCoordinatorRole ? 'Mes Classes Coordonnées' : 'Toutes les Classes'}
@@ -411,7 +411,7 @@ const CoordinatorDashboard = () => {
                 <Button
                     leftSection={<IconRefresh size={16} />}
                     variant="light"
-                    color="iccBlue"
+                    color="pcncTeal"
                     onClick={() => refetch()}
                     loading={isLoading}
                 >

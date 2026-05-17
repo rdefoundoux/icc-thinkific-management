@@ -278,7 +278,7 @@ const TeacherClasses = () => {
                 <Text
                     size="32px"
                     fw={800}
-                    c={theme.colors.iccBlue[8]}
+                    c={theme.colors.pcncTeal[8]}
                     className="dashboard-title"
                     style={{ letterSpacing: '-0.01em' }}
                 >
@@ -287,7 +287,7 @@ const TeacherClasses = () => {
                 <Button
                     leftSection={<IconRefresh size={16} />}
                     variant="light"
-                    color="iccBlue"
+                    color="pcncTeal"
                     onClick={() => refetch()}
                     loading={isLoading}
                 >
