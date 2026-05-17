@@ -1,0 +1,51 @@
+name: "Deploy to Droplet (manual)"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DROPLET_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 143.198.39.187 >> ~/.ssh/known_hosts
+
+      - name: Pull latest code & rebuild frontend
+        run: |
+          ssh -o StrictHostKeyChecking=no root@143.198.39.187 '
+            set -e
+            cd /opt/icc-thinkific-management
+            echo "=== Git pull ==="
+            git pull origin refactor/postgres-icc-rebrand
+            echo "=== Rebuild frontend ==="
+            cd pcnc-app
+            npm run build
+            echo "=== Build complete ==="
+            echo "=== Verify no missing i18n keys ==="
+            python3 << PYEOF
+import json, re, glob
+used = set()
+for f in glob.glob("src/**/*.jsx", recursive=True) + glob.glob("src/**/*.js", recursive=True):
+    if "i18n/locales" in f: continue
+    for m in re.finditer(r"t\(\s*['"'"'\""]([^'"'"'\"]+)['"'"'\""]", open(f).read()):
+        used.add(m.group(1))
+fr = json.load(open("src/i18n/locales/fr/translation.json"))
+en = json.load(open("src/i18n/locales/en/translation.json"))
+def has(d, k):
+    cur = d
+    for p in k.split("."):
+        if isinstance(cur, dict) and p in cur: cur = cur[p]
+        else: return False
+    return isinstance(cur, str)
+real = lambda k: len(k.split(".")) > 1 and not k.startswith("http") and k not in ["-", "error", "success", "button, a"]
+missing_fr = [k for k in used if not has(fr, k) and real(k)]
+missing_en = [k for k in used if not has(en, k) and real(k)]
+print(f"FR missing (real): {len(missing_fr)}: {missing_fr}")
+print(f"EN missing (real): {len(missing_en)}: {missing_en}")
+PYEOF
+          '
