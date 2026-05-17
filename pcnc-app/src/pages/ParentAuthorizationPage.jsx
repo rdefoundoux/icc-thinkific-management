@@ -8,7 +8,7 @@ import { notifications } from '@mantine/notifications';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const disclaimerText = `
-Votre enfant (ou mineur sous votre responsabilité) souhaite participer à la formation PCNC Digital. 
+Votre enfant (ou mineur sous votre responsabilité) souhaite participer à la formation PCNC Corporate.
 Conformément à la législation, votre autorisation parentale est requise pour valider son inscription.
 En signant ci-dessous, vous attestez avoir pris connaissance des conditions de participation et autorisez
 votre enfant à suivre la formation.
