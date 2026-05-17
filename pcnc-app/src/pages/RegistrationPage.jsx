@@ -253,7 +253,7 @@ const RegistrationPage = () => {
                     </Text>
                 </Alert>
 
-                <Box sx={(theme) => ({
+                <Box style={(theme) => ({
                     backgroundColor: theme.white,
                     borderRadius: theme.radius.md,
                     padding: theme.spacing.xl,
@@ -526,10 +526,7 @@ const RegistrationPage = () => {
                             type="submit"
                             fullWidth
                             size="lg"
-                            style={{
-                                background: 'linear-gradient(135deg, #662D91, #00B0CA)',
-                                color: '#ffffff',
-                            }}
+                            color="pcncTeal"
                             component={motion.button}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}

@@ -1,136 +1,153 @@
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import MongoStore from 'connect-mongo';
+import rateLimit from 'express-rate-limit';
+import { PrismaSessionStore } from '@quixo3/prisma-session-store';
+
 import config from './config/env.js';
+import logger from './lib/logger.js';
+import prisma, { disconnectPrisma } from './lib/prisma.js';
+import { requestContext } from './middleware/requestContext.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import mainRouter from './routes/index.js';
 
-class AppServer {
-    constructor() {
-        this.app = express();
-        this.sessionStore = MongoStore.create({
-            mongoUrl: config.MONGODB_URI,
-            ttl: 24 * 60 * 60,
-            autoRemove: 'interval',
-            autoRemoveInterval: 60
-        });
-        this.sessionStore.on('error', (error) => {
-            console.error('Session store error:', error);
-        });
-        this.configureMiddleware();
-        this.connectDatabase();
-        this.configureRoutes();
-    }
+const app = express();
 
-    configureMiddleware() {
-        this.app.set('trust proxy', 1);
-        this.app.use(helmet());
-        // --- CORS CONFIGURATION START ---
-        const allowedOrigins = [
-            'http://localhost:5173',
-            'https://pcnc.tail30380e.ts.net',
-            config.THINKIFIC_OAUTH_REDIRECT_URI,
-            'https://api.elvanto.com',
-            'https://pcnc-admin.erdv.pro',
-            'https://formations.egliseicc.com'
-        ];
+// ─── Behind a reverse proxy (Vercel, nginx) ────────────────────────
+app.set('trust proxy', 1);
 
-        // Matches both preview and production Vercel deployments
-        const vercelRegex = /^https:\/\/([a-zA-Z0-9-]+-)?rdefoundouxs-projects\.vercel\.app$/;
+// ─── Security headers ──────────────────────────────────────────────
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false, // SPA serves its own CSP
+  }),
+);
+app.use(compression());
 
-        this.app.use(cors({
-            origin: function(origin, callback) {
-                if (!origin) return callback(null, true); // Allow non-browser requests
-                if (allowedOrigins.includes(origin) || vercelRegex.test(origin)) {
-                    return callback(null, true);
-                }
-                return callback(new Error('Not allowed by CORS'));
-            },
-            credentials: true,
-            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-            allowedHeaders: ['Content-Type', 'Authorization'],
-            exposedHeaders: ['Set-Cookie']
-        }));
-        // --- CORS CONFIGURATION END ---
-        this.app.use(express.json());
-        this.app.use(express.urlencoded({ extended: true }));
-        this.app.use(cookieParser(process.env.COOKIE_SECRET));
+// ─── CORS ──────────────────────────────────────────────────────────
+const staticOrigins = [
+  config.FRONTEND_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+  config.THINKIFIC.OAUTH_REDIRECT,
+  'https://api.elvanto.com',
+  'https://formations.egliseicc.com',
+  ...config.ALLOWED_ORIGINS,
+].filter(Boolean);
 
-        // Session configuration
-        this.app.use(session({
-            secret: process.env.COOKIE_SECRET,
-            resave: false,
-            saveUninitialized: false,
-            store: this.sessionStore,
-            cookie: {
-                secure: false, // false for HTTP in development
-                sameSite: 'lax', // Allows cookies on same-site requests
-                httpOnly: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                domain: '.erdv.pro' // Explicitly set domain for development
-            },
-            proxy: true
-        }));
+const vercelRegex = /^https:\/\/([a-zA-Z0-9-]+-)?rdefoundouxs-projects\.vercel\.app$/;
 
-        // Session logging middleware
-        this.app.use((req, res, next) => {
-            //console.log('Session middleware - req.session:', req.session);
-            next();
-        });
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (staticOrigins.includes(origin) || vercelRegex.test(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Set-Cookie', 'x-request-id'],
+  }),
+);
 
-        // Rate limiting
-        const limiter = rateLimit({
-            windowMs: 15 * 60 * 1000,
-            max: 500,
-            standardHeaders: true,
-            legacyHeaders: false,
-        });
-        this.app.use(limiter);
-    }
+// ─── Body parsers ──────────────────────────────────────────────────
+// NB: raw body is set on the webhook route directly (see routes/index.js)
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+app.use(cookieParser(config.COOKIE_SECRET));
 
-    async connectDatabase() {
-        try {
-            mongoose.set('strictQuery', false);
-            await mongoose.connect(config.MONGODB_URI);
-            console.log('MongoDB connected successfully');
+// ─── Session (Postgres-backed via Prisma) ──────────────────────────
+app.use(
+  session({
+    name: 'pcnc.sid',
+    secret: config.COOKIE_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    proxy: true,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      domain: config.COOKIE_DOMAIN || undefined,
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+    store: new PrismaSessionStore(prisma, {
+      checkPeriod: 10 * 60 * 1000, // prune expired every 10 min
+      dbRecordIdIsSessionId: true,
+      dbRecordIdFunction: undefined,
+    }),
+  }),
+);
 
-            // Verify session store
-            this.sessionStore.on('error', (error) => {
-                console.error('Session store error:', error);
-            });
+// ─── Observability ─────────────────────────────────────────────────
+app.use(requestContext);
 
-            // Create TTL index
-            const sessionCollection = mongoose.connection.db.collection('sessions');
-            await sessionCollection.createIndex({ expires: 1 }, { expireAfterSeconds: 0 });
-            console.log('Session TTL index created');
+// ─── Rate limit (skip health endpoints) ────────────────────────────
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 500,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.path === '/health' || req.path === '/ready',
+  }),
+);
 
-        } catch (err) {
-            console.error('Database connection error:', err);
-            process.exit(1);
-        }
-    }
+// ─── Health endpoints ──────────────────────────────────────────────
+app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
+app.get('/ready', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ready' });
+  } catch (err) {
+    logger.error({ err }, 'readiness probe failed');
+    res.status(503).json({ status: 'unavailable' });
+  }
+});
 
-    configureRoutes() {
-        this.app.use('/api/v1', mainRouter);
-        this.app.get('/health', (req, res) => res.status(200).json({ status: 'healthy' }));
-    }
+// ─── API routes ────────────────────────────────────────────────────
+app.use('/api/v1', mainRouter);
 
-    start() {
-        const PORT = config.PORT || 3000;
-        this.app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-            console.log(`Environment: ${config.NODE_ENV || 'development'}`);
-            console.log(`Session cookie settings:
-  - Secure: ${config.NODE_ENV === 'production'}
-  - SameSite: ${config.NODE_ENV === 'production' ? 'none' : 'lax'}
-  - Domain: ${config.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : 'localhost'}`);
-        });
-    }
+// ─── 404 + error handling (must be last) ───────────────────────────
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+// ─── Boot ──────────────────────────────────────────────────────────
+const server = app.listen(config.PORT, () => {
+  logger.info(
+    {
+      port: config.PORT,
+      env: config.NODE_ENV,
+      cookieDomain: config.COOKIE_DOMAIN || '(none)',
+    },
+    'pcnc-server started',
+  );
+});
+
+// ─── Graceful shutdown ─────────────────────────────────────────────
+async function shutdown(signal) {
+  logger.info({ signal }, 'shutdown initiated');
+  server.close(async () => {
+    await disconnectPrisma();
+    logger.info('shutdown complete');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    logger.error('forced shutdown after 10s');
+    process.exit(1);
+  }, 10_000).unref();
 }
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));
+process.on('unhandledRejection', (reason) => logger.error({ reason }, 'unhandledRejection'));
+process.on('uncaughtException',  (err)    => logger.fatal({ err },    'uncaughtException'));
 
-const server = new AppServer();
-server.start();
+export default app;

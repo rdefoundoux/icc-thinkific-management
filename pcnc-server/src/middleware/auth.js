@@ -1,63 +1,64 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import { prisma } from '../lib/prisma.js';
+import config from '../config/env.js';
+import { Unauthorized, Forbidden } from '../lib/errors.js';
+import { asyncHandler } from './requestContext.js';
 
-export const authenticate = async (req, res, next) => {
-    let token;
+/**
+ * Load the current user from either an express-session entry or a Bearer JWT.
+ * Populates req.user (without password).
+ */
+export const authenticate = asyncHandler(async (req, _res, next) => {
+    let userId = req.session?.user?.id || req.session?.user?._id;
 
-    if (req.headers.authorization?.startsWith('Bearer ')) {
-        token = req.headers.authorization.split(' ')[1];
+    if (!userId && req.headers.authorization?.startsWith('Bearer ')) {
+        const token = req.headers.authorization.slice(7);
+        try {
+            const decoded = jwt.verify(token, config.JWT_SECRET);
+            userId = decoded.sub || decoded.id;
+        } catch {
+            throw Unauthorized('Invalid or expired token');
+        }
     }
 
-    if (!token) {
-        return res.status(401).json({
-            success: false,
-            error: 'Not authorized to access this route'
-        });
-    }
+    if (!userId) throw Unauthorized('Not authorized to access this route');
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = await User.findById(decoded.id);
-        next();
-    } catch (error) {
-        return res.status(401).json({
-            success: false,
-            error: 'Invalid or expired token'
-        });
-    }
-};
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true, email: true, firstName: true, lastName: true,
+            roles: true, thinkificId: true, lastLogin: true,
+        },
+    });
+    if (!user) throw Unauthorized('User not found');
 
-export const adminOnly = (req, res, next) => {
-    if (req.user.role !== 'admin' && req.user.role !== 'coordinator') {
-        return res.status(403).json({
-            success: false,
-            error: 'Admin privileges required'
-        });
-    }
+    req.user = user;
     next();
-};
+});
 
-export const teacherOnly = (req, res, next) => {
-    if (req.user.role !== 'teacher') {
-        return res.status(403).json({
-            success: false,
-            error: 'Teacher access only'
-        });
-    }
-    next();
-};
-export const isAuthenticated = (req, res, next) => {
+export const isAuthenticated = (req, _res, next) => {
     if (req.user) return next();
-    res.status(401).json({ error: 'Authentication required' });
-};
-export const isAdmin = (req, res, next) => {
-    if (req.user?.roles.includes('admin')) return next();
-    res.status(403).json({ error: 'Admin access required' });
-};
-export const isCoordinator = (req, res, next) => {
-    if (req.user?.roles.includes('coordinator')) return next();
-    res.status(403).json({ error: 'Coordinator access required' });
+    return next(Unauthorized('Authentication required'));
 };
 
-export default class authMiddleware {
-}
+const hasRole = (user, role) => Array.isArray(user?.roles) && user.roles.includes(role);
+
+export const adminOnly = (req, _res, next) => {
+    if (hasRole(req.user, 'admin') || hasRole(req.user, 'coordinator')) return next();
+    return next(Forbidden('Admin privileges required'));
+};
+
+export const teacherOnly = (req, _res, next) => {
+    if (hasRole(req.user, 'teacher')) return next();
+    return next(Forbidden('Teacher access only'));
+};
+
+export const isAdmin = (req, _res, next) => {
+    if (hasRole(req.user, 'admin')) return next();
+    return next(Forbidden('Admin access required'));
+};
+
+export const isCoordinator = (req, _res, next) => {
+    if (hasRole(req.user, 'coordinator')) return next();
+    return next(Forbidden('Coordinator access required'));
+};

@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from "react";
 import {
-    Avatar, Card, Text, Title, Button, SimpleGrid, Group, Stack, Progress, Loader, useMantineTheme
+    Avatar,
+    Card,
+    Text,
+    Title,
+    Button,
+    SimpleGrid,
+    Group,
+    Stack,
+    Progress,
+    Loader,
+    Box,
+    useMantineTheme,
 } from "@mantine/core";
 import { IconMail, IconEdit, IconRefresh } from "@tabler/icons-react";
 import { useAuth } from "../context/AuthContext";
@@ -12,7 +23,7 @@ const ProfilePage = () => {
     const [loading, setLoading] = useState(false);
     const [userData, setUserData] = useState(null);
     const theme = useMantineTheme();
-    const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
+    const isMobile = useMediaQuery("(max-width: 768px)");
 
     const fetchUserData = async () => {
         setLoading(true);
@@ -31,79 +42,97 @@ const ProfilePage = () => {
         if (user) fetchUserData();
     }, [user]);
 
-    if (!user) {
-        return <Navigate to="/login" />;
-    }
+    if (!user) return <Navigate to="/login" />;
+
+    const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase();
+    const displayName = user?.firstName
+        ? `${user.firstName} ${user.lastName || ""}`.trim()
+        : user.name || user.email;
 
     return (
-        <SimpleGrid
-            cols={isMobile ? 1 : 3}
-            spacing="xl"
-            p="xl"
-            breakpoints={[{ maxWidth: "md", cols: 1 }]}
-        >
-            <Card withBorder shadow="lg" p="xl" radius="md">
-                <Stack align="center" spacing="sm">
-                    <Avatar size={120} radius="xl" color="blue" mb="sm" />
-                    <Title order={3}>{user.name}</Title>
-                    <Text size="sm" color="dimmed">
-                        <Group spacing="xs">
+        <Box>
+            <Title order={1} mb="lg">Mon profil</Title>
+            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="xl">
+                <Card padding="xl">
+                    <Stack align="center" gap="sm">
+                        <Avatar
+                            size={120}
+                            radius="xl"
+                            color="pcncTeal"
+                            style={{
+                                background: `linear-gradient(135deg, ${theme.colors.pcncTeal[5]} 0%, ${theme.colors.pcncPurple[5]} 100%)`,
+                                color: "#fff",
+                                fontWeight: 700,
+                                fontSize: 36,
+                            }}
+                        >
+                            {initials || "?"}
+                        </Avatar>
+                        <Title order={3} ta="center">{displayName}</Title>
+                        <Group gap="xs" c="dimmed">
                             <IconMail size={16} />
-                            {user.email}
+                            <Text size="sm">{user.email}</Text>
                         </Group>
-                    </Text>
-                    <Button fullWidth variant="filled" radius="xl" my="md">
-                        <IconEdit size={18} />
-                        Manage Account
-                    </Button>
-                </Stack>
-            </Card>
-            <Card withBorder shadow="xl" p="xl" radius="md" style={{ gridColumn: isMobile ? undefined : "span 2" }}>
-                <Title order={4} mb="lg">
-                    Learning Progress
-                </Title>
-                {loading ? (
-                    <Group position="center" p="xl">
-                        <Loader color="blue" size="lg" />
-                    </Group>
-                ) : (
-                    <SimpleGrid
-                        cols={isMobile ? 1 : 3}
-                        spacing="xl"
-                        breakpoints={[{ maxWidth: "sm", cols: 1 }]}
+                        <Button fullWidth color="pcncTeal" leftSection={<IconEdit size={18} />} my="md">
+                            Gérer mon compte
+                        </Button>
+                    </Stack>
+                </Card>
+
+                <Card padding="xl" style={{ gridColumn: isMobile ? undefined : "span 2" }}>
+                    <Title order={4} mb="lg">Progression d'apprentissage</Title>
+                    {loading ? (
+                        <Group justify="center" p="xl">
+                            <Loader color="pcncTeal" size="lg" />
+                        </Group>
+                    ) : (
+                        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xl">
+                            <StatCard
+                                label="Avancement"
+                                value={`${userData?.completionPercentage}%`}
+                                color={theme.colors.pcncTeal[7]}
+                            >
+                                <Progress
+                                    value={userData?.completionPercentage}
+                                    mt="xs"
+                                    color="pcncTeal"
+                                />
+                            </StatCard>
+                            <StatCard
+                                label="Cours actifs"
+                                value={userData?.enrollments || 0}
+                                color={theme.colors.pcncGreen[7]}
+                            />
+                            <StatCard
+                                label="Série d'apprentissage"
+                                value={`${userData?.learningStreak || 0} jours`}
+                                color={theme.colors.pcncOrange[7]}
+                            />
+                        </SimpleGrid>
+                    )}
+                    <Button
+                        fullWidth
+                        variant="light"
+                        color="pcncTeal"
+                        mt="lg"
+                        leftSection={<IconRefresh size={16} />}
+                        onClick={fetchUserData}
                     >
-                        <StatCard label="Course Progress" value={`${userData?.completionPercentage}%`} color="blue">
-                            <Progress value={userData?.completionPercentage} mt="xs" />
-                        </StatCard>
-                        <StatCard label="Active Courses" value={userData?.enrollments || 0} color="green" />
-                        <StatCard
-                            label="Learning Streak"
-                            value={`${userData?.learningStreak || 0} days`}
-                            color="orange"
-                        />
-                    </SimpleGrid>
-                )}
-                <Button
-                    fullWidth
-                    variant="light"
-                    mt="lg"
-                    leftIcon={<IconRefresh size={16} />}
-                    onClick={fetchUserData}
-                >
-                    Refresh Data
-                </Button>
-            </Card>
-        </SimpleGrid>
+                        Rafraîchir
+                    </Button>
+                </Card>
+            </SimpleGrid>
+        </Box>
     );
 };
 
 const StatCard = ({ label, value, color, children }) => (
-    <Card shadow="sm" radius="lg" padding="lg" withBorder>
-        <Stack spacing={2}>
-            <Text size="sm" color="dimmed">
+    <Card padding="lg">
+        <Stack gap={4}>
+            <Text size="sm" c="dimmed" fw={500}>
                 {label}
             </Text>
-            <Text size={24} fw={600} color={color}>
+            <Text size="28px" fw={700} style={{ color }}>
                 {value}
             </Text>
             {children}

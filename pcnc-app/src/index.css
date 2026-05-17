@@ -1,13 +1,14 @@
-/* index.css */
+/* index.css — ICC global styles */
 
-/* Import Mantine core styles */
 @import '@mantine/core/styles.layer.css';
 
 :root {
-  font-family: 'Google Sans', Roboto, Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
-  background: #f8f9fa;
-  color: #161E3F;
+  background: #F8FAFC;
+  color: #1E2440;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @media (max-width: 768px) {
@@ -20,8 +21,9 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #f8f9fa;
-  color: #3c4043;
+  background: #F8FAFC;
+  color: #1E2440;
+  font-family: inherit;
 }
 
 #root {
@@ -40,13 +42,13 @@ body {
   text-overflow: ellipsis;
 }
 .gradient-text {
-  background: linear-gradient(45deg, #662D91 0%, #00B0CA 100%);
+  background: linear-gradient(90deg, #3460F2 0%, #8132E8 50%, #F5B91A 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .smooth-shadow {
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 6px -1px rgba(18, 24, 51, 0.08), 0 2px 4px -1px rgba(18, 24, 51, 0.04);
 }
 .hover-scale {
   transition: transform 0.2s ease;
@@ -57,89 +59,50 @@ body {
 
 /* Print styles */
 @media print {
-  .no-print {
-    display: none !important;
-  }
-  .print-full-width {
-    width: 100% !important;
-  }
+  .no-print { display: none !important; }
+  .print-full-width { width: 100% !important; }
 }
 
-@keyframes logo-spin {
-  from {transform: rotate(0deg);}
-  to {transform: rotate(360deg);}
-}
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-/* --- Mantine Button --- */
-.mantine-Button-root {
-  border-radius: 24px;
-  font-weight: 500;
-  transition: background-color 0.3s, box-shadow 0.3s;
-}
-.mantine-Button-root:hover {
-  background-color: #e8f0fe;
-  box-shadow: 0 4px 8px rgba(22,30,63,0.1);
-}
-
-/* --- Mantine Card --- */
+/* --- Mantine Card hover lift --- */
 .mantine-Card-root {
-  border-radius: 12px;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 1px 3px rgba(22,30,63,0.05);
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 .mantine-Card-root:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 10px rgba(22,30,63,0.15);
-}
-
-/* --- Mantine Avatar --- */
-.mantine-Avatar-root {
-  box-shadow: 0 4px 6px rgba(32,33,36,0.1);
-}
-
-/* --- Mantine Progress Bar --- */
-.mantine-Progress-root {
-  border-radius: 8px;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(18, 24, 51, 0.08), 0 2px 6px rgba(18, 24, 51, 0.06);
 }
 
 /* ---------------------------------------------------
- * Classter-like Styles
+ * Classter-like table layout (kept for legacy markup)
  * --------------------------------------------------- */
 
-//* Container */
 .classter-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding: 0;
   overflow: visible;
 }
 
-/* Table wrapper for scroll and expansion */
 .classter-table-wrapper {
   width: 100%;
   overflow-x: auto;
   margin: 0;
   padding: 0;
   background: transparent;
-  border-radius: 16px;
+  border-radius: 14px;
 }
 
-/* Table: uncrushable, modern, responsive */
 .classter-table {
   width: 100%;
   min-width: 1100px;
-  border-radius: 16px;
+  border-radius: 14px;
   background: #fff;
   font-size: 1em;
-  box-shadow: 0 8px 24px rgba(22,30,63,0.06);
+  box-shadow: 0 1px 3px rgba(18, 24, 51, 0.04), 0 1px 2px rgba(18, 24, 51, 0.06);
   border-collapse: separate;
   border-spacing: 0;
+  overflow: hidden;
 }
 
 .classter-table th,
@@ -150,25 +113,27 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 14px 16px;
-  border-bottom: 1px solid #e0e0e6;
+  border-bottom: 1px solid #E5EAF1;
 }
 
 .classter-table th {
-  background: #f1f3f6;
+  background: #E6F0FF;
+  color: #0E2B8E;
   font-weight: 700;
-  font-size: 0.95em;
+  font-size: 0.78em;
   position: sticky;
   top: 0;
   z-index: 2;
-  border-bottom: 2px solid #e0e0e6;
+  border-bottom: 1px solid #C7DBFF;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .classter-table tr:nth-child(even) {
-  background: #f7fafd;
+  background: #F8FAFC;
 }
 .classter-table tr:hover {
-  background: #eaf6fa;
+  background: #F1F4F8;
   transition: background 0.2s;
 }
 
@@ -176,8 +141,8 @@ body {
   caption-side: top;
   padding: 12px 0;
   font-size: 1.2em;
-  font-weight: 600;
-  color: #161E3F;
+  font-weight: 700;
+  color: #0E2B8E;
   background: transparent;
 }
 
@@ -190,11 +155,6 @@ body {
   .classter-table td {
     padding: 12px;
   }
-  .classter-table-wrapper {
-    margin-left: -8px;
-    margin-right: -8px;
-    padding: 0 8px;
-  }
 }
 
 @media (max-width: 600px) {
@@ -204,54 +164,50 @@ body {
   }
 }
 
-/* Role pill styling */
+/* Role pill styling — ICC palette */
 .role-pill {
-  border-radius: 16px;
-  font-size: 0.85em;
-  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.78em;
+  padding: 3px 10px;
   text-transform: capitalize;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.01em;
-  background: #e0e7ef;
-  color: #161E3F;
+  background: #E5EAF1;
+  color: #2D3450;
   margin-right: 4px;
   margin-bottom: 2px;
   display: inline-block;
 }
 .role-pill[data-role="admin"] {
-  background: #e8f0fe;
-  color: #1a73e8;
-}
-.role-pill[data-role="teacher"] {
-  background: #F9A061;
-  color: #161E3F;
-}
-.role-pill[data-role="coordinator"] {
-  background: #00B0CA;
-  color: #161E3F;
-}
-.role-pill[data-role="rsf"] {
-  background: #A67FB5;
-  color: #161E3F;
-}
-.role-pill[data-role="sf"] {
-  background: #662D91;
+  background: #1E47D9;
   color: #ffffff;
 }
+.role-pill[data-role="teacher"] {
+  background: #FFEAA8;
+  color: #6B4D00;
+}
+.role-pill[data-role="coordinator"] {
+  background: #E3CCFF;
+  color: #42137F;
+}
+.role-pill[data-role="rsf"] {
+  background: #FFE9EC;
+  color: #A30E22;
+}
+.role-pill[data-role="sf"] {
+  background: #F5EBFF;
+  color: #561AA2;
+}
 .role-pill[data-role="traineeTeacher"] {
-  background: #FFE069;
-  color: #161E3F;
+  background: #FFF7DB;
+  color: #8E6700;
 }
 .role-pill[data-role="student"] {
-  background: #86C8A1;
-  color: #161E3F;
+  background: #E4FAEC;
+  color: #054F26;
 }
 
 .mantine-Alert-root {
   border-radius: 10px;
   font-size: 0.98em;
-}
-.mantine-Modal-root {
-  border-radius: 16px;
-  padding: 1.5em;
 }

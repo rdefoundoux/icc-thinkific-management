@@ -1,54 +1,50 @@
-// webhooks/thinkific.js
 import crypto from 'crypto';
-import { userSyncService } from '../services/user-syncService.js';
 
-const verifyWebhookSignature = (signature, rawBody, secret) => {
-    if (!secret) throw new Error('Webhook secret not configured');
+import { userSyncService } from '../services/user-syncService.js';
+import { logger } from '../lib/logger.js';
+
+function verifyWebhookSignature(signature, rawBody, secret) {
+    if (!secret || !signature) return false;
     const hmac = crypto.createHmac('sha256', secret);
     const digest = hmac.update(rawBody).digest('hex');
-    return true;//crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
-};
+    try {
+        return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
+    } catch {
+        return false;
+    }
+}
 
 export const thinkificWebhookHandler = async (req, res) => {
     try {
-        // 1. Get raw request body
-        const rawBody = req.rawBody ? req.rawBody : JSON.stringify(req.body);
+        const rawBody = req.body instanceof Buffer ? req.body.toString('utf8') : JSON.stringify(req.body);
+        const payload = typeof req.body === 'object' && !(req.body instanceof Buffer)
+            ? req.body
+            : JSON.parse(rawBody);
 
-        // 2. Validate required headers and environment variables
         const signature = req.headers['x-thinkific-signature'];
         const secret = process.env.THINKIFIC_WEBHOOK_SECRET;
 
-        // if (!signature || !secret) {
-        //     console.error('Missing required signature or secret', secret, signature);
-        //     return res.status(401).json({
-        //         error: 'Missing required signature or secret'
-        //     });
-        // }
-        //
-        // // 3. Verify signature with raw body
-        // if (!verifyWebhookSignature(signature, rawBody, secret)) {
-        //     console.error('Invalid signature', signature, rawBody, secret);
-        //     return res.status(401).json({ error: 'Invalid signature' });
-        // }
+        if (secret && signature && !verifyWebhookSignature(signature, rawBody, secret)) {
+            logger.warn('thinkific webhook signature mismatch');
+            return res.status(401).json({ error: 'Invalid signature' });
+        }
 
-        // 4. Process valid webhook
-        switch(req.body.event) {
+        switch (payload.event) {
             case 'user.updated':
             case 'user.created':
-                await userSyncService.syncUser(req.body.data);
+                await userSyncService.syncUser(payload.data);
                 return res.status(200).json({ success: true });
-
             default:
                 return res.status(200).json({
                     success: true,
-                    message: 'Event not handled'
+                    message: 'Event not handled',
                 });
         }
-    } catch (error) {
-        console.error('Webhook error:', error);
+    } catch (err) {
+        logger.error({ err }, 'webhook error');
         return res.status(500).json({
             error: 'Webhook processing failed',
-            message: error.message
+            message: err.message,
         });
     }
 };

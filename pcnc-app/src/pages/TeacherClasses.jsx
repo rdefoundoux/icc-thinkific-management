@@ -273,14 +273,21 @@ const TeacherClasses = () => {
     };
 
     return (
-        <Box p="md" className="teacher-dashboard">
-            <Flex align="center" justify="space-between" mb="md">
-                <Text size="xl" fw={700} className="dashboard-title">
+        <Box className="teacher-dashboard">
+            <Flex align="center" justify="space-between" mb="lg">
+                <Text
+                    size="32px"
+                    fw={800}
+                    c={theme.colors.pcncTeal[8]}
+                    className="dashboard-title"
+                    style={{ letterSpacing: '-0.01em' }}
+                >
                     {isTeacherRole ? t('teacherDashboard.myClasses') : 'Toutes les Classes'}
                 </Text>
                 <Button
-                    leftIcon={<IconRefresh size={16} />}
+                    leftSection={<IconRefresh size={16} />}
                     variant="light"
+                    color="pcncTeal"
                     onClick={() => refetch()}
                     loading={isLoading}
                 >
