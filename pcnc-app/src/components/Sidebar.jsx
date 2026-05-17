@@ -57,8 +57,8 @@ const Sidebar = () => {
     return (
         <Box
             w={{ base: '100vw', sm: 260 }}
-            sx={{
-                backgroundColor: theme.colors.pcncNavy[9],
+            style={{
+                backgroundColor: 'var(--mantine-color-pcncNavy-9)',
                 color: '#fff',
                 height: '100vh',
                 display: 'flex',
@@ -72,14 +72,14 @@ const Sidebar = () => {
             }}
         >
             {/* Logo / Brand */}
-            <Box px="lg" py="xl" sx={{ borderBottom: `1px solid ${theme.colors.pcncNavy[7]}` }}>
+            <Box px="lg" py="xl" style={{ borderBottom: `1px solid ${'var(--mantine-color-pcncNavy-7)'}` }}>
                 <Flex align="center" gap="sm">
                     <Box
-                        sx={{
+                        style={{
                             width: 38,
                             height: 38,
                             borderRadius: 10,
-                            background: `linear-gradient(135deg, ${theme.colors.pcncTeal[5]} 0%, ${theme.colors.pcncPurple[5]} 50%, ${theme.colors.pcncOrange[4]} 100%)`,
+                            background: `linear-gradient(135deg, ${'var(--mantine-color-pcncTeal-5)'} 0%, ${'var(--mantine-color-pcncPurple-5)'} 50%, ${'var(--mantine-color-pcncOrange-4)'} 100%)`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -103,7 +103,7 @@ const Sidebar = () => {
             </Box>
 
             {/* Top Section: Navigation */}
-            <ScrollArea sx={{ flex: 1 }} px="sm" py="md">
+            <ScrollArea style={{ flex: 1 }} px="sm" py="md">
                 <Stack gap={4}>
                     {navItems.map(({ label, to, icon: Icon }, index) => (
                         <NavLink
@@ -133,12 +133,12 @@ const Sidebar = () => {
                     <Menu.Target>
                         <UnstyledButton
                             p="sm"
-                            sx={{
+                            style={{
                                 borderRadius: theme.radius.md,
                                 width: '100%',
                                 color: '#fff',
                                 transition: 'background-color 120ms ease',
-                                '&:hover': { backgroundColor: theme.colors.pcncNavy[7] },
+                                '&:hover': { backgroundColor: 'var(--mantine-color-pcncNavy-7)' },
                             }}
                         >
                             <Flex align="center" gap="sm">
@@ -151,7 +151,7 @@ const Sidebar = () => {
                                     {user?.firstName?.[0]}
                                     {user?.lastName?.[0]}
                                 </Avatar>
-                                <Flex direction="column" sx={{ flex: 1, minWidth: 0 }}>
+                                <Flex direction="column" style={{ flex: 1, minWidth: 0 }}>
                                     <Text fw={600} size="sm" c="#fff" truncate>
                                         {user?.firstName} {user?.lastName}
                                     </Text>

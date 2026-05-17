@@ -17,9 +17,9 @@ const TopNav = ({ onLanguageChange, showLoginButton }) => {
 
     return (
         <Box
-            sx={{
+            style={{
                 background: '#ffffff',
-                borderBottom: `1px solid ${theme.colors.gray[2]}`,
+                borderBottom: `1px solid ${'var(--mantine-color-gray-2)'}`,
                 width: '100%',
                 zIndex: 100,
                 position: 'sticky',
@@ -38,14 +38,14 @@ const TopNav = ({ onLanguageChange, showLoginButton }) => {
                     align="center"
                     gap="sm"
                     onClick={() => navigate('/')}
-                    sx={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer' }}
                 >
                     <Box
-                        sx={{
+                        style={{
                             width: 34,
                             height: 34,
                             borderRadius: 10,
-                            background: `linear-gradient(135deg, ${theme.colors.pcncTeal[5]} 0%, ${theme.colors.pcncPurple[5]} 50%, ${theme.colors.pcncOrange[4]} 100%)`,
+                            background: `linear-gradient(135deg, ${'var(--mantine-color-pcncTeal-5)'} 0%, ${'var(--mantine-color-pcncPurple-5)'} 50%, ${'var(--mantine-color-pcncOrange-4)'} 100%)`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',

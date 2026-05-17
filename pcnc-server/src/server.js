@@ -74,8 +74,8 @@ app.use(
     proxy: true,
     cookie: {
       httpOnly: true,
-      sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax',
-      secure: config.NODE_ENV === 'production',
+      sameSite: 'lax',
+      secure: false,
       domain: config.COOKIE_DOMAIN || undefined,
       maxAge: 24 * 60 * 60 * 1000,
     },

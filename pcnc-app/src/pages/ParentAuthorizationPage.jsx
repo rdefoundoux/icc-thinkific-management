@@ -84,8 +84,8 @@ export default function ParentAuthorizationPage() {
                         <Title
                             order={2}
                             ta="center"
-                            sx={{
-                                background: `linear-gradient(90deg, ${theme.colors.pcncTeal[6]}, ${theme.colors.pcncPurple[6]})`,
+                            style={{
+                                background: `linear-gradient(90deg, ${'var(--mantine-color-pcncTeal-6)'}, ${'var(--mantine-color-pcncPurple-6)'})`,
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                             }}
@@ -105,10 +105,10 @@ export default function ParentAuthorizationPage() {
                             <TextInput label="Téléphone" required value={parentInfo.phone} onChange={(e) => setParentInfo({ ...parentInfo, phone: e.target.value })} />
                         </Group>
                         <Divider label="Signature numérique" labelPosition="center" w="100%" />
-                        <Box sx={{
-                            border: `2px dashed ${theme.colors.pcncTeal[4]}`,
+                        <Box style={{
+                            border: `2px dashed ${'var(--mantine-color-pcncTeal-4)'}`,
                             borderRadius: "12px",
-                            background: theme.colors.gray[0],
+                            background: 'var(--mantine-color-gray-0)',
                             padding: "1rem",
                             width: "100%",
                             minHeight: 180,

@@ -10,9 +10,9 @@ const RegistrationSuccessPage = () => {
 
     return (
         <Box
-            sx={{
+            style={{
                 minHeight: '100vh',
-                background: `linear-gradient(135deg, ${theme.colors.pcncTeal[0]} 0%, ${theme.colors.pcncPurple[0]} 100%)`,
+                background: `linear-gradient(135deg, ${'var(--mantine-color-pcncTeal-0)'} 0%, ${'var(--mantine-color-pcncPurple-0)'} 100%)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -21,7 +21,7 @@ const RegistrationSuccessPage = () => {
         >
             <Container size="sm">
                 <Box
-                    sx={{
+                    style={{
                         backgroundColor: '#ffffff',
                         borderRadius: 16,
                         padding: 48,

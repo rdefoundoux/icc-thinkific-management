@@ -196,26 +196,26 @@ const LoginPage = () => {
         >
             {/* Decorative ICC gradient blobs */}
             <Box
-                sx={{
+                style={{
                     position: 'absolute',
                     top: -120,
                     right: -120,
                     width: 400,
                     height: 400,
                     borderRadius: '50%',
-                    background: `radial-gradient(circle, ${theme.colors.pcncOrange[4]}55 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, ${'var(--mantine-color-pcncOrange-4)'}55 0%, transparent 70%)`,
                     pointerEvents: 'none',
                 }}
             />
             <Box
-                sx={{
+                style={{
                     position: 'absolute',
                     bottom: -160,
                     left: -160,
                     width: 480,
                     height: 480,
                     borderRadius: '50%',
-                    background: `radial-gradient(circle, ${theme.colors.pcncOrange[5]}40 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, ${'var(--mantine-color-pcncOrange-5)'}40 0%, transparent 70%)`,
                     pointerEvents: 'none',
                 }}
             />
@@ -248,11 +248,11 @@ const LoginPage = () => {
                             style={{ maxWidth: 480 }}
                         >
                             <Box
-                                sx={{
+                                style={{
                                     width: 88,
                                     height: 88,
                                     borderRadius: 22,
-                                    background: `linear-gradient(135deg, ${theme.colors.pcncTeal[5]} 0%, ${theme.colors.pcncPurple[5]} 50%, ${theme.colors.pcncOrange[4]} 100%)`,
+                                    background: `linear-gradient(135deg, ${'var(--mantine-color-pcncTeal-5)'} 0%, ${'var(--mantine-color-pcncPurple-5)'} 50%, ${'var(--mantine-color-pcncOrange-4)'} 100%)`,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -297,11 +297,11 @@ const LoginPage = () => {
                                     {['Gestion des classes', 'Suivi des élèves', 'Intégration Thinkific & Zoom'].map((line) => (
                                         <Group key={line} gap="sm" wrap="nowrap">
                                             <Box
-                                                sx={{
+                                                style={{
                                                     width: 6,
                                                     height: 6,
                                                     borderRadius: 999,
-                                                    backgroundColor: theme.colors.pcncOrange[4],
+                                                    backgroundColor: 'var(--mantine-color-pcncOrange-4)',
                                                 }}
                                             />
                                             <Text size="sm" style={{ color: 'rgba(255,255,255,0.8)' }}>

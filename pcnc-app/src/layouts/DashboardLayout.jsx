@@ -15,15 +15,15 @@ const DashboardLayout = ({ user }) => {
 
     return (
         <Box
-            sx={{
+            style={{
                 minHeight: '100vh',
-                backgroundColor: theme.colors.gray[0],
+                backgroundColor: 'var(--mantine-color-gray-0)',
             }}
         >
             {!isMobile && sidebarOpen && <Sidebar />}
 
             <Box
-                sx={{
+                style={{
                     marginLeft: !isMobile && sidebarOpen ? SIDEBAR_WIDTH : 0,
                     minHeight: '100vh',
                     display: 'flex',
@@ -33,10 +33,10 @@ const DashboardLayout = ({ user }) => {
                 <TopNav user={user} />
                 <Box
                     component="main"
-                    sx={{
+                    style={{
                         flex: 1,
                         padding: isMobile ? 16 : 32,
-                        backgroundColor: theme.colors.gray[0],
+                        backgroundColor: 'var(--mantine-color-gray-0)',
                         overflowY: 'auto',
                     }}
                 >

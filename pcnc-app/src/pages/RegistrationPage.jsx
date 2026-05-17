@@ -253,7 +253,7 @@ const RegistrationPage = () => {
                     </Text>
                 </Alert>
 
-                <Box sx={(theme) => ({
+                <Box style={(theme) => ({
                     backgroundColor: theme.white,
                     borderRadius: theme.radius.md,
                     padding: theme.spacing.xl,

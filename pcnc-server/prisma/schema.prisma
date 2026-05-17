@@ -438,8 +438,9 @@ model Country {
 /// or @quixo3/prisma-session-store). Kept in the schema so migrations
 /// own the table.
 model Session {
-  sid       String   @id
-  sess      Json
+  id        String   @id @default(cuid())
+  sid       String   @unique
+  data      String
   expiresAt DateTime
 
   @@index([expiresAt])

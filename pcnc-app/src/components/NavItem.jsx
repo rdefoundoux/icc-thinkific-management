@@ -10,10 +10,10 @@ const NavItem = ({ icon, to, children }) => {
                 px={16}
                 py={12}
                 gap={12}
-                sx={(theme) => ({
+                style={(theme) => ({
                     borderRadius: theme.radius.md,
                     '&:hover': {
-                        backgroundColor: theme.colors.gray[1]
+                        backgroundColor: 'var(--mantine-color-gray-1)'
                     },
                     transition: 'all 0.2s',
                     width: '100%',
