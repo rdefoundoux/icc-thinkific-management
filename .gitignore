@@ -38,3 +38,18 @@ yarn-error.log*
 # Misc
 *.tsbuildinfo
 coverage/
+
+# Backups
+*.backup
+*.backup.*
+.env.backup*
+
+# Prisma migrations lock
+prisma/migrations/migration_lock.toml
+
+# OS
+Thumbs.db
+
+# Lock files de fallback
+yarn.lock
+pnpm-lock.yaml
